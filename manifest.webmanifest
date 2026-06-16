@@ -1,0 +1,14 @@
+{
+  "name": "More Ducks!",
+  "short_name": "More Ducks",
+  "description": "A small, silly, satirical incremental game about making more ducks.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#aee3f5",
+  "theme_color": "#7ec8e3",
+  "icons": [
+    { "src": "assets/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,9 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (only if tooling is ever added; the game itself is build-free)
+node_modules/
+npm-debug.log*

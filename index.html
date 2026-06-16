@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#7ec8e3" />
+  <meta name="description" content="More Ducks! — a small, silly, satirical incremental game about making more ducks." />
+  <title>More Ducks!</title>
+  <link rel="icon" href="assets/icon.svg" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="stage" aria-label="The pond">
+      <div class="counters">
+        <div class="counter counter--ducks">
+          <span class="counter__icon" aria-hidden="true">🦆</span>
+          <span id="duck-count" class="counter__value">0</span>
+          <span class="counter__label">Ducks</span>
+        </div>
+        <div class="counter counter--crumbs">
+          <span class="counter__icon" aria-hidden="true">🍞</span>
+          <span id="crumb-count" class="counter__value">0</span>
+          <span class="counter__label">Breadcrumbs</span>
+        </div>
+      </div>
+
+      <button id="quack-btn" class="duck-button" type="button" aria-label="Quack — hatch a duck">🦆</button>
+      <p class="stage__rate"><span id="duck-rate">0</span> ducks/sec</p>
+      <p class="stage__hint">Tap the duck. Make more ducks.</p>
+    </section>
+
+    <section class="panels" aria-label="Management">
+      <nav class="tabs" role="tablist" aria-label="Panels">
+        <button class="tab is-active" data-tab="flock" role="tab" type="button">Flock</button>
+        <button class="tab" data-tab="upgrades" role="tab" type="button">Upgrades</button>
+        <button class="tab" data-tab="duckdex" role="tab" type="button">Duckdex</button>
+        <button class="tab" data-tab="log" role="tab" type="button">Log</button>
+      </nav>
+
+      <div class="tab-panels">
+        <div class="tab-panel is-active" data-panel="flock" role="tabpanel">
+          <ul id="producer-list" class="card-list"></ul>
+          <p id="flock-empty" class="empty-hint">Your duck-makers will gather here.</p>
+        </div>
+        <div class="tab-panel" data-panel="upgrades" role="tabpanel">
+          <ul id="upgrade-list" class="card-list"></ul>
+          <p id="upgrades-empty" class="empty-hint">No improvements available yet.</p>
+        </div>
+        <div class="tab-panel" data-panel="duckdex" role="tabpanel">
+          <div id="duckdex-grid" class="duckdex"></div>
+          <p id="duckdex-empty" class="empty-hint">No ducks catalogued yet.</p>
+        </div>
+        <div class="tab-panel" data-panel="log" role="tabpanel">
+          <ul id="log-list" class="log"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
