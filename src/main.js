@@ -5,10 +5,13 @@ import { saveGame, loadGame } from "./game/save.js";
 import { eraForDucks } from "./game/progression.js";
 import { createMods, applyUpgrades, buyUpgrade } from "./game/upgrades.js";
 import { formatNumber } from "./game/format.js";
+import { checkDex } from "./game/dex.js";
 import { ERAS } from "./data/eras.js";
 import { initUI, updateUI, logMessage } from "./ui/render.js";
 import { initShop, updateShop } from "./ui/shop.js";
 import { initUpgrades, updateUpgrades } from "./ui/upgrades.js";
+import { initDex, updateDex } from "./ui/dex.js";
+import { initModal, queueModal } from "./ui/modal.js";
 
 const AUTOSAVE_MS = 15000;
 const OFFLINE_CAP_SEC = 8 * 3600; // generous but bounded catch-up
@@ -31,6 +34,7 @@ ducks.on("RESOURCE_COUNT_UPDATED", (e) => {
 // Rebuild derived multipliers from owned upgrades (must precede offline calc).
 applyUpgrades(engine, meta, mods);
 
+initModal();
 initUI({
   onQuack() {
     ducks.incrementBy(meta.clickPower);
@@ -39,12 +43,18 @@ initUI({
 });
 initShop({ onBuy: (id) => buyProducer(engine, id) });
 initUpgrades({ onBuy: (id) => buyUpgrade(engine, meta, mods, id) });
+initDex();
+
+// Catalogue any breeds already earned by the loaded state (silently — no spam).
+checkDex(engine, meta);
+updateDex(meta);
 
 if (loadResult.loaded) {
   logMessage("Welcome back to the pond.");
   applyOfflineProgress(loadResult.savedAt);
 } else {
   logMessage(ERAS[0].intro, true);
+  queueModal({ emoji: ERAS[0].emoji, title: ERAS[0].name, body: ERAS[0].modalBody, button: "Tap the duck" });
 }
 
 /**
@@ -74,16 +84,25 @@ function applyOfflineProgress(savedAt) {
   }
 }
 
-/** Fire era-entry beats up to the era implied by lifetime ducks. */
+/** Fire era-entry beats (log + modal) up to the era implied by lifetime ducks. */
 function advanceEras() {
   const target = eraForDucks(meta.totalDucksEver);
   if (target <= meta.era) return;
   for (let e = meta.era + 1; e <= target; e++) {
     logMessage(ERAS[e].intro, true);
+    queueModal({ emoji: ERAS[e].emoji, title: ERAS[e].name, body: ERAS[e].modalBody });
   }
   meta.era = target;
 }
 advanceEras();
+
+/** Catalogue newly-earned breeds and announce them in the log. */
+function announceNewDucks() {
+  const newly = checkDex(engine, meta);
+  for (const d of newly) {
+    logMessage(`New duck catalogued: ${d.emoji} ${d.name}.`, true);
+  }
+}
 
 // Main loop.
 let lastFrame = Date.now();
@@ -100,6 +119,7 @@ function frame() {
     breadcrumbs.incrementBy(ducks.count * CRUMB_PER_DUCK_PER_SEC * mods.crumbMult * dtSec);
   }
   advanceEras();
+  announceNewDucks();
 
   updateUI({
     ducks: Math.floor(ducks.count),
@@ -108,6 +128,7 @@ function frame() {
   });
   updateShop({ engine, breadcrumbs: breadcrumbs.value, era: meta.era });
   updateUpgrades({ engine, meta, breadcrumbs: breadcrumbs.value });
+  updateDex(meta);
 
   if (now - lastAutosave > AUTOSAVE_MS) {
     saveGame(engine, meta);

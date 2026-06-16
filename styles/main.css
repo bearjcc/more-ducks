@@ -152,7 +152,65 @@ body {
 .card__buy:disabled { opacity: 0.4; cursor: not-allowed; background: var(--panel); color: var(--muted); }
 .card__buy:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
 
+.dex-count { margin: 0 0 var(--gap); font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .duckdex { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: var(--gap); }
+.dex-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--panel-2);
+  font: inherit;
+  color: var(--ink);
+}
+.dex-cell.is-locked { color: var(--muted); opacity: 0.65; }
+.dex-cell.is-unlocked { cursor: pointer; background: rgba(246, 178, 27, 0.18); border-color: rgba(246, 178, 27, 0.45); }
+.dex-cell.is-unlocked:active { transform: scale(0.95); }
+.dex-cell__emoji { font-size: 1.9rem; line-height: 1; }
+.dex-cell__name { font-size: 0.6rem; text-align: center; line-height: 1.05; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 40, 55, 0.45);
+  backdrop-filter: blur(2px);
+}
+.modal-overlay[hidden] { display: none; }
+.modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px 20px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+.modal__emoji { font-size: 3.4rem; line-height: 1; }
+.modal__title { font-size: 1.35rem; font-weight: 800; margin: 8px 0 6px; }
+.modal__body { color: var(--muted); line-height: 1.45; margin: 0; }
+.modal__btn {
+  margin-top: 18px;
+  min-height: 44px;
+  padding: 10px 26px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.modal__btn:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
 
 .log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .log li { padding: 8px 10px; background: var(--panel-2); border-radius: 8px; font-size: 0.85rem; }
