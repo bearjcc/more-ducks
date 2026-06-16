@@ -126,6 +126,8 @@ body {
   border-radius: 12px;
 }
 .card.is-affordable { border-color: rgba(47, 143, 87, 0.5); background: rgba(47, 143, 87, 0.1); }
+.card.is-owned { opacity: 0.7; }
+.card.is-owned .card__buy { background: transparent; color: var(--good); font-weight: 700; opacity: 1; }
 .card__icon { font-size: 2rem; line-height: 1; flex: none; width: 2.4rem; text-align: center; }
 .card__body { flex: 1; min-width: 0; }
 .card__title { font-weight: 700; display: flex; align-items: baseline; gap: 8px; }

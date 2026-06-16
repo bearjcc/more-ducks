@@ -76,7 +76,9 @@ export function ducksPerSecond(engine) {
   for (const p of PRODUCERS) {
     const prod = engine.producer(p.id);
     if (prod && prod.count > 0) {
-      dps += (prod.count * p.productionAmount) / (p.productionTime / 1000);
+      // Read the live output amount so upgrade multipliers are reflected.
+      const amount = prod.outputs.resources.ducks.productionAmount;
+      dps += (prod.count * amount) / (p.productionTime / 1000);
     }
   }
   return dps;
