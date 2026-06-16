@@ -35,6 +35,27 @@ src/
   ui/              DOM rendering
 ```
 
+## Development
+
+The game needs **no build** — editing a file and refreshing the browser is the
+whole loop. Tooling is optional:
+
+```sh
+npm install        # only to run the type-checker
+npm run typecheck  # tsc over the JSDoc (// @ts-check); the vendored engine is skipped
+npm run serve      # python static server on :8000
+```
+
+Game data lives in `src/data/` (producers, upgrades, ducks, eras) so balance and
+copy can be tuned without touching logic. A `window.MoreDucks` console handle is
+exposed for debugging and modding.
+
+## Deploying
+
+Pushing to `main` on GitHub publishes via `.github/workflows/pages.yml` (free for
+public repos). All asset paths are relative, so it works under a project subpath
+like `you.github.io/more-ducks/` with no configuration.
+
 ## Contributing
 
 This is free and open source under the MIT license. It's a personal project

@@ -4,7 +4,7 @@ import { queueModal } from "./modal.js";
 
 /**
  * @typedef {object} DexCell
- * @property {HTMLElement} root
+ * @property {HTMLButtonElement} root
  * @property {HTMLElement} emoji
  * @property {HTMLElement} name
  * @property {boolean} revealed

@@ -28,13 +28,20 @@ export function initUI(handlers) {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => selectTab(tab.getAttribute("data-tab")));
   });
+
+  // Initialise ARIA state to match the active tab.
+  const active = document.querySelector(".tab.is-active");
+  if (active) selectTab(active.getAttribute("data-tab"));
 }
 
 /** @param {string|null} name */
 function selectTab(name) {
   if (!name) return;
-  document.querySelectorAll(".tab").forEach((t) =>
-    t.classList.toggle("is-active", t.getAttribute("data-tab") === name));
+  document.querySelectorAll(".tab").forEach((t) => {
+    const isActive = t.getAttribute("data-tab") === name;
+    t.classList.toggle("is-active", isActive);
+    t.setAttribute("aria-selected", String(isActive));
+  });
   document.querySelectorAll(".tab-panel").forEach((p) =>
     p.classList.toggle("is-active", p.getAttribute("data-panel") === name));
 }

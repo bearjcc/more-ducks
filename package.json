@@ -1,0 +1,14 @@
+{
+  "name": "more-ducks",
+  "version": "0.1.0",
+  "description": "A small, silly, satirical incremental game about making more ducks.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "typecheck": "tsc --noEmit -p jsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
