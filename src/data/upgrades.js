@@ -39,4 +39,10 @@ export const UPGRADES = [
   { id: "recursiveboost", name: "Self-Improvement",    emoji: "🔁", blurb: "The Recursive Drakes are iterating on themselves. Quietly.",     cost: 250000000,  era: 3, effect: { kind: "producerMult", target: "recursive", mult: 5 } },
   { id: "manifest",      name: "Manifest Destiny",     emoji: "🌊", blurb: "The continent is basically a pond now. Crumbs everywhere.",      cost: 600000000,  era: 3, effect: { kind: "crumbMult", mult: 5 } },
   { id: "foiegras",      name: "The Foie Gras Memo",   emoji: "📄", blurb: "Nobody read it. Output quadrupled regardless.",                  cost: 1500000000, era: 3, effect: { kind: "globalMult", mult: 4 } },
+
+  // Era 4 — More Ducks (late grind helpers)
+  { id: "duckchain",   name: "Duckchain",        emoji: "⛓️", blurb: "Immutable ledger of who quacked first. Mostly ducks.",           cost: 2500000000,  era: 4, effect: { kind: "globalMult", mult: 2 } },
+  { id: "crumbfi",     name: "Crumb-Fi",         emoji: "📶", blurb: "Yield farming, but the yield is breadcrumbs. Still crumbs.",   cost: 500000000,   era: 4, effect: { kind: "crumbMult", mult: 3 } },
+  { id: "omnivore",    name: "Omnivore Protocol", emoji: "🍽️", blurb: "If it exists, it can be converted. Menu is short.",           cost: 2000000000,  era: 4, effect: { kind: "globalMult", mult: 2 } },
+  { id: "lastcrumb",   name: "The Last Crumb",   emoji: "🥯", blurb: "There is always one more. There is always one more duck.",       cost: 5000000000,  era: 4, effect: { kind: "crumbMult", mult: 2 } },
 ];

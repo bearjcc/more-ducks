@@ -1,19 +1,24 @@
 // @ts-check
 import { createGame, buyProducer, ducksPerSecond, CRUMB_PER_DUCK_PER_SEC } from "./game/economy.js";
-import { defaultMeta } from "./game/meta.js";
+import { defaultMeta, mergeSettings } from "./game/meta.js";
 import { saveGame, loadGame, clearSave } from "./game/save.js";
 import { eraForDucks } from "./game/progression.js";
 import { createMods, applyUpgrades, buyUpgrade } from "./game/upgrades.js";
 import { formatNumber } from "./game/format.js";
 import { checkDex, dexComplete } from "./game/dex.js";
+import { checkAchievements } from "./game/achievements.js";
+import { sfxQuack, sfxBuy, sfxToast } from "./game/sfx.js";
 import { ERAS } from "./data/eras.js";
 import { DUCKS } from "./data/ducks.js";
-import { initUI, updateUI, logMessage } from "./ui/render.js";
+import { PRODUCERS } from "./data/producers.js";
+import { initUI, updateUI, logMessage, applyEra, pulseDuckCounter } from "./ui/render.js";
 import { initShop, updateShop } from "./ui/shop.js";
 import { initUpgrades, updateUpgrades } from "./ui/upgrades.js";
 import { initDex, updateDex } from "./ui/dex.js";
 import { initModal, queueModal } from "./ui/modal.js";
 import { initEnding, updateFinaleCta, showTerminal } from "./ui/ending.js";
+import { applySettings, initSettings } from "./ui/settings.js";
+import { initToasts, showToast } from "./ui/toast.js";
 
 const AUTOSAVE_MS = 15000;
 const OFFLINE_CAP_SEC = 8 * 3600; // generous but bounded catch-up
@@ -26,6 +31,18 @@ const ducks = engine.resource("ducks");
 const breadcrumbs = engine.currency("breadcrumbs");
 
 const loadResult = loadGame(engine, meta);
+meta.settings = mergeSettings(meta.settings);
+applySettings(meta.settings);
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register(new URL("../sw.js", import.meta.url)).catch(() => {});
+}
+
+// Producer batches pulse the duck counter (idle feedback).
+for (const p of PRODUCERS) {
+  const prod = engine.producer(p.id);
+  if (prod) prod.on("PRODUCER_OUTPUT", () => pulseDuckCounter());
+}
 
 // Lifetime ducks drives era progression. Counting via the resource event keeps
 // manual quacks, producer output, and offline catch-up in one place.
@@ -37,15 +54,32 @@ ducks.on("RESOURCE_COUNT_UPDATED", (e) => {
 applyUpgrades(engine, meta, mods);
 
 initModal();
+initToasts();
 initUI({
   onQuack() {
     ducks.incrementBy(meta.clickPower);
-    breadcrumbs.incrementBy(meta.clickPower * mods.crumbMult); // hand-foraging
+    breadcrumbs.incrementBy(meta.clickPower * mods.crumbMult);
+    sfxQuack();
+    return meta.clickPower;
   },
 });
-initShop({ onBuy: (id) => buyProducer(engine, id) });
-initUpgrades({ onBuy: (id) => buyUpgrade(engine, meta, mods, id) });
+initShop({
+  onBuy: (id, qty) => {
+    if (buyProducer(engine, id, qty) > 0) sfxBuy();
+  },
+  onBuyModeChange: (mode) => { meta.settings.buyMode = mode; },
+});
+initUpgrades({
+  onBuy: (id) => {
+    if (buyUpgrade(engine, meta, mods, id)) sfxBuy();
+  },
+});
 initDex();
+initSettings({
+  engine,
+  meta,
+  onImport: () => { suppressSave = false; },
+});
 
 // When resetting we must stop the unload-save from rewriting the cleared save.
 let suppressSave = false;
@@ -82,6 +116,7 @@ function applyOfflineProgress(savedAt) {
   if (elapsed < 5) return;
 
   const dps = ducksPerSecond(engine);
+  // ponytail: no producers means no offline duck/crumb catch-up — early game is tap-driven.
   if (dps <= 0) return;
 
   const ducks0 = ducks.count;
@@ -106,7 +141,9 @@ function advanceEras() {
     queueModal({ emoji: ERAS[e].emoji, title: ERAS[e].name, body: ERAS[e].modalBody });
   }
   meta.era = target;
+  applyEra(meta.era);
 }
+applyEra(meta.era); // reflect the loaded/initial era before the first advance
 advanceEras();
 
 /** Catalogue newly-earned breeds and announce them in the log. */
@@ -133,6 +170,10 @@ function frame() {
   }
   advanceEras();
   announceNewDucks();
+  checkAchievements({ engine, meta }, (spec) => {
+    sfxToast();
+    showToast(spec);
+  });
 
   updateUI({
     ducks: Math.floor(ducks.count),

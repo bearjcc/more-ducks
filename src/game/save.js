@@ -5,6 +5,8 @@
  * meta state, and a `savedAt` timestamp (needed for offline progress).
  */
 
+import { mergeSettings } from "./meta.js";
+
 const SAVE_KEY = "moreDucks.save";
 const SAVE_VERSION = 1;
 
@@ -33,9 +35,10 @@ function applyMap(map, saved) {
 /**
  * @param {any} engine
  * @param {import("./meta.js").Meta} meta
+ * @returns {object}
  */
-export function saveGame(engine, meta) {
-  const data = {
+function buildSaveData(engine, meta) {
+  return {
     version: SAVE_VERSION,
     savedAt: Date.now(),
     meta,
@@ -43,11 +46,87 @@ export function saveGame(engine, meta) {
     resources: serialiseMap(engine.resources),
     producers: serialiseMap(engine.producers),
   };
+}
+
+/**
+ * @param {any} engine
+ * @param {import("./meta.js").Meta} meta
+ */
+export function saveGame(engine, meta) {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData(engine, meta)));
   } catch (e) {
     console.warn("Could not save game:", e);
   }
+}
+
+/**
+ * @param {any} engine
+ * @param {import("./meta.js").Meta} meta
+ * @returns {string}
+ */
+export function exportSaveText(engine, meta) {
+  return JSON.stringify(buildSaveData(engine, meta));
+}
+
+/**
+ * @param {any} data
+ * @returns {string|null}
+ */
+function validateSave(data) {
+  if (!data || typeof data !== "object") return "Invalid save format.";
+  if (data.version !== SAVE_VERSION) return `Unsupported save version (${data.version}).`;
+  if (!data.meta || !data.currencies || !data.resources || !data.producers) {
+    return "Save is missing required data.";
+  }
+  return null;
+}
+
+/**
+ * Load parsed save data into engine and meta (both mutated in place).
+ * @param {any} engine
+ * @param {import("./meta.js").Meta} meta
+ * @param {any} data
+ * @returns {{ ok: boolean, error?: string, savedAt?: number }}
+ */
+function applySaveData(engine, meta, data) {
+  const err = validateSave(data);
+  if (err) return { ok: false, error: err };
+
+  applyMap(engine.currencies, data.currencies);
+  applyMap(engine.resources, data.resources);
+  applyMap(engine.producers, data.producers);
+
+  const settings = mergeSettings(data.meta.settings);
+  Object.assign(meta, data.meta);
+  meta.settings = settings;
+  if (!Array.isArray(meta.achievements)) meta.achievements = [];
+
+  return { ok: true, savedAt: data.savedAt };
+}
+
+/**
+ * @param {any} engine
+ * @param {import("./meta.js").Meta} meta
+ * @param {string} raw
+ * @returns {{ ok: boolean, error?: string, savedAt?: number }}
+ */
+export function importSaveText(engine, meta, raw) {
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: "Could not parse JSON." };
+  }
+  const result = applySaveData(engine, meta, data);
+  if (result.ok) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch (e) {
+      return { ok: false, error: "Save parsed but could not write to storage." };
+    }
+  }
+  return result;
 }
 
 /**
@@ -68,16 +147,15 @@ export function loadGame(engine, meta) {
     return { loaded: false };
   }
 
-  // Future-version migrations would branch on data.version here.
-  applyMap(engine.currencies, data.currencies);
-  applyMap(engine.resources, data.resources);
-  applyMap(engine.producers, data.producers);
-  if (data.meta) Object.assign(meta, data.meta);
-
-  return { loaded: true, savedAt: data.savedAt };
+  const result = applySaveData(engine, meta, data);
+  if (!result.ok) {
+    console.warn("Invalid save, starting fresh:", result.error);
+    return { loaded: false };
+  }
+  return { loaded: true, savedAt: result.savedAt };
 }
 
-/** Wipe the save (used by a future "New Pond" reset). */
+/** Wipe the save (post-ending "Start a new pond" reset). */
 export function clearSave() {
   localStorage.removeItem(SAVE_KEY);
 }

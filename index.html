@@ -41,10 +41,17 @@
         <button class="tab" data-tab="upgrades" role="tab" type="button">Upgrades</button>
         <button class="tab" data-tab="duckdex" role="tab" type="button">Duckdex</button>
         <button class="tab" data-tab="log" role="tab" type="button">Log</button>
+        <button class="tab" data-tab="settings" role="tab" type="button">Settings</button>
       </nav>
 
       <div class="tab-panels">
         <div class="tab-panel is-active" data-panel="flock" role="tabpanel">
+          <div id="buy-amount" class="buy-amount" role="group" aria-label="Purchase amount">
+            <button class="buy-amount__btn is-active" type="button" data-buy-mode="1">×1</button>
+            <button class="buy-amount__btn" type="button" data-buy-mode="10">×10</button>
+            <button class="buy-amount__btn" type="button" data-buy-mode="100">×100</button>
+            <button class="buy-amount__btn" type="button" data-buy-mode="max">Max</button>
+          </div>
           <ul id="producer-list" class="card-list"></ul>
           <p id="flock-empty" class="empty-hint">Your duck-makers will gather here.</p>
         </div>
@@ -59,6 +66,9 @@
         </div>
         <div class="tab-panel" data-panel="log" role="tabpanel">
           <ul id="log-list" class="log"></ul>
+        </div>
+        <div class="tab-panel" data-panel="settings" role="tabpanel">
+          <div id="settings-root" class="settings"></div>
         </div>
       </div>
     </section>

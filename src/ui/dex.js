@@ -1,6 +1,30 @@
 // @ts-check
 import { DUCKS } from "../data/ducks.js";
+import { PRODUCERS } from "../data/producers.js";
+import { UPGRADES } from "../data/upgrades.js";
+import { ERAS } from "../data/eras.js";
+import { formatNumber } from "../game/format.js";
 import { queueModal } from "./modal.js";
+
+const PRODUCER_NAME = Object.fromEntries(PRODUCERS.map((p) => [p.id, p.name]));
+const UPGRADE_NAME = Object.fromEntries(UPGRADES.map((u) => [u.id, u.name]));
+
+/**
+ * Human-readable "how to catalogue this breed" hint for a locked cell, so a
+ * player chasing the finale knows what's still missing instead of staring at an
+ * anonymous egg. Stays glib — it's a hint, not a quest log.
+ * @param {import("../data/ducks.js").Unlock} u
+ * @returns {string}
+ */
+function lockedHint(u) {
+  switch (u.type) {
+    case "era": return `Reach the “${ERAS[u.value].name}” era`;
+    case "ducks": return `Make ${formatNumber(u.value)} ducks in total`;
+    case "producer": return `Own ${u.count}× ${PRODUCER_NAME[u.id] || u.id}`;
+    case "upgrade": return `Buy “${UPGRADE_NAME[u.id] || u.id}”`;
+    default: return "Keep making ducks";
+  }
+}
 
 /**
  * @typedef {object} DexCell
@@ -30,7 +54,8 @@ export function initDex() {
     const cell = document.createElement("button");
     cell.type = "button";
     cell.className = "dex-cell is-locked";
-    cell.disabled = true;
+    cell.title = lockedHint(d.unlock);
+    cell.setAttribute("aria-label", `Undiscovered duck. ${lockedHint(d.unlock)}.`);
     cell.innerHTML =
       `<span class="dex-cell__emoji" data-emoji aria-hidden="true">🥚</span>` +
       `<span class="dex-cell__name" data-name>???</span>`;
@@ -38,6 +63,9 @@ export function initDex() {
       const refs = cells.get(d.id);
       if (refs && refs.revealed) {
         queueModal({ emoji: d.emoji, title: d.name, body: d.blurb, button: "Nice" });
+      } else {
+        // Locked: tell the player how to earn it (no spoilers on what it is).
+        queueModal({ emoji: "🥚", title: "Undiscovered", body: `${lockedHint(d.unlock)}.`, button: "Got it" });
       }
     });
     cells.set(d.id, {
@@ -65,6 +93,8 @@ export function updateDex(meta) {
       refs.root.disabled = false;
       refs.emoji.textContent = d.emoji;
       refs.name.textContent = d.name;
+      refs.root.title = d.name;
+      refs.root.setAttribute("aria-label", `${d.name}. ${d.blurb}`);
       refs.revealed = true;
     }
   }

@@ -2,8 +2,18 @@
 import ContinuumEngine from "../engine/engine.js";
 import { PRODUCERS } from "../data/producers.js";
 
-/** Breadcrumbs each existing duck forages per second (the flywheel). */
-export const CRUMB_PER_DUCK_PER_SEC = 0.2;
+/**
+ * Breadcrumbs each existing duck forages per second (the idle flywheel).
+ *
+ * Kept deliberately small. Foraged crumbs scale with the *current* flock, which
+ * grows roughly exponentially, so the passive crumb supply is the integral of an
+ * exponential — left unchecked it outruns the `coeff^N` producer cost curve and
+ * the whole five-era arc collapses into ~15 minutes. At this rate the flywheel
+ * is a gentle tailwind: the early game is funded by active tapping (a flat
+ * 1 crumb/tap, handled in main.js), and full completion lands around ~3 hours,
+ * giving the narrative room to breathe. See scripts/sim.mjs for the model.
+ */
+export const CRUMB_PER_DUCK_PER_SEC = 0.002;
 
 /**
  * Build the game engine with its currencies, the headline resource, and the
@@ -43,27 +53,60 @@ export function createGame() {
 }
 
 /**
- * Attempt to buy one unit of a producer.
+ * Total breadcrumb cost to buy `qty` units of a producer (read-only).
  * @param {any} engine
  * @param {string} id
- * @returns {boolean} true if the purchase succeeded
+ * @param {number} qty
+ * @returns {number}
  */
-export function buyProducer(engine, id) {
+export function bulkCost(engine, id, qty) {
   const prod = engine.producer(id);
-  if (!prod) return false;
+  if (!prod || qty <= 0) return Infinity;
+  const cost = prod.calculateCost(qty);
+  return cost ? cost.price : Infinity;
+}
 
-  const cost = prod.calculateCost(1).price;
+/**
+ * How many units of a producer the player can afford right now.
+ * @param {any} engine
+ * @param {string} id
+ * @param {number} currencyValue
+ * @returns {number}
+ */
+export function maxAffordable(engine, id, currencyValue) {
+  if (bulkCost(engine, id, 1) > currencyValue) return 0;
+  let lo = 1;
+  let hi = 2;
+  while (bulkCost(engine, id, hi) <= currencyValue && hi < 1_000_000) hi *= 2;
+  hi = Math.min(hi, 1_000_000);
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (bulkCost(engine, id, mid) <= currencyValue) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+/**
+ * Attempt to buy units of a producer.
+ * @param {any} engine
+ * @param {string} id
+ * @param {number} [qty]
+ * @returns {number} units bought (0 if purchase failed)
+ */
+export function buyProducer(engine, id, qty = 1) {
+  const prod = engine.producer(id);
+  if (!prod || qty <= 0) return 0;
+
+  const cost = bulkCost(engine, id, qty);
   const crumbs = engine.currency("breadcrumbs");
-  if (!isFinite(cost) || crumbs.value < cost) return false;
+  if (!isFinite(cost) || crumbs.value < cost) return 0;
 
-  // A producer's output timer is seeded at construction. When the first unit is
-  // bought we reset it so it doesn't instantly dump a batch for all the elapsed
-  // idle time. Only on the first unit, to preserve partial progress afterwards.
   const wasZero = prod.count === 0;
   crumbs.incrementBy(-cost);
-  prod.incrementBy(1);
+  prod.incrementBy(qty);
   if (wasZero) prod.resetTimers();
-  return true;
+  return qty;
 }
 
 /**

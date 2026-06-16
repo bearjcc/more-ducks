@@ -26,13 +26,17 @@ Then open the printed URL.
 ## Project layout
 
 ```
-index.html         entry point (loads src/main.js as a module)
-styles/main.css    responsive, phone-landscape-first
+index.html              entry point (loads src/main.js as a module)
+manifest.webmanifest    PWA manifest (landscape, standalone)
+styles/main.css         responsive, phone-landscape-first
+scripts/sim.mjs         balance simulator (dev only; npm run sim)
 src/
-  main.js          boot + game loop + autosave
-  engine/          vendored continuum-engine (see VENDOR.md)
-  game/            economy, save/load, meta state, formatting
-  ui/              DOM rendering
+  main.js               boot + game loop + autosave
+  data/                 producers, upgrades, ducks, eras (balance + copy)
+  engine/               vendored continuum-engine (see VENDOR.md)
+  game/                 economy, save/load, meta state, formatting
+  ui/                   DOM rendering (shop, upgrades, dex, modal, ending)
+sw.js                   service worker (offline precache)
 ```
 
 ## Development

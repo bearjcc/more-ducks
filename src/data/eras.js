@@ -1,7 +1,7 @@
 // @ts-check
 /**
  * The five eras. Entering an era is driven by lifetime ducks. `intro` is posted
- * to the log (and, later, an era modal). Keep the tone glib and earnest — never
+ * to the log and an era modal. Keep the tone glib and earnest — never
  * preachy. The allegory should land on its own.
  *
  * @typedef {object} EraDef

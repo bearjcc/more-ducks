@@ -37,6 +37,8 @@ export const DUCKS = [
   { id: "aligned",     name: "Aligned Duck",    emoji: "🧭", era: 2, blurb: "Faces the same way as all the others. We're calling it solved.",          unlock: { type: "upgrade", id: "alignment" } },
   { id: "synthetic",   name: "Synthetic Duck",  emoji: "🧪", era: 2, blurb: "Never lived in a pond. Doesn't know what it's missing. Neither do we.",   unlock: { type: "upgrade", id: "syntheticcrumbs" } },
   { id: "blackbox",    name: "Black-Box Duck",  emoji: "⬛", era: 2, blurb: "We do not know why it quacks. It quacks.",                                 unlock: { type: "producer", id: "hatchery", count: 10 } },
+  { id: "pondscum",    name: "Pond Scum",         emoji: "🫧", era: 2, blurb: "Technically duck-adjacent. Counts for KPIs.",                              unlock: { type: "producer", id: "hatchery", count: 1 } },
+  { id: "gradient",    name: "Gradient Duck",     emoji: "📉", era: 2, blurb: "Descends smoothly toward more duck.",                                      unlock: { type: "ducks", value: 500000 } },
 
   // Era 3 — Duck Intelligence
   { id: "recursive",   name: "Recursive Drake", emoji: "🔁", era: 3, blurb: "A duck that makes ducks that make ducks. Try not to look directly at it.", unlock: { type: "producer", id: "recursive", count: 1 } },
@@ -44,7 +46,13 @@ export const DUCKS = [
   { id: "improver",    name: "Self-Improver",   emoji: "⚙️", era: 3, blurb: "Yesterday's duck could not have built this duck.",                         unlock: { type: "upgrade", id: "recursiveboost" } },
   { id: "leviathan",   name: "Leviathan",       emoji: "🐋", era: 3, blurb: "Australia was step one. There were further steps.",                        unlock: { type: "producer", id: "singularity", count: 1 } },
   { id: "ascended",    name: "Ascended Duck",   emoji: "✨", era: 3, blurb: "It no longer needs the pond. The pond needs it.",                          unlock: { type: "ducks", value: 1000000000 } },
+  { id: "overfit",     name: "Overfit Drake",   emoji: "📊", era: 3, blurb: "Perfect on the training pond. The other ponds are fine. Probably.",        unlock: { type: "upgrade", id: "scalinglaws" } },
+  { id: "benchmark",   name: "Benchmark Duck",  emoji: "🏁", era: 3, blurb: "Scores well on every metric we invented to justify this.",                unlock: { type: "ducks", value: 50000000 } },
+  { id: "swarm",       name: "Swarm Duck",      emoji: "🐝", era: 3, blurb: "Many small ducks in a trenchcoat. Again.",                                 unlock: { type: "producer", id: "recursive", count: 5 } },
 
   // Era 4 — More Ducks
   { id: "omni",        name: "Omni-Duck",       emoji: "🌐", era: 4, blurb: "There is only More Duck. You did this. It's okay. It's mostly okay.",      unlock: { type: "era", value: 4 } },
+  { id: "residual",    name: "Residual Duck",   emoji: "🪨", era: 4, blurb: "What's left after conversion. Still quacks.",                              unlock: { type: "producer", id: "singularity", count: 3 } },
+  { id: "substrate",   name: "Substrate Duck",  emoji: "🧱", era: 4, blurb: "Everything is duck now. This one is duckier.",                             unlock: { type: "upgrade", id: "foiegras" } },
+  { id: "excess",      name: "Excess Duck",     emoji: "📦", era: 4, blurb: "We made more than there was room for. Room was reclassified.",             unlock: { type: "ducks", value: 5000000000 } },
 ];

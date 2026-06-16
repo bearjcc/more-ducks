@@ -58,7 +58,7 @@ export function updateFinaleCta(ready, have, total) {
     ctaEl.hidden = true;
     if (hintEl) {
       hintEl.hidden = false;
-      hintEl.textContent = `Catalogue every duck to finish — ${have}/${total}.`;
+      hintEl.textContent = `Catalogue every duck to finish — ${have}/${total}. Tap the locked eggs in the Duckdex to see what's left.`;
     }
   }
 }
