@@ -3,12 +3,14 @@
  * A single reusable modal with a queue, so era beats and dex details never
  * stack on top of each other. Built in JS to keep index.html lean.
  *
- * @typedef {{ emoji?: string, title: string, body: string, button?: string }} ModalSpec
+ * @typedef {{ emoji?: string, title: string, body: string, button?: string, onClose?: () => void }} ModalSpec
  */
 
 /** @type {ModalSpec[]} */
 const queue = [];
 let open = false;
+/** @type {ModalSpec|null} */
+let currentSpec = null;
 
 /** @type {HTMLElement} */ let overlay;
 /** @type {HTMLElement} */ let emojiEl;
@@ -48,17 +50,22 @@ export function queueModal(spec) {
 function showNext() {
   const spec = queue.shift();
   if (!spec) { hide(); return; }
+  currentSpec = spec;
   open = true;
   emojiEl.textContent = spec.emoji || "";
   emojiEl.style.display = spec.emoji ? "" : "none";
   titleEl.textContent = spec.title;
   bodyEl.textContent = spec.body;
+  bodyEl.style.display = spec.body ? "" : "none";
   btnEl.textContent = spec.button || "Onward";
   overlay.hidden = false;
   btnEl.focus();
 }
 
 function dismiss() {
+  const closing = currentSpec;
+  currentSpec = null;
+  if (closing && closing.onClose) closing.onClose();
   showNext();
 }
 
