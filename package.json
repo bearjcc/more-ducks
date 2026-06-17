@@ -8,7 +8,8 @@
   "scripts": {
     "serve": "python -m http.server 8000",
     "typecheck": "tsc --noEmit -p jsconfig.json",
-    "sim": "node scripts/sim.mjs"
+    "sim": "node scripts/sim.mjs",
+    "test": "node scripts/quack.test.mjs && node scripts/pond.test.mjs && node scripts/dex.test.mjs && node scripts/quackmarks.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

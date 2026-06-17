@@ -11,9 +11,16 @@ import { sfxQuack, sfxBuy, sfxToast } from "./game/sfx.js";
 import { ERAS } from "./data/eras.js";
 import { DUCKS } from "./data/ducks.js";
 import { PRODUCERS } from "./data/producers.js";
-import { initUI, updateUI, logMessage, applyEra, pulseDuckCounter } from "./ui/render.js";
+import { initUI, updateUI, showAnswer, logMessage, applyEra, pulseDuckCounter } from "./ui/render.js";
+import { pickQuack } from "./game/quack.js";
+import { intelligenceScore } from "./game/score.js";
+import { pondDrainPerSec, drainPond, pondFraction, checkPondBeats, WATER_PER_QUACK } from "./game/pond.js";
+import { dexMods } from "./game/dexMods.js";
 import { initShop, updateShop } from "./ui/shop.js";
 import { initUpgrades, updateUpgrades } from "./ui/upgrades.js";
+import { initQuackmarks, updateQuackmarks } from "./ui/quackmarks.js";
+import { buyQuackmark } from "./game/quackmarks.js";
+import { QUACKMARKS } from "./data/quackmarks.js";
 import { initDex, updateDex } from "./ui/dex.js";
 import { initModal, queueModal } from "./ui/modal.js";
 import { initEnding, updateFinaleCta, showTerminal } from "./ui/ending.js";
@@ -60,6 +67,9 @@ initUI({
     ducks.incrementBy(meta.clickPower);
     breadcrumbs.incrementBy(meta.clickPower * mods.crumbMult);
     sfxQuack();
+    meta.questionsAnswered++;
+    drainPond(meta, WATER_PER_QUACK);
+    showAnswer(pickQuack(intelligenceScore(engine, meta)));
     return meta.clickPower;
   },
 });
@@ -72,6 +82,17 @@ initShop({
 initUpgrades({
   onBuy: (id) => {
     if (buyUpgrade(engine, meta, mods, id)) sfxBuy();
+  },
+});
+initQuackmarks({
+  onBuy: (id) => {
+    const bought = buyQuackmark(engine, meta, id);
+    if (bought) {
+      sfxBuy();
+      sfxToast();
+      showToast({ title: bought.label, body: "Intelligence improved. Quack quality unchanged." });
+      logMessage(`Certified: ${bought.name}. ${bought.label}.`, true);
+    }
   },
 });
 initDex();
@@ -127,6 +148,8 @@ function applyOfflineProgress(savedAt) {
   if (offlineDucks > 0) {
     ducks.incrementBy(offlineDucks);
     breadcrumbs.incrementBy(offlineCrumbs);
+    drainPond(meta, pondDrainPerSec(engine) * dexMods(meta).pondMult * elapsed);
+    checkPondBeats(meta, (msg) => logMessage(msg, true));
     const mins = Math.round(elapsed / 60);
     logMessage(`While you were away (~${mins} min), the flock made ${formatNumber(offlineDucks)} ducks.`, true);
   }
@@ -146,17 +169,27 @@ function advanceEras() {
 applyEra(meta.era); // reflect the loaded/initial era before the first advance
 advanceEras();
 
+/** Latest certified benchmark label for the Intelligence counter. */
+function scoreBadgeText(meta) {
+  if (!meta.quackmarksOwned.length) return "";
+  const lastId = meta.quackmarksOwned[meta.quackmarksOwned.length - 1];
+  const q = QUACKMARKS.find((x) => x.id === lastId);
+  return q ? q.label : "";
+}
+
 /** Catalogue newly-earned breeds and announce them in the log. */
 function announceNewDucks() {
   const newly = checkDex(engine, meta);
+  if (newly.length > 0) applyUpgrades(engine, meta, mods);
   for (const d of newly) {
-    logMessage(`New duck catalogued: ${d.emoji} ${d.name}.`, true);
+    logMessage(`New duck catalogued: ${d.emoji} ${d.name}. ${d.demandBlurb}`, true);
   }
 }
 
 // Main loop.
 let lastFrame = Date.now();
 let lastAutosave = lastFrame;
+let lastIdleAnswer = lastFrame;
 function frame() {
   const now = Date.now();
   // Clamp the per-frame delta so a backgrounded tab doesn't dump a huge crumb
@@ -166,7 +199,15 @@ function frame() {
 
   engine.onTick(now);
   if (ducks.count > 0) {
-    breadcrumbs.incrementBy(ducks.count * CRUMB_PER_DUCK_PER_SEC * mods.crumbMult * dtSec);
+    const dex = dexMods(meta);
+    breadcrumbs.incrementBy(
+      (ducks.count * CRUMB_PER_DUCK_PER_SEC * mods.crumbMult * dtSec) / dex.crumbUpkeep,
+    );
+  }
+  const pondDrain = pondDrainPerSec(engine) * dexMods(meta).pondMult * dtSec;
+  if (pondDrain > 0) {
+    drainPond(meta, pondDrain);
+    checkPondBeats(meta, (msg) => logMessage(msg, true));
   }
   advanceEras();
   announceNewDucks();
@@ -175,13 +216,24 @@ function frame() {
     showToast(spec);
   });
 
+  const dps = ducksPerSecond(engine);
+  if (dps > 0 && now - lastIdleAnswer > 8000) {
+    showAnswer(pickQuack(intelligenceScore(engine, meta)));
+    lastIdleAnswer = now;
+  }
+
   updateUI({
     ducks: Math.floor(ducks.count),
     breadcrumbs: Math.floor(breadcrumbs.value),
-    ducksPerSec: ducksPerSecond(engine),
+    ducksPerSec: dps,
+    score: intelligenceScore(engine, meta),
+    questionsAnswered: meta.questionsAnswered,
+    pondFraction: pondFraction(meta),
+    scoreBadge: scoreBadgeText(meta),
   });
   updateShop({ engine, breadcrumbs: breadcrumbs.value, era: meta.era });
   updateUpgrades({ engine, meta, breadcrumbs: breadcrumbs.value });
+  updateQuackmarks({ engine, meta, breadcrumbs: breadcrumbs.value });
   updateDex(meta);
 
   // Endgame: once the world is era 4, surface the finale (or the remaining

@@ -31,7 +31,12 @@ function byId(id) {
 export function initUI(handlers) {
   els.duckCount = byId("duck-count");
   els.crumbCount = byId("crumb-count");
+  els.scoreCount = byId("score-count");
+  els.scoreBadge = byId("score-badge");
   els.duckRate = byId("duck-rate");
+  els.quackAnswer = byId("quack-answer");
+  els.questionsAnswered = byId("questions-answered");
+  els.pondMeter = byId("pond-meter");
   els.logList = byId("log-list");
   els.quackBtn = byId("quack-btn");
 
@@ -111,13 +116,35 @@ export function applyEra(era) {
 }
 
 /**
+ * Show a duck answer in the speech bubble with a short fade. Reduced-motion
+ * safe — skips the animation class but still sets the text.
+ * @param {string} text
+ */
+export function showAnswer(text) {
+  const el = els.quackAnswer;
+  if (!el) return;
+  el.textContent = text;
+  if (!prefersReducedMotion()) {
+    el.classList.remove("is-fade");
+    void /** @type {HTMLElement} */ (el).offsetWidth;
+    el.classList.add("is-fade");
+  }
+}
+
+/**
  * Refresh the live counters. Called every frame.
- * @param {{ ducks: number, breadcrumbs: number, ducksPerSec: number }} snapshot
+ * @param {{ ducks: number, breadcrumbs: number, ducksPerSec: number, score: number, questionsAnswered: number, pondFraction: number, scoreBadge: string }} snapshot
  */
 export function updateUI(snapshot) {
   if (els.duckCount) els.duckCount.textContent = formatNumber(snapshot.ducks);
   if (els.crumbCount) els.crumbCount.textContent = formatNumber(snapshot.breadcrumbs);
+  if (els.scoreCount) els.scoreCount.textContent = formatNumber(snapshot.score);
+  if (els.scoreBadge) els.scoreBadge.textContent = snapshot.scoreBadge;
   if (els.duckRate) els.duckRate.textContent = formatNumber(snapshot.ducksPerSec, 1);
+  if (els.pondMeter) /** @type {HTMLMeterElement} */ (els.pondMeter).value = snapshot.pondFraction;
+  if (els.questionsAnswered && snapshot.questionsAnswered > 0) {
+    els.questionsAnswered.textContent = `${formatNumber(snapshot.questionsAnswered)} questions answered`;
+  }
 }
 
 /** Brief pulse on the duck counter when idle production ticks. */

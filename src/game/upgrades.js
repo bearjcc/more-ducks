@@ -1,6 +1,7 @@
 // @ts-check
 import { UPGRADES } from "../data/upgrades.js";
 import { PRODUCERS } from "../data/producers.js";
+import { dexMods } from "./dexMods.js";
 
 /**
  * Derived multipliers that aren't stored on engine entities. Recomputed from
@@ -44,7 +45,7 @@ export function applyUpgrades(engine, meta, mods) {
   for (const p of PRODUCERS) {
     const prod = engine.producer(p.id);
     if (!prod) continue;
-    const mult = globalMult * (perProducer[p.id] || 1);
+    const mult = globalMult * dexMods(meta).produceMult * (perProducer[p.id] || 1);
     prod.outputs.resources.ducks.productionAmount = p.productionAmount * mult;
   }
 

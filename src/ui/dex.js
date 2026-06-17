@@ -62,7 +62,7 @@ export function initDex() {
     cell.addEventListener("click", () => {
       const refs = cells.get(d.id);
       if (refs && refs.revealed) {
-        queueModal({ emoji: d.emoji, title: d.name, body: d.blurb, button: "Nice" });
+        queueModal({ emoji: d.emoji, title: d.name, body: `${d.blurb}\n\nNeeds: ${d.demandBlurb}`, button: "Nice" });
       } else {
         // Locked: tell the player how to earn it (no spoilers on what it is).
         queueModal({ emoji: "🥚", title: "Undiscovered", body: `${lockedHint(d.unlock)}.`, button: "Got it" });

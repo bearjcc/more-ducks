@@ -6,6 +6,7 @@
  */
 
 import { mergeSettings } from "./meta.js";
+import { POND_MAX } from "./pond.js";
 
 const SAVE_KEY = "moreDucks.save";
 const SAVE_VERSION = 1;
@@ -101,6 +102,9 @@ function applySaveData(engine, meta, data) {
   Object.assign(meta, data.meta);
   meta.settings = settings;
   if (!Array.isArray(meta.achievements)) meta.achievements = [];
+  if (typeof meta.questionsAnswered !== "number") meta.questionsAnswered = 0;
+  if (typeof meta.pondWater !== "number") meta.pondWater = POND_MAX;
+  if (!Array.isArray(meta.quackmarksOwned)) meta.quackmarksOwned = [];
 
   return { ok: true, savedAt: data.savedAt };
 }

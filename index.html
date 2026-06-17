@@ -25,11 +25,24 @@
           <span id="crumb-count" class="counter__value">0</span>
           <span class="counter__label">Breadcrumbs</span>
         </div>
+        <div class="counter counter--score">
+          <span class="counter__icon" aria-hidden="true">🧠</span>
+          <span id="score-count" class="counter__value">0</span>
+          <span class="counter__label">Intelligence</span>
+          <span id="score-badge" class="score-badge"></span>
+        </div>
       </div>
 
-      <button id="quack-btn" class="duck-button" type="button" aria-label="Quack — hatch a duck">🦆</button>
+      <div class="pond" aria-label="Pond water">
+        <span class="pond__icon" aria-hidden="true">💧</span>
+        <meter id="pond-meter" class="pond__meter" min="0" max="1" low="0.25" high="0.75" optimum="1" value="1"></meter>
+      </div>
+
+      <button id="quack-btn" class="duck-button" type="button" aria-label="Ask the duck">🦆</button>
+      <p id="quack-answer" class="quack-answer" aria-live="polite"></p>
+      <p id="questions-answered" class="questions-answered"></p>
       <p class="stage__rate"><span id="duck-rate">0</span> ducks/sec</p>
-      <p class="stage__hint">Tap the duck. Make more ducks.</p>
+      <p class="stage__hint">Ask the duck. It always answers.</p>
       <button id="finale-cta" class="finale-cta" type="button" hidden>Convert Everything</button>
       <p id="finale-hint" class="finale-hint" hidden></p>
       </div>
@@ -39,6 +52,7 @@
       <nav class="tabs" role="tablist" aria-label="Panels">
         <button class="tab is-active" data-tab="flock" role="tab" type="button">Flock</button>
         <button class="tab" data-tab="upgrades" role="tab" type="button">Upgrades</button>
+        <button class="tab" data-tab="marks" role="tab" type="button">Marks</button>
         <button class="tab" data-tab="duckdex" role="tab" type="button">Duckdex</button>
         <button class="tab" data-tab="log" role="tab" type="button">Log</button>
         <button class="tab" data-tab="settings" role="tab" type="button">Settings</button>
@@ -58,6 +72,11 @@
         <div class="tab-panel" data-panel="upgrades" role="tabpanel">
           <ul id="upgrade-list" class="card-list"></ul>
           <p id="upgrades-empty" class="empty-hint">No improvements available yet.</p>
+        </div>
+        <div class="tab-panel" data-panel="marks" role="tabpanel">
+          <p class="marks-intro">Official duck benchmarks. Intelligence goes up. Answers do not.</p>
+          <ul id="quackmark-list" class="card-list"></ul>
+          <p id="quackmarks-empty" class="empty-hint">No benchmarks available yet.</p>
         </div>
         <div class="tab-panel" data-panel="duckdex" role="tabpanel">
           <p class="dex-count"><span id="dex-have">0</span> / <span id="dex-total">0</span> catalogued</p>
