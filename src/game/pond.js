@@ -46,8 +46,9 @@ export function pondFraction(meta) {
  * One-shot narrative beats as the pond shrinks. Glib, never preachy.
  * @param {import("./meta.js").Meta} meta
  * @param {(msg: string) => void} onBeat
+ * @param {(spec: any) => void} [onModal]
  */
-export function checkPondBeats(meta, onBeat) {
+export function checkPondBeats(meta, onBeat, onModal = () => {}) {
   const frac = pondFraction(meta);
   if (frac < 0.25 && !meta.flags.pondLow) {
     meta.flags.pondLow = true;
@@ -56,5 +57,11 @@ export function checkPondBeats(meta, onBeat) {
   if (meta.pondWater <= 0 && !meta.flags.pondEmpty) {
     meta.flags.pondEmpty = true;
     onBeat("The pond is mostly ducks now.");
+    onModal({
+      emoji: "🌊",
+      title: "The Pond Is Gone",
+      body: "The ducks have taken the last drop. They've renamed the basin 'Legacy Aquatic Infrastructure.' Output is up. It's fine.",
+      button: "It's fine",
+    });
   }
 }

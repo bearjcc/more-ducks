@@ -149,7 +149,7 @@ function applyOfflineProgress(savedAt) {
     ducks.incrementBy(offlineDucks);
     breadcrumbs.incrementBy(offlineCrumbs);
     drainPond(meta, pondDrainPerSec(engine) * dexMods(meta).pondMult * elapsed);
-    checkPondBeats(meta, (msg) => logMessage(msg, true));
+    checkPondBeats(meta, (msg) => logMessage(msg, true), queueModal);
     const mins = Math.round(elapsed / 60);
     logMessage(`While you were away (~${mins} min), the flock made ${formatNumber(offlineDucks)} ducks.`, true);
   }
@@ -162,6 +162,22 @@ function advanceEras() {
   for (let e = meta.era + 1; e <= target; e++) {
     logMessage(ERAS[e].intro, true);
     queueModal({ emoji: ERAS[e].emoji, title: ERAS[e].name, body: ERAS[e].modalBody });
+    if (e === 2) {
+      queueModal({
+        emoji: "📋",
+        title: "Environmental Review",
+        body: "The wetland survey is back. Sixteen protected species. We could pause expansion here — or reclassify the wetlands as Duck Infrastructure and carry on. The ducks are waiting.",
+        button: "Reclassify the wetlands",
+      });
+    }
+    if (e === 3) {
+      queueModal({
+        emoji: "🌏",
+        title: "Australia",
+        body: "The ducks have identified Australia as underutilised. They've drawn up plans. We'd technically need to authorise this first. They seem confident we will.",
+        button: "Authorise it",
+      });
+    }
   }
   meta.era = target;
   applyEra(meta.era);
@@ -207,7 +223,7 @@ function frame() {
   const pondDrain = pondDrainPerSec(engine) * dexMods(meta).pondMult * dtSec;
   if (pondDrain > 0) {
     drainPond(meta, pondDrain);
-    checkPondBeats(meta, (msg) => logMessage(msg, true));
+    checkPondBeats(meta, (msg) => logMessage(msg, true), queueModal);
   }
   advanceEras();
   announceNewDucks();
