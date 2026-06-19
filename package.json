@@ -9,7 +9,7 @@
     "serve": "python -m http.server 8000",
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "sim": "node scripts/sim.mjs",
-    "test": "node scripts/quack.test.mjs && node scripts/pond.test.mjs && node scripts/dex.test.mjs && node scripts/quackmarks.test.mjs && node scripts/economy.test.mjs && node scripts/save.test.mjs"
+    "test": "node scripts/chat.test.mjs && node scripts/quack.test.mjs && node scripts/dex.test.mjs && node scripts/quackmarks.test.mjs && node scripts/economy.test.mjs && node scripts/market.test.mjs && node scripts/hype.test.mjs && node scripts/prestige.test.mjs && node scripts/save.test.mjs && node scripts/theme.test.mjs && node scripts/feed.test.mjs && node scripts/regions.test.mjs && node scripts/endings.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

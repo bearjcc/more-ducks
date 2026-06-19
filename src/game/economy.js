@@ -1,19 +1,7 @@
 // @ts-check
 import ContinuumEngine from "../engine/engine.js";
 import { PRODUCERS } from "../data/producers.js";
-
-/**
- * Breadcrumbs each existing duck forages per second (the idle flywheel).
- *
- * Kept deliberately small. Foraged crumbs scale with the *current* flock, which
- * grows roughly exponentially, so the passive crumb supply is the integral of an
- * exponential — left unchecked it outruns the `coeff^N` producer cost curve and
- * the whole five-era arc collapses into ~15 minutes. At this rate the flywheel
- * is a gentle tailwind: the early game is funded by active tapping (a flat
- * 1 crumb/tap, handled in main.js), and full completion lands around ~3 hours,
- * giving the narrative room to breathe. See scripts/sim.mjs for the model.
- */
-export const CRUMB_PER_DUCK_PER_SEC = 0.002;
+import { atCapacity, duckCount, pondCapacity } from "./capacity.js";
 
 /**
  * Build the game engine with its currencies, the headline resource, and the
@@ -21,9 +9,8 @@ export const CRUMB_PER_DUCK_PER_SEC = 0.002;
  *
  * Design notes:
  * - `ducks` is the headline resource we maximize.
- * - `breadcrumbs` is the spend currency (compute / funding), foraged passively
- *   by the existing ducks — handled in the main loop, not by the engine, since
- *   engine producers can only output resources/producers, not currency.
+ * - `coins` are earned in the main loop from served answers (market.js), not
+ *   by engine producers — producers only output ducks.
  * - Purchasing is manual (the engine has no buy method), letting us control
  *   currency deduction and reveal logic ourselves.
  *
@@ -32,13 +19,15 @@ export const CRUMB_PER_DUCK_PER_SEC = 0.002;
 export function createGame() {
   const engine = new ContinuumEngine();
 
-  engine.createCurrency("breadcrumbs", 0);
+  engine.createCurrency("coins", 0);
+  engine.createCurrency("research", 0);
+  engine.createCurrency("hype", 0);
   engine.createResource({ key: "ducks", count: 1 });
 
   for (const p of PRODUCERS) {
     engine.createProducer({
       key: p.id,
-      baseCost: { currency: "breadcrumbs", amount: p.baseCost },
+      baseCost: { currency: "coins", amount: p.baseCost },
       costCoefficient: p.costCoefficient,
       count: 0,
       outputs: {
@@ -53,7 +42,7 @@ export function createGame() {
 }
 
 /**
- * Total breadcrumb cost to buy `qty` units of a producer (read-only).
+ * Total coin cost to buy `qty` units of a producer (read-only).
  * @param {any} engine
  * @param {string} id
  * @param {number} qty
@@ -94,16 +83,18 @@ export function maxAffordable(engine, id, currencyValue) {
  * @param {number} [qty]
  * @returns {number} units bought (0 if purchase failed)
  */
-export function buyProducer(engine, id, qty = 1) {
+export function buyProducer(engine, id, qty = 1, meta = null) {
   const prod = engine.producer(id);
   if (!prod || qty <= 0) return 0;
 
+  if (meta && atCapacity(engine, meta)) return 0;
+
   const cost = bulkCost(engine, id, qty);
-  const crumbs = engine.currency("breadcrumbs");
-  if (!isFinite(cost) || crumbs.value < cost) return 0;
+  const coins = engine.currency("coins");
+  if (!isFinite(cost) || coins.value < cost) return 0;
 
   const wasZero = prod.count === 0;
-  crumbs.incrementBy(-cost);
+  coins.incrementBy(-cost);
   prod.incrementBy(qty);
   if (wasZero) prod.resetTimers();
   return qty;

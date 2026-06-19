@@ -11,7 +11,7 @@ const UPGRADE_NAME = Object.fromEntries(UPGRADES.map((u) => [u.id, u.name]));
 
 /**
  * Human-readable "how to catalogue this breed" hint for a locked cell, so a
- * player chasing the finale knows what's still missing instead of staring at an
+ * player chasing a locked breed knows what's still missing instead of staring at an
  * anonymous egg. Stays glib — it's a hint, not a quest log.
  * @param {import("../data/ducks.js").Unlock} u
  * @returns {string}

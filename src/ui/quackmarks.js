@@ -1,8 +1,10 @@
 // @ts-check
+/** Quackmark cards inside the Marks tab vanity panel (#quackmark-list). */
 import { formatNumber } from "../game/format.js";
 import { QUACKMARKS } from "../data/quackmarks.js";
 import { quackmarkVisible } from "../game/quackmarks.js";
 import { DUCKS } from "../data/ducks.js";
+import { flashCard } from "./render.js";
 
 const DUCK_NAME = Object.fromEntries(DUCKS.map((d) => [d.id, d.name]));
 
@@ -11,10 +13,10 @@ const cards = new Map();
 
 /** @type {HTMLElement|null} */ let listEl = null;
 /** @type {HTMLElement|null} */ let emptyEl = null;
-/** @type {(id: string) => void} */ let onBuy = () => {};
+/** @type {(id: string) => boolean} */ let onBuy = () => false;
 
 /**
- * @param {{ onBuy: (id: string) => void }} handlers
+ * @param {{ onBuy: (id: string) => boolean }} handlers
  */
 export function initQuackmarks(handlers) {
   listEl = document.getElementById("quackmark-list");
@@ -38,7 +40,9 @@ function createCard(def) {
       `<span class="card__cost" data-cost>—</span>` +
     `</button>`;
   const btn = /** @type {HTMLButtonElement} */ (li.querySelector("[data-buy]"));
-  btn.addEventListener("click", () => onBuy(def.id));
+  btn.addEventListener("click", () => {
+    if (onBuy(def.id)) flashCard(refs.root);
+  });
   const refs = { root: li, cost: /** @type {HTMLElement} */ (li.querySelector("[data-cost]")), btn, ownedShown: false };
   cards.set(def.id, refs);
   if (listEl) listEl.appendChild(li);
@@ -46,7 +50,7 @@ function createCard(def) {
 }
 
 /**
- * @param {{ engine: any, meta: import("../game/meta.js").Meta, breadcrumbs: number }} s
+ * @param {{ engine: any, meta: import("../game/meta.js").Meta, coins: number }} s
  */
 export function updateQuackmarks(s) {
   let anyVisible = false;
@@ -80,8 +84,8 @@ export function updateQuackmarks(s) {
       continue;
     }
 
-    refs.cost.textContent = "🍞 " + formatNumber(def.cost, 0);
-    const affordable = s.breadcrumbs >= def.cost;
+    refs.cost.textContent = "🪙 " + formatNumber(def.cost, 0);
+    const affordable = s.coins >= def.cost;
     refs.btn.disabled = !affordable;
     refs.root.classList.toggle("is-affordable", affordable);
   }

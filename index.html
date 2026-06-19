@@ -3,95 +3,203 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#7ec8e3" />
-  <meta name="description" content="More Ducks! — a small, silly, satirical incremental game about making more ducks." />
+  <meta name="theme-color" content="#4a9e6e" />
+  <meta name="description" content="More Ducks! — sequel to QLM. A silly satirical incremental game about scaling a duck Q&A service." />
   <title>More Ducks!</title>
   <link rel="icon" href="assets/icon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/main.css?v=ui7" />
 </head>
-<body>
+<body data-act-tier="chat">
   <main class="app">
-    <section class="stage" aria-label="The pond">
-      <div class="stage__inner">
+    <header class="hud" aria-label="Resources">
+      <button id="settings-gear" class="hud__gear" type="button" aria-label="Settings" title="Settings">⚙️</button>
       <div class="counters">
         <div class="counter counter--ducks">
           <span class="counter__icon" aria-hidden="true">🦆</span>
-          <span id="duck-count" class="counter__value">0</span>
+          <span id="duck-count" class="counter__value" aria-live="polite">0</span>
           <span class="counter__label">Ducks</span>
         </div>
-        <div class="counter counter--crumbs">
-          <span class="counter__icon" aria-hidden="true">🍞</span>
-          <span id="crumb-count" class="counter__value">0</span>
-          <span class="counter__label">Breadcrumbs</span>
-        </div>
-        <div class="counter counter--score">
-          <span class="counter__icon" aria-hidden="true">🧠</span>
-          <span id="score-count" class="counter__value">0</span>
-          <span class="counter__label">Intelligence</span>
-          <span id="score-badge" class="score-badge"></span>
+        <div class="counter counter--coins">
+          <span class="counter__icon" aria-hidden="true">🪙</span>
+          <span id="coin-count" class="counter__value" aria-live="polite">0</span>
+          <span class="counter__label">Coins</span>
         </div>
       </div>
+      <button id="time-toggle" class="time-toggle" type="button" aria-label="Switch to night" title="Night mode">🌙</button>
+    </header>
 
-      <div class="pond" aria-label="Pond water">
-        <span class="pond__icon" aria-hidden="true">💧</span>
-        <meter id="pond-meter" class="pond__meter" min="0" max="1" low="0.25" high="0.75" optimum="1" value="1"></meter>
-      </div>
-
-      <button id="quack-btn" class="duck-button" type="button" aria-label="Ask the duck">🦆</button>
-      <p id="quack-answer" class="quack-answer" aria-live="polite"></p>
-      <p id="questions-answered" class="questions-answered"></p>
-      <p class="stage__rate"><span id="duck-rate">0</span> ducks/sec</p>
-      <p class="stage__hint">Ask the duck. It always answers.</p>
-      <button id="finale-cta" class="finale-cta" type="button" hidden>Convert Everything</button>
-      <p id="finale-hint" class="finale-hint" hidden></p>
+    <section class="stage" aria-label="The pond">
+      <div class="stage__ambient" aria-hidden="true"></div>
+      <div class="stage__inner">
+        <div id="chat-thread" class="chat-thread" aria-label="Chat history">
+          <div class="chat-msg chat-msg--duck">Quack?</div>
+        </div>
+        <p id="questions-answered" class="questions-answered"></p>
       </div>
     </section>
+
+    <div class="bottom-tray" aria-label="Ask a question">
+      <p id="feed-hint" class="feed-hint" hidden></p>
+      <div class="chat-input">
+        <button id="duck-feed-btn" class="duck-feed-float" type="button" aria-label="Feed the duck" title="Feed the duck">🦆</button>
+        <input id="question-input" class="chat-input__field" type="text" maxlength="500" placeholder="Message the duck…" autocomplete="off" />
+        <button id="send-btn" class="chat-input__send" type="button">Send</button>
+        <button id="auto-btn" class="chat-input__auto" type="button">Auto</button>
+      </div>
+    </div>
 
     <section class="panels" aria-label="Management">
-      <nav class="tabs" role="tablist" aria-label="Panels">
-        <button class="tab is-active" data-tab="flock" role="tab" type="button">Flock</button>
-        <button class="tab" data-tab="upgrades" role="tab" type="button">Upgrades</button>
-        <button class="tab" data-tab="marks" role="tab" type="button">Marks</button>
-        <button class="tab" data-tab="duckdex" role="tab" type="button">Duckdex</button>
-        <button class="tab" data-tab="log" role="tab" type="button">Log</button>
-        <button class="tab" data-tab="settings" role="tab" type="button">Settings</button>
-      </nav>
-
       <div class="tab-panels">
-        <div class="tab-panel is-active" data-panel="flock" role="tabpanel">
-          <div id="buy-amount" class="buy-amount" role="group" aria-label="Purchase amount">
-            <button class="buy-amount__btn is-active" type="button" data-buy-mode="1">×1</button>
-            <button class="buy-amount__btn" type="button" data-buy-mode="10">×10</button>
-            <button class="buy-amount__btn" type="button" data-buy-mode="100">×100</button>
-            <button class="buy-amount__btn" type="button" data-buy-mode="max">Max</button>
+        <div class="tab-panel" data-panel="dashboard" role="tabpanel" hidden>
+          <section class="dashboard" aria-label="Market dashboard">
+            <div class="hero-stat">
+              <span id="answers-rate" class="hero-stat__value" aria-live="polite">0</span>
+              <span class="hero-stat__label">answers per sec</span>
+            </div>
+            <div class="dashboard__row">
+              <div class="market-gauge" aria-label="Demand versus supply">
+                <div class="market-gauge__track">
+                  <div id="gauge-served" class="market-gauge__served"></div>
+                  <div id="gauge-gap" class="market-gauge__gap"></div>
+                </div>
+                <p class="market-gauge__legend">
+                  <span><b id="demand-rate">0</b> demand</span>
+                  <span><b id="supply-rate">0</b> supply</span>
+                </p>
+              </div>
+              <div class="dash-stat dash-stat--hype">
+                <span class="dash-stat__icon" aria-hidden="true">📣</span>
+                <span id="hype-count" class="dash-stat__value">0</span>
+                <span class="dash-stat__label">hype</span>
+              </div>
+              <div class="dash-stat dash-stat--feed" hidden>
+                <span class="dash-stat__icon" aria-hidden="true">⚡</span>
+                <span id="feed-opex" class="dash-stat__value">0</span>
+                <span class="dash-stat__label">feed/sec</span>
+              </div>
+            </div>
+            <div class="dashboard__row dashboard__row--flock">
+              <div class="dash-stat dash-stat--ducks">
+                <span class="dash-stat__icon" aria-hidden="true">🦆</span>
+                <span data-duck-total class="dash-stat__value">0</span>
+                <span class="dash-stat__label">ducks</span>
+              </div>
+              <div class="dash-stat dash-stat--dps">
+                <span class="dash-stat__icon" aria-hidden="true">📈</span>
+                <span data-duck-rate class="dash-stat__value">0</span>
+                <span class="dash-stat__label">ducks/sec</span>
+              </div>
+            </div>
+            <p id="pond-cap-label" class="pond-cap-label"></p>
+          </section>
+        </div>
+        <div class="tab-panel" data-panel="flock" role="tabpanel" hidden>
+          <div class="panel-toolbar">
+            <p class="panel-toolbar__rate"><span data-duck-rate>0</span> ducks/sec</p>
+            <div id="buy-amount" class="buy-amount" role="group" aria-label="Purchase amount">
+              <button class="buy-amount__btn is-active" type="button" data-buy-mode="1">×1</button>
+              <button class="buy-amount__btn" type="button" data-buy-mode="10">×10</button>
+              <button class="buy-amount__btn" type="button" data-buy-mode="100">×100</button>
+              <button class="buy-amount__btn" type="button" data-buy-mode="max">Max</button>
+            </div>
           </div>
+          <button id="buy-pond-btn" class="pond-buy-btn" type="button" hidden>Buy another pond</button>
           <ul id="producer-list" class="card-list"></ul>
-          <p id="flock-empty" class="empty-hint">Your duck-makers will gather here.</p>
+          <p id="flock-empty" class="empty-hint">Buy duck-makers here. They multiply while you nap.</p>
         </div>
-        <div class="tab-panel" data-panel="upgrades" role="tabpanel">
+        <div class="tab-panel" data-panel="hype" role="tabpanel" hidden>
+          <p class="shop-section__intro">Spend coins to manufacture demand. Hype fades — the bubble needs feeding.</p>
+          <ul id="hype-list" class="card-list"></ul>
+          <p id="hype-empty" class="empty-hint">Campaigns unlock as the flock grows.</p>
+        </div>
+        <div class="tab-panel" data-panel="upgrades" role="tabpanel" hidden>
           <ul id="upgrade-list" class="card-list"></ul>
-          <p id="upgrades-empty" class="empty-hint">No improvements available yet.</p>
+          <p id="upgrades-empty" class="empty-hint">Upgrades appear as the pond gets weirder.</p>
         </div>
-        <div class="tab-panel" data-panel="marks" role="tabpanel">
-          <p class="marks-intro">Official duck benchmarks. Intelligence goes up. Answers do not.</p>
-          <ul id="quackmark-list" class="card-list"></ul>
-          <p id="quackmarks-empty" class="empty-hint">No benchmarks available yet.</p>
+        <div class="tab-panel" data-panel="research" role="tabpanel" hidden>
+          <ul id="research-list" class="card-list"></ul>
+          <p id="research-empty" class="empty-hint">Research upgrades appear as answers stack up.</p>
         </div>
-        <div class="tab-panel" data-panel="duckdex" role="tabpanel">
-          <p class="dex-count"><span id="dex-have">0</span> / <span id="dex-total">0</span> catalogued</p>
-          <div id="duckdex-grid" class="duckdex"></div>
-          <p id="duckdex-empty" class="empty-hint">No ducks catalogued yet.</p>
-        </div>
-        <div class="tab-panel" data-panel="log" role="tabpanel">
-          <ul id="log-list" class="log"></ul>
-        </div>
-        <div class="tab-panel" data-panel="settings" role="tabpanel">
-          <div id="settings-root" class="settings"></div>
+        <div class="tab-panel" data-panel="more" role="tabpanel" hidden>
+          <details id="marks-section" class="vanity-panel more-section" hidden>
+            <summary class="vanity-panel__summary">Vanity stats</summary>
+            <div class="vanity-panel__body">
+              <div class="vanity-stat">
+                <span class="vanity-stat__icon" aria-hidden="true">🧠</span>
+                <div class="vanity-stat__main">
+                  <span class="vanity-stat__label">Intelligence Score</span>
+                  <span id="score-count" class="vanity-stat__value">0</span>
+                </div>
+                <span id="score-badge" class="score-badge"></span>
+              </div>
+              <section class="vanity-panel__section" aria-label="Quackmarks">
+                <p class="marks-intro">Official duck benchmarks. Intelligence goes up. Answers do not.</p>
+                <ul id="quackmark-list" class="card-list card-list--marks"></ul>
+                <p id="quackmarks-empty" class="empty-hint">Benchmarks unlock with progress.</p>
+              </section>
+              <section id="prestige-section" class="vanity-panel__section prestige-section" hidden aria-label="Prestige">
+                <h3 class="prestige-section__title">Ship vNext</h3>
+                <p id="prestige-citations" class="prestige-section__meta">Reset the flock, bank permanent citations, unlock pondering.</p>
+                <button id="prestige-btn" class="prestige-btn" type="button" disabled>Ship vNext</button>
+              </section>
+            </div>
+          </details>
+          <section class="more-section" aria-label="Answerdex">
+            <h3 class="more-section__title">Answerdex</h3>
+            <p class="dex-count"><span id="answerdex-have">0</span> quacks discovered</p>
+            <div id="answerdex-grid" class="answerdex"></div>
+          </section>
+          <section id="regions-section" class="more-section" aria-label="Regions" hidden>
+            <h3 class="more-section__title">Regions</h3>
+            <ul id="region-list" class="card-list"></ul>
+          </section>
+          <section class="more-section" aria-label="Duckdex">
+            <h3 class="more-section__title">Duckdex</h3>
+            <p class="dex-count"><span id="dex-have">0</span> / <span id="dex-total">0</span> catalogued</p>
+            <div id="duckdex-grid" class="duckdex"></div>
+            <p id="duckdex-empty" class="empty-hint">Catalogue breeds by playing. Eggs fill in as you go.</p>
+          </section>
+          <section class="more-section" aria-label="Event log">
+            <h3 class="more-section__title">Pond log</h3>
+            <ul id="log-list" class="log"></ul>
+          </section>
+          <section id="settings-section" class="more-section" aria-label="Settings">
+            <h3 class="more-section__title">Settings</h3>
+            <div id="settings-root" class="settings"></div>
+          </section>
         </div>
       </div>
+
+      <nav class="dock" aria-label="Main" hidden>
+        <div class="tabs" role="tablist" aria-label="Panels">
+          <button class="tab" data-tab="dashboard" role="tab" type="button" aria-selected="false" hidden>
+            <span class="tab__icon" aria-hidden="true">📈</span><span class="tab__label">Stats</span>
+          </button>
+          <button class="tab" data-tab="flock" role="tab" type="button" aria-selected="false" hidden>
+            <span class="tab__icon" aria-hidden="true">🦆</span><span class="tab__label">Flock</span>
+          </button>
+          <button class="tab" data-tab="hype" role="tab" type="button" aria-selected="false" hidden>
+            <span class="tab__icon" aria-hidden="true">📣</span><span class="tab__label">Ads</span>
+          </button>
+          <button class="tab" data-tab="upgrades" role="tab" type="button" aria-selected="false" hidden>
+            <span class="tab__icon" aria-hidden="true">⬆️</span><span class="tab__label">Upgrades</span>
+          </button>
+          <button class="tab" data-tab="research" role="tab" type="button" aria-selected="false" hidden>
+            <span class="tab__icon" aria-hidden="true">🔬</span><span class="tab__label">Research</span>
+          </button>
+          <button class="tab" data-tab="more" role="tab" type="button" aria-selected="false" hidden>
+            <span class="tab__icon" aria-hidden="true">⋯</span><span class="tab__label">More</span>
+          </button>
+        </div>
+      </nav>
     </section>
   </main>
+
+  <div id="era-burst" class="era-burst" aria-hidden="true" hidden></div>
 
   <script type="module" src="src/main.js"></script>
 </body>

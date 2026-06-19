@@ -1,4 +1,5 @@
 // @ts-check
+/** Quackmark visibility, purchase, and Intelligence Score multiplier (vanity panel). */
 import { QUACKMARKS } from "../data/quackmarks.js";
 
 /**
@@ -36,10 +37,10 @@ export function buyQuackmark(engine, meta, id) {
   const q = QUACKMARKS.find((x) => x.id === id);
   if (!q || !quackmarkVisible(meta, q)) return null;
 
-  const crumbs = engine.currency("breadcrumbs");
-  if (crumbs.value < q.cost) return null;
+  const coins = engine.currency("coins");
+  if (coins.value < q.cost) return null;
 
-  crumbs.incrementBy(-q.cost);
+  coins.incrementBy(-q.cost);
   meta.quackmarksOwned.push(id);
   return q;
 }

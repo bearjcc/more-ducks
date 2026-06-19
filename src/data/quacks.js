@@ -1,7 +1,8 @@
 // @ts-check
 /**
  * Weighted quack table (ported from QLM DUCK_SOUNDS_BASE) and verbosity tiers.
- * Intelligence Score picks a tier; the quack text itself is always nonsense.
+ * Intelligence Score and coherence pick verbosity tiers; raw quack text is nonsense
+ * until coherence blends in fluent lines from questions.js (economy.md §4).
  *
  * @typedef {{ min: number, wrap: (q: string) => string }} Tier
  */
@@ -36,10 +37,16 @@ export const QUACKS = [
   ["You're absolutely right!", 0.1],
 ];
 
-/** @type {Tier[]} ascending min score */
+/**
+ * Verbosity tiers (ascending min score). QLM fidelity: answers stay nonsense
+ * quacks; the most a high score adds is a short, confident prefix — never the
+ * corporate "Comprehensive analysis…" line and never the reserved finale
+ * punchline (FINAL_ANSWER in quack.js). "After careful consideration:" is the
+ * ceiling on purpose.
+ * @type {Tier[]}
+ */
 export const TIERS = [
   { min: 0, wrap: (q) => q },
   { min: 100, wrap: (q) => `${q} ${q}` },
   { min: 10_000, wrap: (q) => `After careful consideration: ${q}` },
-  { min: 1_000_000, wrap: (q) => `Comprehensive analysis suggests additional ducks may improve confidence. ${q}` },
 ];

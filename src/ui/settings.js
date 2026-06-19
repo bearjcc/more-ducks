@@ -5,6 +5,7 @@ import { exportSaveText, importSaveText } from "../game/save.js";
 import { setBuyMode } from "./shop.js";
 import { setReduceMotionPref } from "./render.js";
 import { setSfxEnabled } from "../game/sfx.js";
+import { applyTimeOfDay } from "./theme.js";
 
 /** @type {import("../game/meta.js").Settings} */
 let current = mergeSettings();
@@ -18,6 +19,7 @@ export function applySettings(settings) {
   setBuyMode(current.buyMode);
   setReduceMotionPref(current.reduceMotion);
   setSfxEnabled(current.sfx);
+  applyTimeOfDay(current.timeOfDay);
   document.body.classList.toggle("force-reduce-motion", current.reduceMotion === true);
   document.body.classList.toggle("force-motion", current.reduceMotion === false);
 }
@@ -50,6 +52,14 @@ export function initSettings(ctx) {
         `</select>` +
       `</label>` +
       `<label class="settings__row">` +
+        `<span>Time of day</span>` +
+        `<select id="set-time" class="settings__select">` +
+          `<option value="system">System default</option>` +
+          `<option value="day">Day</option>` +
+          `<option value="night">Night</option>` +
+        `</select>` +
+      `</label>` +
+      `<label class="settings__row">` +
         `<span>Reduce motion</span>` +
         `<select id="set-motion" class="settings__select">` +
           `<option value="system">System default</option>` +
@@ -78,6 +88,7 @@ export function initSettings(ctx) {
     `</section>`;
 
   const notationEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-notation"));
+  const timeEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-time"));
   const motionEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-motion"));
   const sfxEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-sfx"));
   const statusEl = root.querySelector("#set-status");
@@ -91,6 +102,10 @@ export function initSettings(ctx) {
   motionEl.addEventListener("change", () => {
     const v = motionEl.value;
     ctx.meta.settings.reduceMotion = v === "on" ? true : v === "off" ? false : null;
+    applySettings(ctx.meta.settings);
+  });
+  timeEl.addEventListener("change", () => {
+    ctx.meta.settings.timeOfDay = /** @type {any} */ (timeEl.value);
     applySettings(ctx.meta.settings);
   });
   sfxEl.addEventListener("change", () => {
@@ -140,6 +155,7 @@ export function initSettings(ctx) {
   /** @param {import("../game/meta.js").Settings} s */
   function syncControls(s) {
     notationEl.value = s.notation;
+    timeEl.value = s.timeOfDay;
     motionEl.value = s.reduceMotion === true ? "on" : s.reduceMotion === false ? "off" : "system";
     sfxEl.checked = s.sfx;
   }

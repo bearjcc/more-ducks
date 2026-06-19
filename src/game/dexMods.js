@@ -1,23 +1,34 @@
 // @ts-check
 import { DUCKS } from "../data/ducks.js";
 
-/** @typedef {{ kind: "pondMult", mult: number }
- *   | { kind: "crumbUpkeep", mult: number }
+/** @typedef {{ kind: "coinUpkeep", mult: number }
+ *   | { kind: "researchUpkeep", mult: number }
+ *   | { kind: "hypeDecay", mult: number }
+ *   | { kind: "coherenceLift", add: number }
+ *   | { kind: "questionIntake", add: number }
  *   | { kind: "produceMult", mult: number }
  *   | { kind: "scoreInflate", mult: number }} Demand */
 
-/** @typedef {{ pondMult: number, crumbUpkeep: number, produceMult: number, scoreInflate: number }} DexMods */
+/** @typedef {{ coinUpkeep: number, researchUpkeep: number, hypeDecayMult: number, coherenceAdd: number, questionIntake: number, produceMult: number, scoreInflate: number }} DexMods */
 
 const DUCK_BY_ID = Object.fromEntries(DUCKS.map((d) => [d.id, d]));
 
 /** @returns {DexMods} */
 export function defaultDexMods() {
-  return { pondMult: 1, crumbUpkeep: 1, produceMult: 1, scoreInflate: 1 };
+  return {
+    coinUpkeep: 1,
+    researchUpkeep: 1,
+    hypeDecayMult: 1,
+    coherenceAdd: 0,
+    questionIntake: 0,
+    produceMult: 1,
+    scoreInflate: 1,
+  };
 }
 
 /**
  * Stack catalogued-duck demands. Collection is the excuse engine: cute ducks
- * impose plausible new costs.
+ * impose plausible new costs on the two-sided market (economy.md §8).
  * @param {import("./meta.js").Meta} meta
  * @returns {DexMods}
  */
@@ -27,13 +38,25 @@ export function dexMods(meta) {
     const d = DUCK_BY_ID[id];
     if (!d?.demand) continue;
     switch (d.demand.kind) {
-      case "pondMult": out.pondMult *= d.demand.mult; break;
-      case "crumbUpkeep": out.crumbUpkeep *= d.demand.mult; break;
+      case "coinUpkeep": out.coinUpkeep *= d.demand.mult; break;
+      case "researchUpkeep": out.researchUpkeep *= d.demand.mult; break;
+      case "hypeDecay": out.hypeDecayMult *= d.demand.mult; break;
+      case "coherenceLift": out.coherenceAdd += d.demand.add; break;
+      case "questionIntake": out.questionIntake += d.demand.add; break;
       case "produceMult": out.produceMult *= d.demand.mult; break;
       case "scoreInflate": out.scoreInflate *= d.demand.mult; break;
     }
   }
   return out;
+}
+
+/**
+ * @param {import("./meta.js").Meta} meta
+ * @param {DexMods} dex
+ * @returns {number} Coherence in [0, 1] after Duckdex lifts.
+ */
+export function effectiveCoherence(meta, dex) {
+  return Math.min(1, meta.coherence + dex.coherenceAdd);
 }
 
 /**

@@ -1,11 +1,35 @@
 // @ts-check
 import { formatNumber } from "../game/format.js";
 import { ERAS } from "../data/eras.js";
+import { syncThemeColor } from "./theme.js";
+import {
+  appendChatAnswer,
+  appendChatExchange,
+  appendChatThought,
+  beginPonderExchange,
+  updateChatAffordance,
+} from "./chat.js";
+import { applyActTier } from "./shell.js";
+import {
+  anyTabUnlocked,
+  flockTabUnlocked,
+  marksSectionUnlocked,
+  tabUnlocked,
+} from "../game/unlocks.js";
+import { showToast } from "./toast.js";
 
 /** @type {Record<string, HTMLElement|null>} */
 const els = {};
 /** @type {boolean|null} */
 let motionOverride = null;
+/** @type {number} */
+let lastHype = 0;
+/** @type {number} */
+let lastFeedOpex = 0;
+/** @type {number} */
+let lastAnswersRate = 0;
+/** @type {boolean} */
+let flockToastShown = false;
 
 /** @param {boolean|null} pref null = system */
 export function setReduceMotionPref(pref) {
@@ -24,50 +48,177 @@ function byId(id) {
   return document.getElementById(id);
 }
 
+/** Interval between streamed thoughts while holding (pondering mode). */
+const PONDER_TICK_MS = 380;
+
 /**
- * Wire up persistent UI handlers (the quack button and tab switching).
- * @param {{ onQuack: () => number }} handlers  onQuack returns ducks hatched, for juice.
+ * Wire up persistent UI handlers (feed duck, tabs, pondering hold).
+ * @param {{
+ *   isPonderingUnlocked?: () => boolean,
+ *   onPonderStart?: () => { question: string, thought: string } | null,
+ *   onPonderTick?: (holdMs: number) => { thought?: string } | void,
+ *   onPonderEnd?: (holdMs: number) => { answer: string, coinGain: number } | null,
+ *   onFeedTap?: () => void,
+ *   onBuyPond?: () => void,
+ * }} handlers
  */
 export function initUI(handlers) {
   els.duckCount = byId("duck-count");
-  els.crumbCount = byId("crumb-count");
+  els.coinCount = byId("coin-count");
   els.scoreCount = byId("score-count");
   els.scoreBadge = byId("score-badge");
-  els.duckRate = byId("duck-rate");
-  els.quackAnswer = byId("quack-answer");
+  els.answersRate = byId("answers-rate");
+  els.demandRate = byId("demand-rate");
+  els.supplyRate = byId("supply-rate");
+  els.gaugeServed = byId("gauge-served");
+  els.gaugeGap = byId("gauge-gap");
+  els.hypeCount = byId("hype-count");
+  els.hypeStat = els.hypeCount?.closest(".dash-stat--hype") ?? null;
   els.questionsAnswered = byId("questions-answered");
-  els.pondMeter = byId("pond-meter");
   els.logList = byId("log-list");
-  els.quackBtn = byId("quack-btn");
+  els.duckFeedBtn = byId("duck-feed-btn");
+  els.settingsGear = byId("settings-gear");
+  els.feedOpexEl = byId("feed-opex");
+  els.feedStatEl = els.feedOpexEl?.closest(".dash-stat--feed") ?? null;
+  els.pondCapLabel = byId("pond-cap-label");
+  els.buyPondBtn = /** @type {HTMLButtonElement} */ (byId("buy-pond-btn"));
 
-  const quack = els.quackBtn;
-  if (quack) {
-    // `click` covers mouse, touch, and keyboard (Enter/Space) for accessibility.
-    quack.addEventListener("click", (e) => {
-      const got = handlers.onQuack();
-      floatGain(quack, got, e);
+  /** Pondering hold on duck avatar (post-prestige). */
+  function bindPonderHold(btn, handlers) {
+    if (!btn || !handlers.onPonderStart || !handlers.onPonderEnd) return;
+
+    /** @type {ReturnType<typeof setInterval>|null} */
+    let tickTimer = null;
+    let ponderActive = false;
+    let holdStart = 0;
+    /** @type {number|null} */
+    let captureId = null;
+
+    const stopTick = () => {
+      if (tickTimer) clearInterval(tickTimer);
+      tickTimer = null;
+    };
+
+    const endPonder = (/** @type {PointerEvent} */ e) => {
+      if (!ponderActive) return;
+      ponderActive = false;
+      stopTick();
+      const holdMs = Date.now() - holdStart;
+      const result = handlers.onPonderEnd?.(holdMs);
+      if (result) {
+        appendChatAnswer(result.answer);
+        setPondering(false);
+        floatGain(btn, result.coinGain, e);
+      } else {
+        setPondering(false);
+      }
+      if (captureId !== null) {
+        try { btn.releasePointerCapture(captureId); } catch { /* released */ }
+        captureId = null;
+      }
+    };
+
+    btn.addEventListener("pointerdown", (e) => {
+      const ponderingUnlocked = handlers.isPonderingUnlocked?.() ?? false;
+      if (!ponderingUnlocked || e.button !== 0) return;
+      const session = handlers.onPonderStart?.();
+      if (!session) return;
+      e.preventDefault();
+      ponderActive = true;
+      holdStart = Date.now();
+      beginPonderExchange(session.question, session.thought);
+      setPondering(true);
+      captureId = e.pointerId;
+      btn.setPointerCapture(e.pointerId);
+      tickTimer = setInterval(() => {
+        const tick = handlers.onPonderTick?.(Date.now() - holdStart);
+        if (tick && "thought" in tick && tick.thought) appendChatThought(tick.thought);
+      }, PONDER_TICK_MS);
     });
+
+    btn.addEventListener("pointerup", endPonder);
+    btn.addEventListener("pointercancel", endPonder);
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => selectTab(tab.getAttribute("data-tab")));
+    tab.addEventListener("click", () => {
+      const name = tab.getAttribute("data-tab");
+      if (/** @type {HTMLElement} */ (tab).hidden) return;
+      if (tab.classList.contains("is-active") && document.body.hasAttribute("data-panel-open")) {
+        closeTab();
+      } else {
+        openTab(name);
+      }
+    });
   });
 
-  // Initialise ARIA state to match the active tab.
-  const active = document.querySelector(".tab.is-active");
-  if (active) selectTab(active.getAttribute("data-tab"));
+  if (els.settingsGear) {
+    els.settingsGear.addEventListener("click", () => openTab("settings"));
+  }
+
+  if (handlers.onFeedTap && els.duckFeedBtn) {
+    els.duckFeedBtn.addEventListener("click", () => handlers.onFeedTap?.());
+  }
+
+  bindPonderHold(els.duckFeedBtn, handlers);
+
+  if (handlers.onBuyPond && els.buyPondBtn) {
+    els.buyPondBtn.addEventListener("click", () => handlers.onBuyPond?.());
+  }
+  closeTab();
 }
 
-/** @param {string|null} name */
-function selectTab(name) {
-  if (!name) return;
+/** Close all panels (mobile specials tray). */
+export function closeTab() {
+  document.body.removeAttribute("data-panel-open");
   document.querySelectorAll(".tab").forEach((t) => {
-    const isActive = t.getAttribute("data-tab") === name;
+    t.classList.remove("is-active");
+    t.setAttribute("aria-selected", "false");
+  });
+  document.querySelectorAll(".tab-panel").forEach((p) => {
+    p.classList.remove("is-active");
+    /** @type {HTMLElement} */ (p).hidden = true;
+  });
+  if (els.settingsGear) els.settingsGear.classList.remove("is-active");
+}
+
+/** @param {string|null|undefined} name */
+export function openTab(name) {
+  if (!name) {
+    closeTab();
+    return;
+  }
+  const scrollSettings = name === "settings";
+  const panel = scrollSettings ? "more" : name;
+  if (!scrollSettings && document.body.dataset.panelOpen === panel) {
+    closeTab();
+    return;
+  }
+  document.body.dataset.panelOpen = panel;
+  document.querySelectorAll(".tab").forEach((t) => {
+    const tabName = t.getAttribute("data-tab");
+    const isActive = tabName === panel;
     t.classList.toggle("is-active", isActive);
     t.setAttribute("aria-selected", String(isActive));
   });
-  document.querySelectorAll(".tab-panel").forEach((p) =>
-    p.classList.toggle("is-active", p.getAttribute("data-panel") === name));
+  document.querySelectorAll(".tab-panel").forEach((p) => {
+    const isActive = p.getAttribute("data-panel") === panel;
+    p.classList.toggle("is-active", isActive);
+    /** @type {HTMLElement} */ (p).hidden = !isActive;
+  });
+  if (els.settingsGear) {
+    els.settingsGear.classList.toggle("is-active", panel === "more");
+  }
+  if (scrollSettings) {
+    requestAnimationFrame(() => {
+      document.getElementById("settings-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+}
+
+/** First quack — hide onboarding hint. */
+export function markGameStarted() {
+  document.body.dataset.started = "1";
 }
 
 /**
@@ -86,7 +237,8 @@ function floatGain(btn, amount, e) {
   const y = e.clientY || rect.top + rect.height / 2;
   const el = document.createElement("div");
   el.className = "float-gain";
-  el.textContent = "+" + formatNumber(amount, 0);
+  const decimals = amount < 1 ? 3 : 0;
+  el.textContent = "+" + formatNumber(amount, decimals);
   el.style.left = x + "px";
   el.style.top = y + "px";
   el.style.setProperty("--drift", (Math.random() * 28 - 14).toFixed(1) + "px");
@@ -95,56 +247,170 @@ function floatGain(btn, amount, e) {
   // (interrupted animation, backgrounded tab, etc.).
   setTimeout(() => el.remove(), 1000);
   document.body.appendChild(el);
+  pulseCoinCounter();
+}
+
+/** Toggle pondering glow on the feed duck button. */
+function setPondering(active) {
+  if (els.duckFeedBtn) els.duckFeedBtn.classList.toggle("is-pondering", active);
 }
 
 /**
- * Reflect the current era on the stage: the tap target becomes the era's emoji
- * (duck → vortex → globe), the sky palette shifts, and the browser theme-colour
- * follows. The allegory stays unspoken — the screen just quietly changes under
- * the player. Idempotent; safe to call every era advance and on load.
+ * Brief purchase flash on a card row.
+ * @param {HTMLElement|null|undefined} root
+ */
+export function flashCard(root) {
+  if (prefersReducedMotion() || !root) return;
+  root.classList.remove("is-purchased");
+  void root.offsetWidth;
+  root.classList.add("is-purchased");
+  root.addEventListener("animationend", () => root.classList.remove("is-purchased"), { once: true });
+}
+
+/**
+ * Reflect the current era on the stage: sky palette shifts and browser theme-colour
+ * follows. Idempotent; safe to call every era advance and on load.
  * @param {number} era
  */
 export function applyEra(era) {
   const def = ERAS[era] || ERAS[0];
   document.body.dataset.era = String(def.id);
-  if (els.quackBtn) els.quackBtn.textContent = def.emoji;
-  const theme = getComputedStyle(document.body).getPropertyValue("--sky-1").trim();
-  if (theme) {
-    let meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme);
-  }
+  document.body.dataset.totalDucks = String(document.body.dataset.totalDucks || "1");
+  applyActTier(era);
+  syncThemeColor();
+}
+
+/** @param {string} question @param {string} answer */
+export function showExchange(question, answer) {
+  appendChatExchange(question, answer);
 }
 
 /**
- * Show a duck answer in the speech bubble with a short fade. Reduced-motion
- * safe — skips the animation class but still sets the text.
- * @param {string} text
- */
-export function showAnswer(text) {
-  const el = els.quackAnswer;
-  if (!el) return;
-  el.textContent = text;
-  if (!prefersReducedMotion()) {
-    el.classList.remove("is-fade");
-    void /** @type {HTMLElement} */ (el).offsetWidth;
-    el.classList.add("is-fade");
-  }
-}
-
-/**
- * Refresh the live counters. Called every frame.
- * @param {{ ducks: number, breadcrumbs: number, ducksPerSec: number, score: number, questionsAnswered: number, pondFraction: number, scoreBadge: string }} snapshot
+ * Refresh HUD counters and market dashboard. Score lives in the Marks vanity panel.
+ * @param {{ ducks: number, coins: number, ducksPerSec: number, answersPerSec: number, supplyPerSec: number, demandPerSec: number, hype: number, score: number, questionsAnswered: number, scoreBadge: string, feedOpexPerSec?: number, pondCap?: number, pondDucks?: number, hungry?: boolean, canAsk?: boolean }} snapshot
  */
 export function updateUI(snapshot) {
   if (els.duckCount) els.duckCount.textContent = formatNumber(snapshot.ducks);
-  if (els.crumbCount) els.crumbCount.textContent = formatNumber(snapshot.breadcrumbs);
+  document.body.dataset.totalDucks = String(snapshot.ducks);
+  if (els.coinCount) els.coinCount.textContent = formatNumber(snapshot.coins);
   if (els.scoreCount) els.scoreCount.textContent = formatNumber(snapshot.score);
   if (els.scoreBadge) els.scoreBadge.textContent = snapshot.scoreBadge;
-  if (els.duckRate) els.duckRate.textContent = formatNumber(snapshot.ducksPerSec, 1);
-  if (els.pondMeter) /** @type {HTMLMeterElement} */ (els.pondMeter).value = snapshot.pondFraction;
+  if (els.answersRate) els.answersRate.textContent = formatNumber(snapshot.answersPerSec, 2);
+  if (els.answersRate && snapshot.answersPerSec > lastAnswersRate + 0.001) {
+    pulseHeroRate();
+  }
+  lastAnswersRate = snapshot.answersPerSec;
+  if (els.demandRate) els.demandRate.textContent = formatNumber(snapshot.demandPerSec, 2);
+  if (els.supplyRate) els.supplyRate.textContent = formatNumber(snapshot.supplyPerSec, 2);
+  if (els.hypeCount) els.hypeCount.textContent = formatNumber(snapshot.hype, 1);
+  if (els.hypeStat) {
+    const decaying = snapshot.hype > 0.05 && snapshot.hype < lastHype - 0.0005;
+    els.hypeStat.classList.toggle("is-decaying", decaying);
+  }
+  lastHype = snapshot.hype;
+  if (snapshot.questionsAnswered > 0) {
+    document.body.dataset.started = "1";
+  }
+  updateMarketGauge(snapshot.supplyPerSec, snapshot.demandPerSec);
+  document.querySelectorAll("[data-duck-rate]").forEach((el) => {
+    el.textContent = formatNumber(snapshot.ducksPerSec, 1);
+  });
+  document.querySelectorAll("[data-duck-total]").forEach((el) => {
+    el.textContent = formatNumber(snapshot.ducks);
+  });
   if (els.questionsAnswered && snapshot.questionsAnswered > 0) {
     els.questionsAnswered.textContent = `${formatNumber(snapshot.questionsAnswered)} questions answered`;
   }
+  const feedOpex = snapshot.feedOpexPerSec ?? 0;
+  if (els.feedOpexEl) els.feedOpexEl.textContent = formatNumber(feedOpex, 3);
+  if (els.feedStatEl) els.feedStatEl.hidden = feedOpex <= 0;
+  if (els.pondCapLabel && snapshot.pondCap != null && snapshot.pondDucks != null) {
+    els.pondCapLabel.textContent = `${formatNumber(snapshot.pondDucks, 0)} / ${formatNumber(snapshot.pondCap, 0)} ducks`;
+  }
+  updateChatAffordance(snapshot.hungry ?? false, snapshot.canAsk ?? true);
+}
+
+/**
+ * Reveal dock tabs as progression gates clear; hide dock until first tab unlocks.
+ * @param {{ meta: import("../game/meta.js").Meta, coins: number, engine: any, answersPerSec?: number, research?: number }} ctx
+ */
+export function updateTabUnlocks(ctx) {
+  const { meta, coins, engine, answersPerSec = 0, research = 0 } = ctx;
+  const dock = document.querySelector(".dock");
+  const tabsVisible = anyTabUnlocked(meta, coins, engine, answersPerSec, research);
+
+  if (dock) /** @type {HTMLElement} */ (dock).hidden = !tabsVisible;
+
+  document.querySelectorAll(".tab[data-tab]").forEach((tab) => {
+    const name = tab.getAttribute("data-tab");
+    if (!name) return;
+    const unlocked = tabUnlocked(name, meta, coins, engine, answersPerSec, research);
+    /** @type {HTMLElement} */ (tab).hidden = !unlocked;
+  });
+
+  const marksSection = document.getElementById("marks-section");
+  if (marksSection) marksSection.hidden = !marksSectionUnlocked(meta);
+
+  if (flockTabUnlocked(meta) && !flockToastShown && !meta.flags.flockTabToast) {
+    flockToastShown = true;
+    meta.flags.flockTabToast = true;
+    showToast({ title: "Purchases unlocked", body: "Tap Flock to buy duck-makers." });
+  } else if (meta.flags.flockTabToast) {
+    flockToastShown = true;
+  }
+
+  const openPanel = document.body.dataset.panelOpen;
+  if (openPanel && !tabUnlocked(openPanel, meta, coins, engine, answersPerSec, research) && openPanel !== "more") {
+    closeTab();
+  }
+}
+
+/**
+ * Demand-vs-supply gauge: green = served, amber = idle capacity or backlog.
+ * @param {number} supply
+ * @param {number} demand
+ */
+function updateMarketGauge(supply, demand) {
+  const max = Math.max(supply, demand, 0.001);
+  const served = Math.min(supply, demand);
+  const gap = Math.abs(supply - demand);
+  if (els.gaugeServed) els.gaugeServed.style.width = `${(served / max) * 100}%`;
+  if (els.gaugeGap) {
+    els.gaugeGap.style.width = `${(gap / max) * 100}%`;
+    els.gaugeGap.dataset.mode = supply > demand ? "idle" : "backlog";
+  }
+}
+
+/** Brief pulse on hero answers/sec when rate rises. */
+export function pulseHeroRate() {
+  if (prefersReducedMotion() || !els.answersRate) return;
+  els.answersRate.classList.remove("is-pulse");
+  void els.answersRate.offsetWidth;
+  els.answersRate.classList.add("is-pulse");
+}
+
+/** One-shot confetti burst on era transition. */
+export function triggerEraBurst() {
+  if (prefersReducedMotion()) return;
+  const host = document.getElementById("era-burst");
+  if (!host) return;
+  host.hidden = false;
+  host.replaceChildren();
+  const pieces = ["🦆", "✨", "🪙", "🌿"];
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement("span");
+    el.className = "era-burst__bit";
+    el.textContent = pieces[i % pieces.length];
+    el.style.setProperty("--x", `${(Math.random() * 160 - 80).toFixed(0)}px`);
+    el.style.setProperty("--r", `${(Math.random() * 40 - 20).toFixed(0)}deg`);
+    el.style.animationDelay = `${(i * 40)}ms`;
+    host.appendChild(el);
+  }
+  host.addEventListener("animationend", () => {
+    host.hidden = true;
+    host.replaceChildren();
+  }, { once: true });
+  setTimeout(() => { host.hidden = true; host.replaceChildren(); }, 1200);
 }
 
 /** Brief pulse on the duck counter when idle production ticks. */
@@ -153,6 +419,23 @@ export function pulseDuckCounter() {
   els.duckCount.classList.remove("is-pulse");
   void els.duckCount.offsetWidth;
   els.duckCount.classList.add("is-pulse");
+}
+
+export function updateBuyPondBtn(cost, affordable, visible) {
+  const btn = els.buyPondBtn;
+  if (!btn) return;
+  btn.hidden = !visible;
+  if (!visible) return;
+  btn.textContent = `Buy pond (${formatNumber(cost, 0)} 🪙) +50 capacity`;
+  /** @type {HTMLButtonElement} */ (btn).disabled = !affordable;
+}
+
+/** Brief gold pulse on the coin counter when coins are earned. */
+export function pulseCoinCounter() {
+  if (prefersReducedMotion() || !els.coinCount) return;
+  els.coinCount.classList.remove("is-pulse", "is-shimmer");
+  void els.coinCount.offsetWidth;
+  els.coinCount.classList.add("is-pulse", "is-shimmer");
 }
 
 /**

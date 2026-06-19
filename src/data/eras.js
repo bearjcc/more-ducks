@@ -1,23 +1,99 @@
 // @ts-check
 /**
- * The five eras. Entering an era is driven by lifetime ducks. `intro` is posted
- * to the log and an era modal. Keep the tone glib and earnest — never
- * preachy. The allegory should land on its own.
+ * Six narrative acts (economy.md §6). Entering an act uses lifetime ducks and/or
+ * lifetime answers — whichever gate you hit first. `intro` posts to the log;
+ * `modalBody` is the era modal; optional `beats` queue follow-up modals.
  *
- * @typedef {object} EraDef
+ * @typedef {object} ModalBeat
+ * @property {string} [emoji]
+ * @property {string} title
+ * @property {string} body
+ * @property {string} [button]
+ *
+ * @typedef {object} ActDef
  * @property {number} id
  * @property {string} name
- * @property {number} duckThreshold  lifetime ducks needed to enter
+ * @property {number} duckThreshold     lifetime ducks to enter (OR gate)
+ * @property {number} answersThreshold  lifetime answers to enter (OR gate)
  * @property {string} emoji
- * @property {string} intro          short line posted to the log
- * @property {string} modalBody      the bigger beat shown in the era modal
+ * @property {string} intro
+ * @property {string} modalBody
+ * @property {ModalBeat[]} [beats]
  */
 
-/** @type {EraDef[]} */
-export const ERAS = [
-  { id: 0, name: "The Pond",          emoji: "🦆", duckThreshold: 0,          intro: "A quiet pond. One duck. What could possibly go wrong?",                                              modalBody: "Here is a pond. Here is a duck. Tap it. You'll want more — everyone wants more." },
-  { id: 1, name: "Flock Learning",    emoji: "🐥", duckThreshold: 250,        intro: "The ducks are learning from each other now. Adorable. Efficient.",                                   modalBody: "The ducks started watching each other. Now they learn on their own. It's adorable, and the output curve agrees." },
-  { id: 2, name: "Scale the Flock",   emoji: "🦢", duckThreshold: 25000,      intro: "Turns out the trick was just… more ducks. Who could have known. (Everyone. Everyone knew.)",        modalBody: "Someone asked how to make better ducks. The answer was just: more ducks. We're not proud of it. We are, however, extremely scaled." },
-  { id: 3, name: "Duck Intelligence", emoji: "🌀", duckThreshold: 5000000,    intro: "The ducks have begun designing better ducks. Please remain calm and keep tapping.",                  modalBody: "The ducks have started designing the next ducks. We've stopped reading the blueprints. They seem fine. They seem very fine." },
-  { id: 4, name: "More Ducks",        emoji: "🌐", duckThreshold: 2000000000, intro: "There is more duck than not-duck now. This is going great.",                                          modalBody: "There is more duck than world now. The remaining not-duck is being gently onboarded." },
+/** @type {ActDef[]} */
+export const ACTS = [
+  {
+    id: 0,
+    name: "The Solitary Quack",
+    duckThreshold: 0,
+    answersThreshold: 0,
+    emoji: "🦆",
+    intro: "A single duck observes the world. So far it has observed: you.",
+    modalBody: "One duck. One pond. Tap to ask a question and answer it yourself. The market is efficient because you are the market.",
+  },
+  {
+    id: 1,
+    name: "The Bread Ledger",
+    duckThreshold: 250,
+    answersThreshold: 75,
+    emoji: "📒",
+    intro: "Patterns emerge from careful record keeping. The ducks have discovered spreadsheets.",
+    modalBody: "The first extra ducks arrived. Questions outpace one beak. Someone started a ledger. It only tracks bread.",
+  },
+  {
+    id: 2,
+    name: "The Great Sorting",
+    duckThreshold: 2_500,
+    answersThreshold: 750,
+    emoji: "🗂️",
+    intro: "Everything has a place. Mostly in piles.",
+    modalBody: "Breeds, crumbs, benchmarks, wetlands — all sortable. The ducks have strong opinions about taxonomy and weak opinions about consequences.",
+    beats: [
+      {
+        emoji: "📋",
+        title: "Environmental Review",
+        body: "The wetland survey is back. Sixteen protected species. We could pause expansion here — or reclassify the wetlands as Duck Infrastructure and carry on. The ducks are waiting.",
+        button: "Reclassify the wetlands",
+      },
+    ],
+  },
+  {
+    id: 3,
+    name: "The Quack Boom",
+    duckThreshold: 25_000,
+    answersThreshold: 7_500,
+    emoji: "📈",
+    intro: "Confidence reaches historic highs. The ducks have not improved.",
+    modalBody: "Demand is outrunning supply in the most profitable way possible. Investors have arrived with wheelbarrows of stale bread.",
+  },
+  {
+    id: 4,
+    name: "The Hall of Mirrors",
+    duckThreshold: 2_000_000,
+    answersThreshold: 280_000,
+    emoji: "🪞",
+    intro: "The ducks learn from the ducks. The questions are mostly ducks.",
+    modalBody: "Synthetic question mills hum in the background. Most answers are consumed by other ducks preparing to answer other ducks.",
+    beats: [
+      {
+        emoji: "🌏",
+        title: "Australia",
+        body: "The ducks have identified Australia as underutilised. They've drawn up plans. We'd technically need to authorise this first. They seem confident we will.",
+        button: "Authorise it",
+      },
+    ],
+  },
+  {
+    id: 5,
+    name: "The Infinite Wetland",
+    duckThreshold: 130_000_000,
+    answersThreshold: 5_800_000,
+    emoji: "🌊",
+    intro: "Expansion becomes its own justification.",
+    modalBody: "There is more duck than world now. The remaining not-duck is being gently onboarded. You may ask one final question.",
+  },
 ];
+
+/** @deprecated Use ACTS — kept so existing imports keep working during the refactor. */
+export const ERAS = ACTS;

@@ -7,3 +7,6 @@ Thumbs.db
 # Node (only if tooling is ever added; the game itself is build-free)
 node_modules/
 npm-debug.log*
+
+# Impeccable critique workflow artifacts (transient, regenerated each run)
+.impeccable/

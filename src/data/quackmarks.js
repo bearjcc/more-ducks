@@ -1,13 +1,13 @@
 // @ts-check
 /**
- * Benchmark badges. Raise Intelligence Score, not answer quality.
+ * Benchmark badges in the Marks vanity panel. Raise Intelligence Score, not answer quality.
  *
  * @typedef {object} QuackmarkDef
  * @property {string} id
  * @property {string} name
  * @property {string} emoji
  * @property {string} blurb
- * @property {number} cost         breadcrumbs
+ * @property {number} cost         coins
  * @property {number} era          minimum era to appear
  * @property {number} scoreMult    Intelligence multiplier (1.14 = +14%)
  * @property {string} label        shown on purchase toast, e.g. "+14% PONDMLU"

@@ -48,12 +48,21 @@ function blip(freq, duration, volume = 0.08) {
 export function sfxQuack() {
   blip(420, 0.06, 0.06);
   setTimeout(() => blip(520, 0.05, 0.04), 40);
+  vibrate(12);
 }
 
 export function sfxBuy() {
   blip(660, 0.08, 0.05);
+  vibrate(8);
 }
 
 export function sfxToast() {
   blip(880, 0.12, 0.04);
+  vibrate(6);
+}
+
+/** @param {number} ms */
+function vibrate(ms) {
+  if (!enabled || typeof navigator === "undefined" || !navigator.vibrate) return;
+  try { navigator.vibrate(ms); } catch { /* unsupported */ }
 }

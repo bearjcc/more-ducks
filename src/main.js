@@ -1,89 +1,266 @@
 // @ts-check
-import { createGame, buyProducer, ducksPerSecond, CRUMB_PER_DUCK_PER_SEC } from "./game/economy.js";
+import { createGame, buyProducer, ducksPerSecond } from "./game/economy.js";
+import {
+  ANSWERS_PER_DUCK_PER_SEC,
+  BASE_DEMAND,
+  COIN_PER_ANSWER,
+  coherenceValueMult,
+  decayHype,
+  demand,
+  researchFromServed,
+  servedPerSecond,
+  supplyPerSecond,
+  updateCoherence,
+  ponderDepth,
+  ponderEffectiveCoherence,
+  ponderResearchBonus,
+} from "./game/market.js";
 import { defaultMeta, mergeSettings } from "./game/meta.js";
 import { saveGame, loadGame, clearSave } from "./game/save.js";
-import { eraForDucks } from "./game/progression.js";
+import { actForStats } from "./game/progression.js";
 import { createMods, applyUpgrades, buyUpgrade } from "./game/upgrades.js";
 import { formatNumber } from "./game/format.js";
-import { checkDex, dexComplete } from "./game/dex.js";
+import { checkDex } from "./game/dex.js";
 import { checkAchievements } from "./game/achievements.js";
 import { sfxQuack, sfxBuy, sfxToast } from "./game/sfx.js";
 import { ERAS } from "./data/eras.js";
-import { DUCKS } from "./data/ducks.js";
 import { PRODUCERS } from "./data/producers.js";
-import { initUI, updateUI, showAnswer, logMessage, applyEra, pulseDuckCounter } from "./ui/render.js";
-import { pickQuack } from "./game/quack.js";
+import {
+  initUI,
+  updateUI,
+  showExchange,
+  logMessage,
+  applyEra,
+  pulseDuckCounter,
+  pulseCoinCounter,
+  markGameStarted,
+  triggerEraBurst,
+  updateBuyPondBtn,
+  updateTabUnlocks,
+} from "./ui/render.js";
+import {
+  resolveQuestion,
+  pickThought,
+  pickQuestion,
+  pickQuack,
+} from "./game/quack.js";
 import { intelligenceScore } from "./game/score.js";
-import { pondDrainPerSec, drainPond, pondFraction, checkPondBeats, WATER_PER_QUACK } from "./game/pond.js";
-import { dexMods } from "./game/dexMods.js";
+import { dexMods, effectiveCoherence } from "./game/dexMods.js";
+import { buyHypeCampaign } from "./game/hype.js";
+import { citationsMult } from "./game/prestige.js";
 import { initShop, updateShop } from "./ui/shop.js";
+import { initHype, updateHype } from "./ui/hype.js";
 import { initUpgrades, updateUpgrades } from "./ui/upgrades.js";
 import { initQuackmarks, updateQuackmarks } from "./ui/quackmarks.js";
 import { buyQuackmark } from "./game/quackmarks.js";
 import { QUACKMARKS } from "./data/quackmarks.js";
 import { initDex, updateDex } from "./ui/dex.js";
-import { initModal, queueModal } from "./ui/modal.js";
-import { initEnding, updateFinaleCta, showTerminal } from "./ui/ending.js";
+import { initPrestige, updatePrestige, bindPrestigeCtx } from "./ui/prestige.js";
+import { initModal, queueModal, queueActEntry, queueWelcomeBack } from "./ui/modal.js";
+import { initEnding, showTerminal } from "./ui/ending.js";
 import { applySettings, initSettings } from "./ui/settings.js";
+import { initTimeToggle } from "./ui/theme.js";
 import { initToasts, showToast } from "./ui/toast.js";
+import { initChat } from "./ui/chat.js";
+import { initAnswerdex, updateAnswerdex } from "./ui/answerdex.js";
+import { initRegions, updateRegions } from "./ui/regions.js";
+import {
+  needsFeed,
+  feedDuck,
+  recordAnswerForFeed,
+  feedOpexPerSec,
+} from "./game/feed.js";
+import { recordAnswerdex } from "./game/answerdex.js";
+import {
+  buyPond,
+  clampDucksToCapacity,
+  nextPondCost,
+  pondCapacity,
+} from "./game/capacity.js";
+import {
+  applyPendingRent,
+  floodAustralia,
+  rentRegion,
+  tickRegions,
+  unlockRegion,
+  deploySaltwater,
+  deploySpace,
+} from "./game/regions.js";
+import { checkEndings } from "./game/endings.js";
 
 const AUTOSAVE_MS = 15000;
-const OFFLINE_CAP_SEC = 8 * 3600; // generous but bounded catch-up
+const OFFLINE_CAP_SEC = 8 * 3600;
 
 const engine = createGame();
 const meta = defaultMeta();
 const mods = createMods();
 
 const ducks = engine.resource("ducks");
-const breadcrumbs = engine.currency("breadcrumbs");
+const coins = engine.currency("coins");
+const research = engine.currency("research");
 
 const loadResult = loadGame(engine, meta);
 meta.settings = mergeSettings(meta.settings);
 applySettings(meta.settings);
 
+if (!loadResult.loaded && !meta.gameStartMs) meta.gameStartMs = Date.now();
+
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register(new URL("../sw.js", import.meta.url)).catch(() => {});
 }
 
-// Producer batches pulse the duck counter (idle feedback).
 for (const p of PRODUCERS) {
   const prod = engine.producer(p.id);
   if (prod) prod.on("PRODUCER_OUTPUT", () => pulseDuckCounter());
 }
 
-// Lifetime ducks drives era progression. Counting via the resource event keeps
-// manual quacks, producer output, and offline catch-up in one place.
 ducks.on("RESOURCE_COUNT_UPDATED", (e) => {
   if (e.delta > 0) meta.totalDucksEver += e.delta;
 });
 
-// Rebuild derived multipliers from owned upgrades (must precede offline calc).
 applyUpgrades(engine, meta, mods);
+updateCoherence(meta, engine);
 
 initModal();
 initToasts();
+
+function creditManualAnswer(effCoherence, extraResearch = 0) {
+  const dex = dexMods(meta);
+  const coherence = effCoherence ?? effectiveCoherence(meta, dex);
+  const valueMult = coherenceValueMult(coherence);
+  const citeMult = citationsMult(meta);
+  const coinGain = COIN_PER_ANSWER * valueMult * mods.crumbMult / dex.coinUpkeep * citeMult;
+  coins.incrementBy(coinGain);
+  const researchBase = researchFromServed(1) + extraResearch;
+  research.incrementBy(researchBase / dex.researchUpkeep * citeMult);
+  meta.answersTotal += 1;
+  meta.questionsAnswered++;
+  recordAnswerForFeed(meta);
+  return coinGain;
+}
+
+/**
+ * @param {string} text
+ * @returns {number} coin gain for juice
+ */
+function manualAsk(text) {
+  if (meta.flags.ended || needsFeed(meta)) return 0;
+  markGameStarted();
+  const dex = dexMods(meta);
+  const coherence = effectiveCoherence(meta, dex);
+
+  const { question, answer, baseQuack } = resolveQuestion({
+    text,
+    score: intelligenceScore(engine, meta),
+    totalDucksEver: meta.totalDucksEver,
+    coherence,
+  });
+
+  const coinGain = creditManualAnswer(coherence);
+  const isNew = recordAnswerdex(meta, baseQuack);
+  if (isNew) {
+    sfxToast();
+    showToast({ title: "New quack!", body: baseQuack.slice(0, 60) });
+  }
+
+  sfxQuack();
+  showExchange(question, answer);
+  return coinGain;
+}
+
+function triggerEnding(id) {
+  if (meta.flags.ended) return;
+  meta.endingId = id;
+  meta.flags.ended = true;
+  saveGame(engine, meta);
+  showTerminal(id, meta);
+}
+
+initChat({
+  canAsk: () => !meta.flags.ended && !needsFeed(meta),
+  onSend: (text) => manualAsk(text),
+  holdRepeatEnabled: () => mods.holdRepeat,
+  holdIntervalMs: () => mods.holdRepeatIntervalMs,
+});
+
 initUI({
-  onQuack() {
-    ducks.incrementBy(meta.clickPower);
-    breadcrumbs.incrementBy(meta.clickPower * mods.crumbMult);
+  isPonderingUnlocked: () => meta.ponderingUnlocked,
+  onFeedTap: () => {
+    if (needsFeed(meta)) {
+      feedDuck(meta);
+      meta.manualFeeds++;
+      sfxBuy();
+    }
+  },
+  onBuyPond: () => {
+    if (buyPond(engine, meta)) {
+      sfxBuy();
+      logMessage("Another pond. More capacity. Same ducks, more room.", true);
+    }
+  },
+  onPonderStart: () => {
+    if (!meta.ponderingUnlocked) return null;
+    markGameStarted();
     sfxQuack();
-    meta.questionsAnswered++;
-    drainPond(meta, WATER_PER_QUACK);
-    showAnswer(pickQuack(intelligenceScore(engine, meta)));
-    return meta.clickPower;
+    const coherence = effectiveCoherence(meta, dexMods(meta));
+    return {
+      question: pickQuestion(meta.totalDucksEver),
+      thought: pickThought(coherence),
+    };
+  },
+  onPonderTick: () => {
+    const coherence = effectiveCoherence(meta, dexMods(meta));
+    return { thought: pickThought(coherence) };
+  },
+  onPonderEnd: (holdMs) => {
+    if (!meta.ponderingUnlocked) return null;
+    const depth = ponderDepth(holdMs);
+    const effCoherence = ponderEffectiveCoherence(effectiveCoherence(meta, dexMods(meta)), depth);
+    const answer = pickQuack(
+      intelligenceScore(engine, meta),
+      effCoherence,
+      meta.totalDucksEver,
+    );
+    const coinGain = creditManualAnswer(effCoherence, ponderResearchBonus(depth));
+    return { answer, coinGain };
   },
 });
+
+initTimeToggle({ meta, onChange: () => applySettings(meta.settings) });
+
 initShop({
   onBuy: (id, qty) => {
-    if (buyProducer(engine, id, qty) > 0) sfxBuy();
+    const bought = buyProducer(engine, id, qty, meta);
+    if (bought > 0) sfxBuy();
+    return bought > 0;
   },
   onBuyModeChange: (mode) => { meta.settings.buyMode = mode; },
 });
-initUpgrades({
+
+initHype({
   onBuy: (id) => {
-    if (buyUpgrade(engine, meta, mods, id)) sfxBuy();
+    const launched = buyHypeCampaign(engine, meta, id);
+    if (launched) {
+      sfxBuy();
+      logMessage(`Launched: ${launched.emoji} ${launched.name}. Demand is trending.`, true);
+      return true;
+    }
+    return false;
   },
 });
+
+initUpgrades({
+  onBuy: (id) => {
+    const bought = buyUpgrade(engine, meta, mods, id);
+    if (bought) {
+      sfxBuy();
+      const ending = checkEndings(engine, meta);
+      if (ending) triggerEnding(ending);
+    }
+    return bought;
+  },
+});
+
 initQuackmarks({
   onBuy: (id) => {
     const bought = buyQuackmark(engine, meta, id);
@@ -92,100 +269,116 @@ initQuackmarks({
       sfxToast();
       showToast({ title: bought.label, body: "Intelligence improved. Quack quality unchanged." });
       logMessage(`Certified: ${bought.name}. ${bought.label}.`, true);
+      return true;
     }
+    return false;
   },
 });
+
 initDex();
-initSettings({
-  engine,
-  meta,
-  onImport: () => { suppressSave = false; },
+initAnswerdex();
+initRegions({
+  onAction: (id, action) => {
+    let ok = false;
+    if (action === "unlock") ok = unlockRegion(engine, meta, id);
+    else if (action === "rent") ok = rentRegion(engine, meta, id);
+    else if (action === "flood") ok = floodAustralia(engine, meta);
+    else if (action === "saltwater") ok = deploySaltwater(engine, meta);
+    else if (action === "space") ok = deploySpace(engine, meta);
+    if (ok) {
+      sfxBuy();
+      const ending = checkEndings(engine, meta);
+      if (ending) triggerEnding(ending);
+    }
+    return ok;
+  },
 });
 
-// When resetting we must stop the unload-save from rewriting the cleared save.
+initSettings({ engine, meta, onImport: () => { suppressSave = false; } });
+
 let suppressSave = false;
 initEnding({
   onReset: () => { suppressSave = true; clearSave(); location.reload(); },
-  getTotalDucks: () => meta.totalDucksEver,
   onEnded: () => { meta.flags.ended = true; saveGame(engine, meta); },
 });
+initPrestige({
+  onPrestige: () => {
+    updateCoherence(meta, engine);
+    applyEra(meta.era);
+    saveGame(engine, meta);
+  },
+});
 
-// Catalogue any breeds already earned by the loaded state (silently — no spam).
 checkDex(engine, meta);
 updateDex(meta);
+updateAnswerdex(meta);
 
-// If a previous session already reached the end, go straight to the finale.
-if (meta.flags.ended) showTerminal();
+if (meta.flags.ended && meta.endingId) showTerminal(meta.endingId, meta);
 
 if (loadResult.loaded) {
   logMessage("Welcome back to the pond.");
   applyOfflineProgress(loadResult.savedAt);
 } else {
   logMessage(ERAS[0].intro, true);
-  queueModal({ emoji: ERAS[0].emoji, title: ERAS[0].name, body: ERAS[0].modalBody, button: "Tap the duck" });
+  queueActEntry(0, "Ask the duck");
 }
 
-/**
- * Grant capped offline earnings based on the last save time. Producer output is
- * a constant rate while away, so duck gain is exact; breadcrumbs use the exact
- * integral of a linearly growing flock.
- * @param {number|undefined} savedAt
- */
 function applyOfflineProgress(savedAt) {
   if (!savedAt) return;
   const elapsed = Math.min((Date.now() - savedAt) / 1000, OFFLINE_CAP_SEC);
   if (elapsed < 5) return;
 
   const dps = ducksPerSecond(engine);
-  // ponytail: no producers means no offline duck/crumb catch-up — early game is tap-driven.
   if (dps <= 0) return;
 
   const ducks0 = ducks.count;
   const offlineDucks = Math.floor(dps * elapsed);
-  const avgDucks = ducks0 + (dps * elapsed) / 2;
-  const offlineCrumbs = avgDucks * CRUMB_PER_DUCK_PER_SEC * mods.crumbMult * elapsed;
+  const dex = dexMods(meta);
+  const supplyStart = ducks0 * ANSWERS_PER_DUCK_PER_SEC * mods.efficiencyMult;
+  const ducksEnd = ducks0 + offlineDucks;
+  const supplyEnd = ducksEnd * ANSWERS_PER_DUCK_PER_SEC * mods.efficiencyMult;
+  const offlineDemand = BASE_DEMAND + dex.questionIntake;
+  const avgServed = servedPerSecond((supplyStart + supplyEnd) / 2, offlineDemand);
+  updateCoherence(meta, engine);
+  const coherence = effectiveCoherence(meta, dex);
+  const valueMult = coherenceValueMult(coherence);
+  const citeMult = citationsMult(meta);
+  const offlineCoins = avgServed * COIN_PER_ANSWER * valueMult * mods.crumbMult / dex.coinUpkeep * citeMult * elapsed;
+  const offlineAnswers = avgServed * elapsed;
 
   if (offlineDucks > 0) {
     ducks.incrementBy(offlineDucks);
-    breadcrumbs.incrementBy(offlineCrumbs);
-    drainPond(meta, pondDrainPerSec(engine) * dexMods(meta).pondMult * elapsed);
-    checkPondBeats(meta, (msg) => logMessage(msg, true), queueModal);
+    clampDucksToCapacity(engine, meta);
+    coins.incrementBy(offlineCoins);
+    research.incrementBy(researchFromServed(offlineAnswers) / dex.researchUpkeep * citeMult);
+    meta.answersTotal += offlineAnswers;
     const mins = Math.round(elapsed / 60);
     logMessage(`While you were away (~${mins} min), the flock made ${formatNumber(offlineDucks)} ducks.`, true);
+    pulseDuckCounter();
+    pulseCoinCounter();
+    sfxToast();
+    queueWelcomeBack({
+      mins,
+      ducks: formatNumber(offlineDucks),
+      coins: formatNumber(offlineCoins, 0),
+    });
   }
 }
 
-/** Fire era-entry beats (log + modal) up to the era implied by lifetime ducks. */
 function advanceEras() {
-  const target = eraForDucks(meta.totalDucksEver);
+  const target = actForStats({ totalDucksEver: meta.totalDucksEver, answersTotal: meta.answersTotal });
   if (target <= meta.era) return;
   for (let e = meta.era + 1; e <= target; e++) {
     logMessage(ERAS[e].intro, true);
-    queueModal({ emoji: ERAS[e].emoji, title: ERAS[e].name, body: ERAS[e].modalBody });
-    if (e === 2) {
-      queueModal({
-        emoji: "📋",
-        title: "Environmental Review",
-        body: "The wetland survey is back. Sixteen protected species. We could pause expansion here — or reclassify the wetlands as Duck Infrastructure and carry on. The ducks are waiting.",
-        button: "Reclassify the wetlands",
-      });
-    }
-    if (e === 3) {
-      queueModal({
-        emoji: "🌏",
-        title: "Australia",
-        body: "The ducks have identified Australia as underutilised. They've drawn up plans. We'd technically need to authorise this first. They seem confident we will.",
-        button: "Authorise it",
-      });
-    }
+    queueActEntry(e);
+    triggerEraBurst();
   }
   meta.era = target;
   applyEra(meta.era);
 }
-applyEra(meta.era); // reflect the loaded/initial era before the first advance
+applyEra(meta.era);
 advanceEras();
 
-/** Latest certified benchmark label for the Intelligence counter. */
 function scoreBadgeText(meta) {
   if (!meta.quackmarksOwned.length) return "";
   const lastId = meta.quackmarksOwned[meta.quackmarksOwned.length - 1];
@@ -193,7 +386,6 @@ function scoreBadgeText(meta) {
   return q ? q.label : "";
 }
 
-/** Catalogue newly-earned breeds and announce them in the log. */
 function announceNewDucks() {
   const newly = checkDex(engine, meta);
   if (newly.length > 0) applyUpgrades(engine, meta, mods);
@@ -202,29 +394,47 @@ function announceNewDucks() {
   }
 }
 
-// Main loop.
 let lastFrame = Date.now();
 let lastAutosave = lastFrame;
-let lastIdleAnswer = lastFrame;
+
 function frame() {
   const now = Date.now();
-  // Clamp the per-frame delta so a backgrounded tab doesn't dump a huge crumb
-  // batch — real offline catch-up is handled on load.
   const dtSec = Math.min((now - lastFrame) / 1000, 1);
   lastFrame = now;
 
+  if (!meta.flags.ended) {
+    const ending = checkEndings(engine, meta);
+    if (ending) {
+      triggerEnding(ending);
+    }
+  }
+
   engine.onTick(now);
-  if (ducks.count > 0) {
-    const dex = dexMods(meta);
-    breadcrumbs.incrementBy(
-      (ducks.count * CRUMB_PER_DUCK_PER_SEC * mods.crumbMult * dtSec) / dex.crumbUpkeep,
-    );
+  clampDucksToCapacity(engine, meta);
+
+  const dex = dexMods(meta);
+  decayHype(engine, dtSec, dex);
+  updateCoherence(meta, engine);
+  const coherence = effectiveCoherence(meta, dex);
+  const marketDemand = demand(meta, engine, dex);
+  const supply = supplyPerSecond(engine, mods);
+  const served = servedPerSecond(supply, marketDemand) * dtSec;
+  const valueMult = coherenceValueMult(coherence);
+  const citeMult = citationsMult(meta);
+
+  if (served > 0) {
+    coins.incrementBy(served * COIN_PER_ANSWER * valueMult * mods.crumbMult / dex.coinUpkeep * citeMult);
+    research.incrementBy(researchFromServed(served) / dex.researchUpkeep * citeMult);
+    meta.answersTotal += served;
   }
-  const pondDrain = pondDrainPerSec(engine) * dexMods(meta).pondMult * dtSec;
-  if (pondDrain > 0) {
-    drainPond(meta, pondDrain);
-    checkPondBeats(meta, (msg) => logMessage(msg, true), queueModal);
-  }
+
+  const answersPerSec = servedPerSecond(supply, marketDemand);
+  const feedOpex = feedOpexPerSec(answersPerSec, meta);
+  if (feedOpex > 0) coins.incrementBy(-feedOpex * dtSec);
+
+  tickRegions(meta, dtSec);
+  if (meta.pendingRent > 0) applyPendingRent(engine, meta);
+
   advanceEras();
   announceNewDucks();
   checkAchievements({ engine, meta }, (spec) => {
@@ -233,30 +443,42 @@ function frame() {
   });
 
   const dps = ducksPerSecond(engine);
-  if (dps > 0 && now - lastIdleAnswer > 8000) {
-    showAnswer(pickQuack(intelligenceScore(engine, meta)));
-    lastIdleAnswer = now;
-  }
+  const hype = engine.currency("hype")?.value ?? 0;
+  const cap = pondCapacity(meta);
+  const duckN = Math.floor(ducks.count);
 
   updateUI({
-    ducks: Math.floor(ducks.count),
-    breadcrumbs: Math.floor(breadcrumbs.value),
+    ducks: duckN,
+    coins: Math.floor(coins.value),
     ducksPerSec: dps,
+    answersPerSec,
+    supplyPerSec: supply,
+    demandPerSec: marketDemand,
+    hype,
     score: intelligenceScore(engine, meta),
     questionsAnswered: meta.questionsAnswered,
-    pondFraction: pondFraction(meta),
     scoreBadge: scoreBadgeText(meta),
+    feedOpexPerSec: feedOpex,
+    pondCap: cap,
+    pondDucks: duckN,
+    hungry: needsFeed(meta),
+    canAsk: !meta.flags.ended && !needsFeed(meta),
   });
-  updateShop({ engine, breadcrumbs: breadcrumbs.value, era: meta.era });
-  updateUpgrades({ engine, meta, breadcrumbs: breadcrumbs.value });
-  updateQuackmarks({ engine, meta, breadcrumbs: breadcrumbs.value });
-  updateDex(meta);
 
-  // Endgame: once the world is era 4, surface the finale (or the remaining
-  // Duckdex to complete first).
-  if (!meta.flags.ended && meta.era >= 4) {
-    updateFinaleCta(dexComplete(meta), meta.dexUnlocked.length, DUCKS.length);
-  }
+  updateTabUnlocks({ meta, coins: coins.value, engine, answersPerSec, research: research.value });
+
+  updateShop({ engine, meta, coins: coins.value, era: meta.era });
+  updateHype({ meta, coins: coins.value });
+  updateUpgrades({ engine, meta, coins: coins.value, research: research.value });
+  updateQuackmarks({ engine, meta, coins: coins.value });
+  bindPrestigeCtx({ engine, meta, mods });
+  updatePrestige({ engine, meta, mods });
+  updateDex(meta);
+  updateAnswerdex(meta);
+  updateRegions({ engine, meta, era: meta.era });
+
+  const pondCost = nextPondCost(meta);
+  updateBuyPondBtn(pondCost, coins.value >= pondCost, meta.era >= 2);
 
   if (!suppressSave && now - lastAutosave > AUTOSAVE_MS) {
     saveGame(engine, meta);
@@ -266,7 +488,6 @@ function frame() {
 }
 requestAnimationFrame(frame);
 
-// Save when the player leaves or backgrounds the tab (but not while resetting).
 addEventListener("visibilitychange", () => {
   if (!suppressSave && document.hidden) saveGame(engine, meta);
 });
@@ -274,7 +495,5 @@ addEventListener("beforeunload", () => {
   if (!suppressSave) saveGame(engine, meta);
 });
 
-// Console handle for debugging and modding (this is a single-player, offline,
-// open-source toy — peeking at the engine is part of the fun).
 // @ts-ignore
-window.MoreDucks = { engine, meta, mods, ducks, breadcrumbs, save: () => saveGame(engine, meta) };
+window.MoreDucks = { engine, meta, mods, ducks, coins, research, save: () => saveGame(engine, meta) };

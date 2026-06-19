@@ -1,10 +1,21 @@
 # More Ducks! 🦆
 
-A small, silly, earnestly satirical incremental game about making more ducks.
+Incremental sequel to [QLM](https://github.com/bearjcc/QLM) (Quack Language Model): a small, silly, earnestly satirical browser game about scaling a duck Q&A service until the world is mostly pond.
 
 It runs entirely in your browser — no backend, no accounts, no monetization.
-Progress is kept in `localStorage`. Built to play well on a phone in landscape
-as much as on a laptop.
+Progress is kept in `localStorage`. **Phone landscape first**, portrait and laptop supported.
+
+## Docs (read before hacking)
+
+| File | Purpose |
+|------|---------|
+| [**HANDOFF.md**](HANDOFF.md) | Agent entry point: vision, shipped state, known gaps |
+| [**TODO.md**](TODO.md) | Current implementation backlog |
+| [**DESIGN.md**](DESIGN.md) | UI/UX target (Tap Titans 2 + mobile chat) |
+| [**PRODUCT.md**](PRODUCT.md) | Product voice and anti-slop rules |
+| [../docs/economy.md](../docs/economy.md) | Authoritative economy spec |
+| [../docs/concept.md](../docs/concept.md) | Satire spine and tone |
+| [../CONTEXT.md](../CONTEXT.md) | Domain glossary |
 
 > Ha, *Duck Intelligence*, that's silly… hey, this is cute… huh, it's pretty
 > fun… yes, of course I want to flood Australia, that means **more ducks**…
@@ -27,15 +38,15 @@ Then open the printed URL.
 
 ```
 index.html              entry point (loads src/main.js as a module)
-manifest.webmanifest    PWA manifest (landscape, standalone)
-styles/main.css         responsive, phone-landscape-first
+manifest.webmanifest    PWA manifest (any orientation, standalone)
+styles/main.css         responsive; portrait stack + laptop two-column
 scripts/sim.mjs         balance simulator (dev only; npm run sim)
 src/
   main.js               boot + game loop + autosave
   data/                 producers, upgrades, ducks, eras (balance + copy)
   engine/               vendored continuum-engine (see VENDOR.md)
   game/                 economy, save/load, meta state, formatting
-  ui/                   DOM rendering (shop, upgrades, dex, modal, ending)
+  ui/                   DOM rendering (chat, shop, dashboard, dex, modal, ending)
 sw.js                   service worker (offline precache)
 ```
 
