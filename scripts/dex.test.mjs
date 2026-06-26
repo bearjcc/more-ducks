@@ -3,7 +3,7 @@ import { DUCKS } from "../src/data/ducks.js";
 import { dexMods, defaultDexMods, effectiveCoherence } from "../src/game/dexMods.js";
 import { defaultMeta } from "../src/game/meta.js";
 import { createGame } from "../src/game/economy.js";
-import { BASE_DEMAND, demand } from "../src/game/market.js";
+import { BASE_DEMAND, BUZZ_PER_DUCK, BUZZ_EXPONENT, demand } from "../src/game/market.js";
 
 let passed = 0;
 let failed = 0;
@@ -45,9 +45,11 @@ console.log("\n(d) Market resource demands wire through");
   meta.dexUnlocked = ["decoy", "aligned", "overfit", "datadrake"];
   const m = dexMods(meta);
   const engine = createGame();
-  assert(demand(meta, engine, m) === BASE_DEMAND + m.questionIntake, "questionIntake raises demand");
+  // Fresh engine has 1 duck → organic buzz = BUZZ_PER_DUCK·1^exp on top of base + intake.
+  const buzz = BUZZ_PER_DUCK * Math.pow(engine.resource("ducks").count, BUZZ_EXPONENT);
+  assert(demand(meta, engine, m) === BASE_DEMAND + buzz + m.questionIntake, "questionIntake raises demand");
   assert(m.hypeDecayMult > 1, "aligned duck accelerates hype decay");
-  assert(m.researchUpkeep > 1, "overfit duck taxes research");
+  assert(m.coinUpkeep > 1.05, "overfit duck taxes coins");
   meta.coherence = 0.5;
   assert(effectiveCoherence(meta, m) > 0.5, "datadrake lifts effective coherence");
 }

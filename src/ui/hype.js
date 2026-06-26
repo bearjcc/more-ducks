@@ -1,27 +1,42 @@
 // @ts-check
-import { formatNumber } from "../game/format.js";
-import { campaignVisible } from "../game/hype.js";
-import { HYPE_CAMPAIGNS } from "../data/hype.js";
-import { flashCard } from "./render.js";
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (HYPE_CAMPAIGNS data, emoji).
 
+import { formatNumber } from "../game/format.js";
+import {
+  campaignVisible,
+  campaignNextCost,
+  campaignAtCap,
+  campaignHypeGain,
+  maxMarketingLevel,
+} from "../game/hype.js";
+
+import { HYPE_CAMPAIGNS } from "../data/hype.js";
+import { purchaseRevealed } from "../game/unlocks.js";
+import { marketingLevel } from "../game/levels.js";
+import { flashCard } from "./render.js";
 /**
  * @typedef {object} CardRefs
  * @property {HTMLElement} root
+ * @property {HTMLElement} title
  * @property {HTMLElement} count
  * @property {HTMLElement} cost
  * @property {HTMLButtonElement} btn
  */
 
 /** @type {Map<string, CardRefs>} */
+
 const cards = new Map();
 
 /** @type {HTMLElement|null} */ let listEl = null;
+
 /** @type {HTMLElement|null} */ let emptyEl = null;
+
 /** @type {(id: string) => boolean} */ let onBuy = () => false;
 
 /**
  * @param {{ onBuy: (id: string) => boolean }} handlers
  */
+
 export function initHype(handlers) {
   listEl = document.getElementById("hype-list");
   emptyEl = document.getElementById("hype-empty");
@@ -32,31 +47,42 @@ export function initHype(handlers) {
  * @param {import("../data/hype.js").HypeCampaignDef} def
  * @returns {CardRefs}
  */
+
 function createCard(def) {
   const li = document.createElement("li");
   li.className = "card";
   li.innerHTML =
     `<div class="card__icon" aria-hidden="true">${def.emoji}</div>` +
     `<div class="card__body">` +
-      `<div class="card__title">${def.name} <span class="card__count" data-hype>+${formatNumber(def.hypeGain, 0)}</span></div>` +
+      `<div class="card__title" data-title>${def.name}</div>` +
       `<div class="card__blurb">${def.blurb}</div>` +
     `</div>` +
     `<button class="card__buy" type="button" data-buy aria-label="Launch ${def.name}">` +
+      `<span class="card__count" data-count hidden></span>` +
       `<span class="card__cost" data-cost>—</span>` +
     `</button>`;
+
   const btn = /** @type {HTMLButtonElement} */ (li.querySelector("[data-buy]"));
+
   /** @type {CardRefs} */
+
   const refs = {
     root: li,
-    count: /** @type {HTMLElement} */ (li.querySelector("[data-hype]")),
+
+    title: /** @type {HTMLElement} */ (li.querySelector("[data-title]")),
+
+    count: /** @type {HTMLElement} */ (li.querySelector("[data-count]")),
+
     cost: /** @type {HTMLElement} */ (li.querySelector("[data-cost]")),
     btn,
   };
+
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     if (onBuy(def.id)) flashCard(refs.root);
   });
   li.addEventListener("click", () => {
+    if (refs.btn.disabled) return;
     if (onBuy(def.id)) flashCard(refs.root);
   });
   cards.set(def.id, refs);
@@ -67,25 +93,51 @@ function createCard(def) {
 /**
  * @param {{ meta: import("../game/meta.js").Meta, coins: number }} s
  */
+
 export function updateHype(s) {
   let anyVisible = false;
   for (const def of HYPE_CAMPAIGNS) {
-    const visible = campaignVisible(s.meta, def);
+    const level = marketingLevel(s.meta, def.id);
+    const atCap = campaignAtCap(def, level);
+    const nextCost = campaignNextCost(def, level);
+    const visible = campaignVisible(s.meta, def)
+      && purchaseRevealed(s.coins, nextCost, level > 0);
     let refs = cards.get(def.id);
-
     if (!visible) {
       if (refs) refs.root.style.display = "none";
       continue;
     }
+
     if (!refs) refs = createCard(def);
     refs.root.style.display = "";
     anyVisible = true;
+    const nextGain = campaignHypeGain(def, level + 1);
+    if (def.purchaseMode === "level") {
+      const max = maxMarketingLevel(def);
+      refs.title.textContent = `${def.name} Lv ${level}/${max}`;
+      refs.count.hidden = false;
+      refs.count.textContent = `+${formatNumber(nextGain, 0)}`;
+    } else {
+      refs.title.textContent = def.name;
+      refs.count.hidden = false;
+      refs.count.textContent = level > 0
+        ? `×${formatNumber(level, 0)} +${formatNumber(nextGain, 0)}`
+        : `+${formatNumber(nextGain, 0)}`;
+    }
 
-    refs.cost.textContent = "🪙 " + formatNumber(def.cost, 0);
-    const affordable = s.coins >= def.cost;
+    if (atCap) {
+      refs.cost.textContent = "Max";
+      refs.btn.disabled = true;
+      refs.root.classList.remove("is-affordable");
+      continue;
+    }
+
+    refs.cost.textContent = "🪙 " + formatNumber(nextCost, 0);
+    const affordable = s.coins >= nextCost;
     refs.btn.disabled = !affordable;
     refs.root.classList.toggle("is-affordable", affordable);
-    refs.btn.setAttribute("aria-label", `Launch ${def.name} for ${formatNumber(def.cost, 0)} coins`);
+    refs.btn.setAttribute("aria-label", `Launch ${def.name} for ${formatNumber(nextCost, 0)} coins`);
   }
+
   if (emptyEl) emptyEl.style.display = anyVisible ? "none" : "";
 }

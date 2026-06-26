@@ -1,8 +1,7 @@
 // @ts-check
 import ContinuumEngine from "../engine/engine.js";
 import { PRODUCERS } from "../data/producers.js";
-import { atCapacity, duckCount, pondCapacity } from "./capacity.js";
-
+import { atCapacity } from "./capacity.js";
 /**
  * Build the game engine with its currencies, the headline resource, and the
  * full producer roster.
@@ -18,12 +17,9 @@ import { atCapacity, duckCount, pondCapacity } from "./capacity.js";
  */
 export function createGame() {
   const engine = new ContinuumEngine();
-
   engine.createCurrency("coins", 0);
-  engine.createCurrency("research", 0);
   engine.createCurrency("hype", 0);
   engine.createResource({ key: "ducks", count: 1 });
-
   for (const p of PRODUCERS) {
     engine.createProducer({
       key: p.id,
@@ -86,13 +82,10 @@ export function maxAffordable(engine, id, currencyValue) {
 export function buyProducer(engine, id, qty = 1, meta = null) {
   const prod = engine.producer(id);
   if (!prod || qty <= 0) return 0;
-
   if (meta && atCapacity(engine, meta)) return 0;
-
   const cost = bulkCost(engine, id, qty);
   const coins = engine.currency("coins");
   if (!isFinite(cost) || coins.value < cost) return 0;
-
   const wasZero = prod.count === 0;
   coins.incrementBy(-cost);
   prod.incrementBy(qty);

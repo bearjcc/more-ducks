@@ -1,5 +1,6 @@
 // @ts-check
 import { DUCKS } from "../data/ducks.js";
+import { upgradeLevel } from "./levels.js";
 
 /**
  * @param {import("../data/ducks.js").Unlock} u
@@ -15,7 +16,7 @@ function isUnlocked(u, engine, meta) {
       const p = engine.producer(u.id);
       return !!p && p.count >= u.count;
     }
-    case "upgrade": return meta.upgradesOwned.includes(u.id);
+    case "upgrade": return upgradeLevel(meta, u.id) >= 1;
     default: return false;
   }
 }

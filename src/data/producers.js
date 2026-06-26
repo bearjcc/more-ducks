@@ -18,12 +18,12 @@
 
 /** @type {ProducerDef[]} */
 export const PRODUCERS = [
-  { id: "duckling",    name: "Duckling",         emoji: "🐤",  blurb: "It follows the others. That's the whole strategy.",        baseCost: 12,          costCoefficient: 1.15, productionTime: 1500, productionAmount: 1,     era: 0 },
-  { id: "nestbox",     name: "Nesting Box",      emoji: "📦",  blurb: "Ducks in. More ducks out. Try not to think about it.",     baseCost: 100,         costCoefficient: 1.15, productionTime: 1000, productionAmount: 1,     era: 0 },
-  { id: "breeder",     name: "Breeding Pair",    emoji: "💞",  blurb: "Two ducks, lightly supervised.",                           baseCost: 1_100,       costCoefficient: 1.16, productionTime: 1000, productionAmount: 5,     era: 1 },
-  { id: "pondfarm",    name: "Pond Farm",        emoji: "🪣",  blurb: "Industrial dabbling. Fully free-range, allegedly.",        baseCost: 12_000,      costCoefficient: 1.16, productionTime: 1000, productionAmount: 24,    era: 1 },
-  { id: "hatchery",    name: "Mega-Hatchery",    emoji: "🏭",  blurb: "We ran the numbers. The numbers said: more ducks.",        baseCost: 170_000,     costCoefficient: 1.17, productionTime: 1000, productionAmount: 130,   era: 2 },
-  { id: "datapond",    name: "Data Pond",        emoji: "🛰️",  blurb: "Every duck trains the next. Quack quality is improving.",  baseCost: 2_800_000,   costCoefficient: 1.17, productionTime: 1000, productionAmount: 700,   era: 2 },
-  { id: "recursive",   name: "Recursive Drake",  emoji: "♾️",  blurb: "A duck that makes ducks that make ducks. We're so back.",  baseCost: 5_000_000,     costCoefficient: 1.18, productionTime: 1000, productionAmount: 3800,  era: 3 },
-  { id: "singularity", name: "Quack Singularity", emoji: "🌀", blurb: "Habitat is now a rounding error. Australia volunteered.",  baseCost: 6_000_000,   costCoefficient: 1.19, productionTime: 1000, productionAmount: 21000, era: 3 },
+  { id: "duckling",    name: "Duckling",         emoji: "🐤",  blurb: "It follows the others. That's the whole strategy.",        baseCost: 12,          costCoefficient: 1.15, productionTime: 1500, productionAmount: 1,      era: 0 },
+  { id: "nestbox",     name: "Nesting Box",      emoji: "📦",  blurb: "Ducks in. More ducks out. Try not to think about it.",     baseCost: 100,         costCoefficient: 1.15, productionTime: 1000, productionAmount: 3,      era: 0 },
+  { id: "breeder",     name: "Breeding Pair",    emoji: "💞",  blurb: "Two ducks, lightly supervised.",                           baseCost: 1_100,       costCoefficient: 1.16, productionTime: 1000, productionAmount: 22,     era: 1 },
+  { id: "pondfarm",    name: "Pond Farm",        emoji: "🪣",  blurb: "Industrial dabbling. Fully free-range, allegedly.",        baseCost: 12_000,      costCoefficient: 1.16, productionTime: 1000, productionAmount: 140,    era: 1 },
+  { id: "hatchery",    name: "Mega-Hatchery",    emoji: "🏭",  blurb: "We ran the numbers. The numbers said: more ducks.",        baseCost: 170_000,     costCoefficient: 1.17, productionTime: 1000, productionAmount: 1200,   era: 2 },
+  { id: "datapond",    name: "Data Pond",        emoji: "🛰️",  blurb: "Every duck teaches the next. Quack quality is improving.",  baseCost: 2_800_000,   costCoefficient: 1.17, productionTime: 1000, productionAmount: 12000,  era: 2 },
+  { id: "recursive",   name: "Recursive Drake",  emoji: "♾️",  blurb: "A duck that makes ducks that make ducks. We're so back.",  baseCost: 36_000_000,    costCoefficient: 1.18, productionTime: 1000, productionAmount: 93000,  era: 3 },
+  { id: "singularity", name: "Quack Singularity", emoji: "🌀", blurb: "Habitat is now a rounding error. Australia volunteered.",  baseCost: 450_000_000, costCoefficient: 1.19, productionTime: 1000, productionAmount: 700000, era: 3 },
 ];

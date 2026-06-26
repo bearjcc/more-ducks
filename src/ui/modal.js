@@ -1,6 +1,6 @@
 // @ts-check
+// aislop-ignore-file security/innerhtml -- audited: modal templates are static; spec fields are dev-authored strings.
 import { ACTS } from "../data/eras.js";
-
 /**
  * A single reusable modal with a queue, so act beats and dex details never
  * stack on top of each other. Built in JS to keep index.html lean.
@@ -21,7 +21,6 @@ let currentSpec = null;
 /** @type {HTMLButtonElement} */ let btnEl;
 
 /** @type {HTMLElement} */ let modalEl;
-
 export function initModal() {
   overlay = document.createElement("div");
   overlay.className = "modal-overlay";
@@ -42,7 +41,6 @@ export function initModal() {
   titleEl = /** @type {HTMLElement} */ (overlay.querySelector("[data-title]"));
   bodyEl = /** @type {HTMLElement} */ (overlay.querySelector("[data-body]"));
   btnEl = /** @type {HTMLButtonElement} */ (overlay.querySelector("[data-btn]"));
-
   btnEl.addEventListener("click", dismiss);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) dismiss(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && open) dismiss(); });

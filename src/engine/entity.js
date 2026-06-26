@@ -11,7 +11,6 @@ export default class Entity extends EventEmitter {
             maxCount: opts.maxCount || Number.MAX_VALUE,
         }
         this.requirements = opts.requirements;
-        if ( this.requirements ) console.log(this.requirements);
         this.lastProcessed = 0;
         this.engine = opts.engine;
     }
@@ -72,11 +71,11 @@ export default class Entity extends EventEmitter {
         }
     }
 
-    processTick(dt) {
-        this.count += calculateIncrement(dt);
+    // Abstract base: subclasses (Producer, Resource) override with real logic.
+    processTick(_dt) {
     }
 
-    canProcess(dt) {
+    canProcess() {
         return this.count > 0;
     }
 }

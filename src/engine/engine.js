@@ -25,7 +25,6 @@ export default class ContinuumEngine {
         this.activeModifiers = [];
         this.numberFormatter = formatDictionaryNumber;
         this.autosavePeriod = 0;
-        console.log("%c %c Continuum Engine ready", "font-size: 12px;background: blue; color: white", "font-size: 12px; background: white; color: black;");
     }
 
     createCurrency(type, initialValue) {
@@ -129,8 +128,7 @@ export default class ContinuumEngine {
             if (dt - this.lastTick > 50 ) {
                 this.processProducers(dt);
                 this.processResources(dt);
-                this.processModifiers(dt);
-                // store the last tick that we did processing on
+                this.processModifiers();
                 this.lastTick = dt;
             }
         } else {
@@ -178,35 +176,31 @@ export default class ContinuumEngine {
         let state = window.localStorage.getItem('state');
 
         if (state) {
-            try {
-                state = JSON.parse(state);
-                for (const prop in state) {
-                    switch (prop) {
-                        case "currencies":
-                            for (const curr in state[prop]) {
-                                this.currencies[curr].deserialise(state[prop][curr]);
-                            }
-                            break;
+            state = JSON.parse(state);
+            for (const prop in state) {
+                switch (prop) {
+                    case "currencies":
+                        for (const curr in state[prop]) {
+                            this.currencies[curr].deserialise(state[prop][curr]);
+                        }
+                        break;
 
-                        case "resources":
-                            for (const res in state[prop]) {
-                                this.resources[res].deserialise(state[prop][res]);
-                            }
-                            break;
+                    case "resources":
+                        for (const res in state[prop]) {
+                            this.resources[res].deserialise(state[prop][res]);
+                        }
+                        break;
 
-                        case "producers":
-                            for (const prod in state[prop]) {
-                                this.producers[prod].deserialise(state[prop][prod]);
-                            }
-                            break;
+                    case "producers":
+                        for (const prod in state[prop]) {
+                            this.producers[prod].deserialise(state[prop][prod]);
+                        }
+                        break;
 
-                        default:
-                            this[prop] = state[prop];
-                            break;
-                    }
+                    default:
+                        this[prop] = state[prop];
+                        break;
                 }
-            } catch (e) {
-                throw e;
             }
         }
     }
@@ -227,19 +221,17 @@ export default class ContinuumEngine {
         }
     }
 
-    processModifiers(dt) {
+    processModifiers() {
         let modifier;
         for ( let i = this.activeModifiers.length-1; i >= 0; i-- ) {
             modifier = this.activeModifiers[i];
             if (modifier.expiresAt < Date.now()) {
-                // deactivate the modifier
                 for (const producer in this.producers) {
                     this.modifiers[modifier.key].remove("producer", this.producers[producer]);
                 }
                 for (const resource in this.resources) {
                     this.modifiers[modifier.key].remove("resource", this.resources[resource]);
                 }
-                // remove the modifier from the active modifiers list
                 this.activeModifiers.splice(i, 1);
             }
         }

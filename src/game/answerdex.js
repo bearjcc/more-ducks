@@ -1,17 +1,18 @@
 // @ts-check
-import { QUACKS } from "../data/quacks.js";
+import { BASIC_ANSWERS, isCollectibleAnswer } from "../data/quacks.js";
 
-/** All discoverable base quack strings (table entries). */
-export const ANSWERDEX_TOTAL = QUACKS.length;
+/** Collectible answers in the Answerdex (profession emoji + rares). */
+export const ANSWERDEX_TOTAL = BASIC_ANSWERS.filter(([t]) => isCollectibleAnswer(t)).length;
 
 /**
  * @param {import("./meta.js").Meta} meta
- * @param {string} baseQuack
+ * @param {string} baseAnswer
  * @returns {boolean} true if newly discovered
  */
-export function recordAnswerdex(meta, baseQuack) {
-  if (!baseQuack || meta.answerdexSeen.includes(baseQuack)) return false;
-  meta.answerdexSeen.push(baseQuack);
+export function recordAnswerdex(meta, baseAnswer) {
+  if (!baseAnswer || !isCollectibleAnswer(baseAnswer)) return false;
+  if (meta.answerdexSeen.includes(baseAnswer)) return false;
+  meta.answerdexSeen.push(baseAnswer);
   return true;
 }
 
@@ -24,9 +25,12 @@ export function answerdexCount(meta) {
 }
 
 /**
- * @param {string} baseQuack
+ * @param {string} baseAnswer
  * @returns {boolean}
  */
-export function isCatalogQuack(baseQuack) {
-  return QUACKS.some(([text]) => text === baseQuack);
+export function isCatalogAnswer(baseAnswer) {
+  return BASIC_ANSWERS.some(([text]) => text === baseAnswer);
 }
+
+/** @deprecated use isCatalogAnswer */
+export const isCatalogQuack = isCatalogAnswer;

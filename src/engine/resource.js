@@ -20,7 +20,7 @@ export default class Resource extends Entity {
         return null;
     }
 
-    processTick(dt) {
+    processTick() {
         if (this.calculated && typeof this.calculated === "object") {
             let obj;
             const source = this.calculated.source;

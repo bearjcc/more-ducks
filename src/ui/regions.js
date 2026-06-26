@@ -1,18 +1,11 @@
 // @ts-check
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (REGIONS data, emoji).
 import { formatNumber } from "../game/format.js";
 import { REGIONS } from "../data/regions.js";
 import {
-  findRegion,
-  floodAustralia,
-  rentRegion,
-  unlockRegion,
-  deploySaltwater,
-  deploySpace,
   totalRentPerDay,
 } from "../game/regions.js";
 import { flashCard } from "./render.js";
-
-/** @type {HTMLElement|null} */ let sectionEl = null;
 /** @type {HTMLElement|null} */ let listEl = null;
 /** @type {(id: string, action: string) => boolean} */ let onAction = () => false;
 
@@ -20,7 +13,6 @@ import { flashCard } from "./render.js";
  * @param {{ onAction: (id: string, action: string) => boolean }} handlers
  */
 export function initRegions(handlers) {
-  sectionEl = document.getElementById("regions-section");
   listEl = document.getElementById("region-list");
   onAction = handlers.onAction;
 }
@@ -29,16 +21,16 @@ export function initRegions(handlers) {
  * @param {{ engine: any, meta: import("../game/meta.js").Meta, era: number }} ctx
  */
 export function updateRegions(ctx) {
-  if (!listEl || !sectionEl) return;
-  const show = ctx.era >= 4;
-  sectionEl.hidden = !show;
-  if (!show) return;
+  if (!listEl) return;
+  if (ctx.era < 4) {
+    listEl.replaceChildren();
+    return;
+  }
 
   listEl.replaceChildren();
   for (const r of REGIONS) {
     if (r.id === "home") continue;
     if (ctx.era < r.era) continue;
-
     const li = document.createElement("li");
     li.className = "card";
     const unlocked = ctx.meta.regionsUnlocked.includes(r.id);
@@ -47,7 +39,6 @@ export function updateRegions(ctx) {
     const salt = r.id === "ocean" && ctx.meta.saltwaterDeployed;
     const orbital = r.id === "space" && ctx.meta.spaceDeployed;
     const saltwaterGate = r.requiresSaltwater && !ctx.meta.saltwaterDeployed;
-
     let action = "";
     let actionLabel = "";
     if (saltwaterGate) {
@@ -79,7 +70,6 @@ export function updateRegions(ctx) {
       (action
         ? `<button class="card__buy" type="button" data-region="${r.id}" data-action="${action}">${actionLabel}</button>`
         : `<span class="card__owned">✓</span>`);
-
     const btn = li.querySelector(".card__buy");
     if (btn) {
       btn.addEventListener("click", () => {

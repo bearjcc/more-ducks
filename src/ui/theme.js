@@ -55,11 +55,9 @@ export function applyTimeOfDay(pref) {
   const instant = !themeBooted;
   themeBooted = true;
   if (instant) document.documentElement.classList.add("theme-instant");
-
   const resolved = resolveTimeOfDay(pref);
   document.documentElement.dataset.time = resolved;
   document.documentElement.style.colorScheme = resolved === "night" ? "dark" : "light";
-
   if (instant) {
     syncThemeColor();
     requestAnimationFrame(() => document.documentElement.classList.remove("theme-instant"));
@@ -67,7 +65,6 @@ export function applyTimeOfDay(pref) {
     scheduleThemeColorSync();
   }
   updateTimeToggle(resolved);
-
   if (pref === "system") {
     if (!darkMq && typeof matchMedia === "function") {
       darkMq = matchMedia("(prefers-color-scheme: dark)");

@@ -1,14 +1,15 @@
 // @ts-check
 import { COMPETITOR_BIRDS, COMPETITOR_MS, ENDINGS, HORIZONTAL_CAPSTONE, VERTICAL_CAPSTONE } from "../data/endings.js";
 import { hasRentedRegions } from "./regions.js";
+import { upgradeLevel } from "./levels.js";
 
 /**
  * @param {import("./meta.js").Meta} meta
  * @returns {boolean}
  */
 export function hasCapstone(meta) {
-  return meta.upgradesOwned.includes(VERTICAL_CAPSTONE)
-    || meta.upgradesOwned.includes(HORIZONTAL_CAPSTONE)
+  return upgradeLevel(meta, VERTICAL_CAPSTONE) >= 1
+    || upgradeLevel(meta, HORIZONTAL_CAPSTONE) >= 1
     || meta.spaceDeployed;
 }
 
@@ -23,8 +24,8 @@ export function checkEndings(engine, meta) {
   const coins = engine.currency("coins")?.value ?? 0;
   if (coins < 0 && hasRentedRegions(meta)) return "bankrupt";
 
-  if (meta.upgradesOwned.includes(VERTICAL_CAPSTONE)) return "singularity";
-  if (meta.upgradesOwned.includes(HORIZONTAL_CAPSTONE)) return "swarm";
+  if (upgradeLevel(meta, VERTICAL_CAPSTONE) >= 1) return "singularity";
+  if (upgradeLevel(meta, HORIZONTAL_CAPSTONE) >= 1) return "swarm";
   if (meta.spaceDeployed) return "space";
 
   const elapsed = Date.now() - (meta.gameStartMs || Date.now());

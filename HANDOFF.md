@@ -137,12 +137,12 @@ Priority-ordered for next agent:
 
 1. ~~**Quack tiers + tests** — remove comprehensive-analysis tier; gate meta questions late; align tests with QLM.~~ **Done (Milestone 1):** corporate tier removed, meta questions gated to era 4+, tests realigned in `scripts/quack.test.mjs`.
 2. ~~**Finale** — endings are capstone purchases + orbital deploy; remove leftover hitchhiker dead code.~~ **Done (Milestone 2, Option B):** dropped `ENDINGS.hitchhiker` and its UI branch; the 5 hidden endings (bankrupt / singularity / swarm / space / competitor) are the finale. The `FINAL_ANSWER` punchline lives on the singularity ending.
-3. **HUD / header** — reduce contrast seam between `.hud` and `.stage`; match DESIGN.md (gradient overlay, shared `--surface`).
+3. ~~**HUD / header** — reduce contrast seam between `.hud` and `.stage`; match DESIGN.md (gradient overlay, shared `--surface`).~~ **Done (Milestone 3):** gradient HUD fade, shared stage surface, feed hint on portrait, landscape phone sheet layout.
 4. **Progression pacing** — delay producers / Ads until upgrades land; verify unlock order matches § early-game loop above.
 5. **Naming cleanup** — `crumbMult` → `coinMult` or `revenueMult` in code (player-facing is already coins).
 6. **Overlap audit** — one coherent path for: feed gate vs auto feeder vs passive answers vs manual send; document in code comments where needed.
 7. **Regional duck species** — regions exist; Duckdex breeds are not yet tied to region unlocks per vision.
-8. **Landscape polish** — verify chat + dock on phone landscape (design center per Bear).
+8. ~~**Landscape polish** — verify chat + dock on phone landscape (design center per Bear).~~ **Done (Milestone 3.3):** chat-first layout extends to `(orientation: landscape) and (max-height: 520px)`.
 9. **Remove stale UI spec** — DESIGN.md previously described stage quack FAB and hero-in-stage; stage is chat-only now.
 
 ---
@@ -154,6 +154,7 @@ cd more-ducks
 npm install
 npm run serve          # static server :8000
 npm test               # node:test suite
+npm run readability    # HUD contrast + no text-shadow on counters (day/night, all eras)
 npm run typecheck
 npm run sim            # balance sim
 ```

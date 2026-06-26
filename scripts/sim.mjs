@@ -1,4 +1,8 @@
+// aislop-ignore-file ai-slop/console-leftover -- CLI report tool; console output is the product.
 // Balance simulator for More Ducks! — NOT shipped, NOT imported by the game.
+// Intentionally one file: it owns a single block of mutable sim state (ducks, coins,
+// hype, owned maps) touched by every function below. Splitting would scatter that state
+// across modules for no readability gain. Cohesive + self-contained beats artificial seams.
 // Mirrors main.js market loop (demand/supply/hype/efficiency/coherence) with a
 // rational-player buying policy, then reports wall-clock time to each act and
 // finale-ready. Target: ~6–8 h for a medium-engagement player (economy.md §1).
@@ -8,26 +12,32 @@
 //
 import { PRODUCERS } from "../src/data/producers.js";
 import { UPGRADES } from "../src/data/upgrades.js";
-import { RESEARCH_UPGRADES } from "../src/data/research.js";
+import { bulkScaledCost } from "../src/game/scaledCost.js";
 import { HYPE_CAMPAIGNS } from "../src/data/hype.js";
+import {
+  campaignNextCost,
+  campaignHypeGain,
+  maxMarketingLevel,
+} from "../src/game/hype.js";
 import { ACTS } from "../src/data/eras.js";
 import { DUCKS } from "../src/data/ducks.js";
 import {
   ANSWERS_PER_DUCK_PER_SEC,
   BASE_DEMAND,
+  BUZZ_PER_DUCK,
+  BUZZ_EXPONENT,
   COIN_PER_ANSWER,
-  COHERENCE_RESEARCH_THRESHOLD,
+  COHERENCE_ANSWERS_THRESHOLD,
   HYPE_DECAY_PER_SEC,
   HYPE_FACTOR,
-  RESEARCH_PER_ANSWER,
   coherenceValueMult,
   servedPerSecond,
 } from "../src/game/market.js";
 import { actForStats } from "../src/game/progression.js";
 import { dexMods, effectiveCoherence } from "../src/game/dexMods.js";
 
-const TARGET_HOURS_MIN = 6;
-const TARGET_HOURS_MAX = 8;
+const TARGET_HOURS_MIN = 2;
+const TARGET_HOURS_MAX = 3;
 
 // Multiply every act duck threshold (answers thresholds stay fixed).
 const ACT_DUCK_SCALE = Number(process.env.ERASCALE ?? 1);
@@ -57,17 +67,19 @@ function dhms(sec) {
 
 // ---- state -------------------------------------------------------------
 const owned = Object.fromEntries(PRODUCERS.map((p) => [p.id, 0]));
-const upOwned = new Set();
-/** @type {{ upgradesOwned: string[], dexUnlocked: string[], coherence: number }} */
-const meta = { upgradesOwned: [], dexUnlocked: [], coherence: 0 };
+/** @type {Record<string, number>} */
+const upLevels = {};
+/** @type {Record<string, number>} */
+const marketingLevels = {};
+/** @type {{ upgradeLevels: Record<string, number>, marketingLevels: Record<string, number>, dexUnlocked: string[], coherence: number }} */
+const meta = { upgradeLevels: upLevels, marketingLevels, dexUnlocked: [], coherence: 0 };
 
 let ducks = 1;
 let lifetimeDucks = 1;
+let pondCount = 0; // capacity.js: each pond +DUCKS_PER_POND to the supply cap
 let answersTotal = 0;
 let coins = 0;
-let research = 0;
 let hype = 0;
-let researchSpent = 0;
 let era = 0;
 let t = 0;
 
@@ -75,20 +87,49 @@ function actThreshold(a) {
   return { ducks: a.duckThreshold * ACT_DUCK_SCALE, answers: a.answersThreshold };
 }
 
+const DEFAULT_MAX_LEVEL = 25;
+
+function maxUpLevel(u) {
+  if (u.purchaseMode === "once") return 1;
+  if (u.purchaseMode === "quantity") return Infinity;
+  return u.maxLevel ?? DEFAULT_MAX_LEVEL;
+}
+
+function stackedMult(targetMult, level, maxLevel) {
+  if (level <= 0) return 1;
+  return targetMult ** (level / maxLevel);
+}
+
+function upgradeLevel(id) {
+  return upLevels[id] ?? 0;
+}
+
+function upgradeNextCost(u, level) {
+  if (u.purchaseMode === "once") return level >= 1 ? Infinity : u.baseCost;
+  return bulkScaledCost(u.baseCost, u.costCoefficient ?? 1.15, level, 1);
+}
+
 function recomputeMods() {
-  let clickAdd = 0, clickMult = 1, crumbMult = 1, globalMult = 1, efficiencyMult = 1;
+  let clickAdd = 0, clickMult = 1, crumbMult = 1, globalMult = 1, efficiencyMult = 1, pondCapacityBonus = 0;
   /** @type {Record<string, number>} */
   const perProducer = {};
-  for (const u of [...UPGRADES, ...RESEARCH_UPGRADES]) {
-    if (!upOwned.has(u.id)) continue;
+  for (const u of UPGRADES) {
+    const level = upgradeLevel(u.id);
+    if (level <= 0) continue;
+    const cap = maxUpLevel(u);
     const e = u.effect;
     switch (e.kind) {
-      case "clickAdd": clickAdd += e.amount; break;
-      case "clickMult": clickMult *= e.mult; break;
-      case "crumbMult": crumbMult *= e.mult; break;
-      case "globalMult": globalMult *= e.mult; break;
-      case "producerMult": perProducer[e.target] = (perProducer[e.target] || 1) * e.mult; break;
-      case "efficiencyMult": efficiencyMult *= e.mult; break;
+      case "clickAdd": clickAdd += e.amount * level; break;
+      case "clickMult": clickMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
+      case "crumbMult": crumbMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
+      case "globalMult": globalMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
+      case "producerMult": {
+        const m = stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap);
+        perProducer[e.target] = (perProducer[e.target] || 1) * m;
+        break;
+      }
+      case "efficiencyMult": efficiencyMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
+      case "pondCapacity": pondCapacityBonus += e.amount * level; break;
     }
   }
   const dex = dexMods(meta);
@@ -97,6 +138,7 @@ function recomputeMods() {
     crumbMult,
     globalMult: globalMult * dex.produceMult,
     efficiencyMult,
+    pondCapacityBonus,
     perProducer,
     dex,
   };
@@ -116,26 +158,38 @@ function dps(mods) {
 }
 
 function coherence(mods) {
-  const earned = research + researchSpent;
-  meta.coherence = Math.min(1, earned / COHERENCE_RESEARCH_THRESHOLD);
+  meta.coherence = Math.min(1, answersTotal / COHERENCE_ANSWERS_THRESHOLD);
   return effectiveCoherence(meta, mods.dex);
 }
 
 function marketDemand(mods) {
-  return BASE_DEMAND + mods.dex.questionIntake + HYPE_FACTOR * hype;
+  const liveDucks = Math.min(ducks, pondCapacity(mods));
+  const buzz = BUZZ_PER_DUCK * Math.pow(Math.max(0, liveDucks), BUZZ_EXPONENT);
+  return BASE_DEMAND + buzz + mods.dex.questionIntake + HYPE_FACTOR * hype;
+}
+
+// capacity.js: supply is gated by pond capacity, NOT raw duck output. Ducks are
+// clamped to this cap every tick; lifetime production (acts/dex) is uncapped.
+const BASE_POND_CAPACITY = 12;
+const DUCKS_PER_POND = 50;
+const FLOCK_HEADROOM = 1.15; // cap tracks the flock (capacity.js) — flock drives supply
+function pondCapacity(mods) {
+  const pondRoom = BASE_POND_CAPACITY + (1 + pondCount) * DUCKS_PER_POND + (mods.pondCapacityBonus || 0);
+  const flockRoom = Math.ceil(lifetimeDucks * FLOCK_HEADROOM);
+  return Math.max(pondRoom, flockRoom);
+}
+function pondCost() {
+  return Math.floor(5000 * Math.pow(2.2, pondCount));
 }
 
 function marketSupply(mods) {
-  return ducks * ANSWERS_PER_DUCK_PER_SEC * mods.efficiencyMult;
+  const live = Math.min(ducks, pondCapacity(mods)); // clamped count, not raw output
+  return live * ANSWERS_PER_DUCK_PER_SEC * mods.efficiencyMult;
 }
 
 function coinGainPerServed(served, mods) {
   const c = coherence(mods);
   return served * COIN_PER_ANSWER * coherenceValueMult(c) * mods.crumbMult / mods.dex.coinUpkeep;
-}
-
-function researchGainPerServed(served, mods) {
-  return served * RESEARCH_PER_ANSWER / mods.dex.researchUpkeep;
 }
 
 function nextCost(p) {
@@ -152,7 +206,7 @@ function isDexUnlocked(d) {
     case "era": return era >= u.value;
     case "ducks": return lifetimeDucks >= u.value;
     case "producer": return owned[u.id] >= u.count;
-    case "upgrade": return upOwned.has(u.id);
+    case "upgrade": return upgradeLevel(u.id) >= 1;
     default: return false;
   }
 }
@@ -165,7 +219,8 @@ function checkDex() {
       if (dexReached[d.id] === undefined) dexReached[d.id] = t;
     }
   }
-  meta.upgradesOwned = [...upOwned];
+  meta.upgradeLevels = { ...upLevels };
+  meta.marketingLevels = { ...marketingLevels };
 }
 
 function advanceEra() {
@@ -173,22 +228,6 @@ function advanceEra() {
 }
 
 // ---- buying policy -----------------------------------------------------
-function buyResearchUpgrades() {
-  let bought = true;
-  while (bought) {
-    bought = false;
-    for (const u of RESEARCH_UPGRADES) {
-      if (upOwned.has(u.id) || u.era > era) continue;
-      if (research >= u.cost) {
-        research -= u.cost;
-        researchSpent += u.cost;
-        upOwned.add(u.id);
-        bought = true;
-      }
-    }
-  }
-}
-
 function buyCoinUpgrades() {
   const dexUpgradeIds = new Set(
     DUCKS.filter((d) => d.unlock.type === "upgrade").map((d) => d.unlock.id),
@@ -196,16 +235,18 @@ function buyCoinUpgrades() {
   const order = [...UPGRADES].sort((a, b) => {
     const aDex = dexUpgradeIds.has(a.id) ? 0 : 1;
     const bDex = dexUpgradeIds.has(b.id) ? 0 : 1;
-    return aDex - bDex || a.cost - b.cost;
+    return aDex - bDex || a.baseCost - b.baseCost;
   });
   let bought = true;
   while (bought) {
     bought = false;
     for (const u of order) {
-      if (upOwned.has(u.id) || u.era > era) continue;
-      if (coins >= u.cost) {
-        coins -= u.cost;
-        upOwned.add(u.id);
+      const level = upgradeLevel(u.id);
+      if (level >= maxUpLevel(u) || u.era > era) continue;
+      const cost = upgradeNextCost(u, level);
+      if (coins >= cost) {
+        coins -= cost;
+        upLevels[u.id] = level + 1;
         bought = true;
       }
     }
@@ -216,22 +257,32 @@ function buyCoinUpgrades() {
 function buyHypeCampaigns(mods) {
   const supply = marketSupply(mods);
   const intake = mods.dex.questionIntake;
-  const targetDemand = Math.min(supply, Math.max(BASE_DEMAND + intake, supply * 0.88));
+  // Demand chases just above supply so the capped flock never strands answers;
+  // buyPonds then raises the cap to meet demand — the two ratchet up together.
+  const targetDemand = Math.max(BASE_DEMAND + intake, supply * 1.1);
   const targetHype = Math.max(0, (targetDemand - BASE_DEMAND - intake) / HYPE_FACTOR);
   if (hype >= targetHype * 0.85) return;
 
-  // ponytail: cap 3 launches/tick — enough to chase demand without instant max hype
+  // cap 3 launches/tick — enough to chase demand without instant max hype.
+  // Realistic player: buy the biggest campaign you can afford (most hype per tap),
+  // not the cheapest — otherwise demand never catches a runaway supply.
   for (let i = 0; i < 3 && hype < targetHype * 0.85; i++) {
     let best = null;
-    let bestRatio = 0;
+    let bestGain = 0;
     for (const c of HYPE_CAMPAIGNS) {
-      if (c.era > era || coins < c.cost) continue;
-      const ratio = c.hypeGain / c.cost;
-      if (ratio > bestRatio) { bestRatio = ratio; best = c; }
+      if (c.era > era) continue;
+      const lvl = marketingLevels[c.id] ?? 0;
+      if (lvl >= maxMarketingLevel(c)) continue;
+      const cost = campaignNextCost(c, lvl);
+      if (coins < cost) continue;
+      const gain = campaignHypeGain(c, lvl + 1);
+      if (gain > bestGain) { bestGain = gain; best = c; }
     }
     if (!best) break;
-    coins -= best.cost;
-    hype += best.hypeGain;
+    const lvl = marketingLevels[best.id] ?? 0;
+    coins -= campaignNextCost(best, lvl);
+    marketingLevels[best.id] = lvl + 1;
+    hype += campaignHypeGain(best, lvl + 1);
   }
 }
 
@@ -248,7 +299,7 @@ function buyDexGateProducers() {
   }
 }
 
-function buyProducers(mods) {
+function buyProducers() {
   let bought = true;
   while (bought) {
     bought = false;
@@ -271,12 +322,29 @@ function buyProducers(mods) {
   }
 }
 
+/** Raise the supply cap while supply is the binding constraint on coin income. */
+function buyPonds(mods) {
+  // Only worth it when the flock has filled the current cap AND supply < demand
+  // (otherwise extra capacity sells nothing). Mirrors a player buying ponds to
+  // monetize demand they can't currently serve.
+  let bought = true;
+  while (bought) {
+    bought = false;
+    const atCap = ducks >= pondCapacity(mods) - 1e-6;
+    if (atCap && marketSupply(mods) < marketDemand(mods) * 0.98 && coins >= pondCost()) {
+      coins -= pondCost();
+      pondCount++;
+      bought = true;
+    }
+  }
+}
+
 function buyStuff(mods) {
-  buyResearchUpgrades();
   buyCoinUpgrades();
   buyDexGateProducers();
   buyHypeCampaigns(mods);
-  buyProducers(mods);
+  buyPonds(mods);
+  buyProducers();
 }
 
 function decayHype(dt, mods) {
@@ -300,16 +368,16 @@ while (t < CAP) {
     const taps = CLICK_RATE * DT;
     const c = coherence(mods);
     const coinTap = COIN_PER_ANSWER * coherenceValueMult(c) * mods.crumbMult / mods.dex.coinUpkeep;
-    const researchTap = RESEARCH_PER_ANSWER / mods.dex.researchUpkeep;
     coins += coinTap * taps;
-    research += researchTap * taps;
     answersTotal += taps;
   }
 
-  // Producer output → duck population (supply capacity).
+  // Producer output → duck population. Lifetime (acts/dex) counts full output;
+  // the live count is clamped to pond capacity (main.js clampDucksToCapacity).
   const duckGain = dps(mods) * DT;
   ducks += duckGain;
   lifetimeDucks += duckGain;
+  ducks = Math.min(ducks, pondCapacity(mods));
 
   checkDex();
   const mods2 = recomputeMods();
@@ -320,7 +388,6 @@ while (t < CAP) {
   const served = servedPerSecond(supply, demand) * DT;
 
   coins += coinGainPerServed(served, mods2);
-  research += researchGainPerServed(served, mods2);
   answersTotal += served;
 
   advanceEra();
@@ -329,9 +396,13 @@ while (t < CAP) {
   buyStuff(mods2);
 
   // First capstone upgrade (vertical or horizontal ending).
-  if (finaleAt === null && (upOwned.has("selfgoverning") || upOwned.has("oceanswarm"))) {
+  if (finaleAt === null && (upgradeLevel("selfgoverning") >= 1 || upgradeLevel("oceanswarm") >= 1)) {
     finaleAt = t;
     break;
+  }
+  if (process.env.TRACE && t % (Number(process.env.TRACE) || 3600) === 0) {
+    const m = recomputeMods();
+    console.error(`t=${(t / 3600).toFixed(0)}h  lifeDucks=${fmt(lifetimeDucks)}  answers=${fmt(answersTotal)}  coins=${fmt(coins)}  supply=${fmt(marketSupply(m))}  demand=${fmt(marketDemand(m))}  era=${era}`);
   }
   t += DT;
 }
@@ -353,19 +424,19 @@ for (const a of ACTS) {
 
 console.log();
 const allProducers = PRODUCERS.every((p) => owned[p.id] > 0);
-const allUpgrades = UPGRADES.every((u) => upOwned.has(u.id));
-const allResearch = RESEARCH_UPGRADES.every((u) => upOwned.has(u.id));
+const upOwnedCount = UPGRADES.filter((u) => upgradeLevel(u.id) > 0).length;
+console.log(`100% completion: producers ${allProducers ? "all" : "partial"}, upgrades ${upOwnedCount}/${UPGRADES.length}`);
 console.log(`Capstone ending @ ${finaleAt === null ? "NOT within cap" : dhms(finaleAt)} (selfgoverning or oceanswarm)`);
 if (finaleH !== null) {
   const status = inTarget ? "IN TARGET" : finaleH < TARGET_HOURS_MIN ? "TOO FAST" : "TOO SLOW";
   console.log(`Arc estimate: ${finaleH.toFixed(2)} h — ${status}`);
 }
-console.log(`100% completion: producers ${allProducers ? "all" : "partial"}, coin upgrades ${UPGRADES.filter((u) => upOwned.has(u.id)).length}/${UPGRADES.length}, research ${RESEARCH_UPGRADES.filter((u) => upOwned.has(u.id)).length}/${RESEARCH_UPGRADES.length}`);
 
 const finalMods = recomputeMods();
 console.log(`\nfinal: ducks=${fmt(ducks)}, lifetime=${fmt(lifetimeDucks)}, answers=${fmt(answersTotal)}`);
 console.log(`market: supply=${fmt(marketSupply(finalMods))}/s, demand=${fmt(marketDemand(finalMods))}/s, hype=${fmt(hype)}`);
-console.log(`coins=${fmt(coins)}, research=${fmt(research)}, coherence=${coherence(finalMods).toFixed(2)}`);
+console.log(`ponds=${pondCount} (cap=${fmt(pondCapacity(finalMods))} ducks), live ducks=${fmt(Math.min(ducks, pondCapacity(finalMods)))}`);
+console.log(`coins=${fmt(coins)}, coherence=${coherence(finalMods).toFixed(2)}`);
 console.log(`owned producers: ${PRODUCERS.map((p) => p.id + "×" + owned[p.id]).join(", ")}`);
 console.log(`dex: ${meta.dexUnlocked.length}/${DUCKS.length}`);
 const lateDex = DUCKS.filter((d) => dexReached[d.id] !== undefined)

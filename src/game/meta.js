@@ -5,7 +5,7 @@
  * state by save.js.
  *
  * @typedef {object} Settings
- * @property {"word"|"compact"|"scientific"} notation
+ * @property {"suffix"|"scientific"} notation
  * @property {boolean|null} reduceMotion  null = follow system preference
  * @property {"day"|"night"|"system"} timeOfDay
  * @property {boolean} sfx
@@ -15,8 +15,8 @@
  * @property {number} clickPower      Legacy; hold-repeat replaces click hatch.
  * @property {number} era             Current era index (0-based).
  * @property {string[]} dexUnlocked   Ids of catalogued duck breeds.
- * @property {string[]} upgradesOwned Ids of purchased upgrades.
- * @property {string[]} quackmarksOwned Certified benchmark ids.
+ * @property {Record<string, number>} upgradeLevels  Per-upgrade level or quantity count.
+ * @property {Record<string, number>} marketingLevels Per-campaign level or quantity count.
  * @property {Record<string, boolean>} flags  One-shot narrative/milestone flags.
  * @property {string[]} achievements  Toast milestones already shown.
  * @property {number} totalDucksEver  Lifetime ducks produced (for milestones).
@@ -25,8 +25,6 @@
  * @property {number} answersTotal       Lifetime answers (distinct from questionsAnswered taps).
  * @property {number} demand             Runtime market demand (recomputed each tick).
  * @property {boolean} ponderingUnlocked Whether the pondering layer is unlocked.
- * @property {number} citations          Prestige currency banked across runs (+income mult).
- * @property {number} prestigeCount      Number of prestige resets completed.
  * @property {number} answersSinceFeed   Answers since last manual feed.
  * @property {number} manualFeeds        Lifetime manual duck feeds (onboarding).
  * @property {boolean} autoFeederOwned   Auto feeder removes feed gate, adds opex.
@@ -50,7 +48,7 @@
 /** @returns {Settings} */
 export function defaultSettings() {
   return {
-    notation: "word",
+    notation: "suffix",
     reduceMotion: null,
     timeOfDay: "system",
     sfx: true,
@@ -64,8 +62,8 @@ export function defaultMeta() {
     clickPower: 1,
     era: 0,
     dexUnlocked: [],
-    upgradesOwned: [],
-    quackmarksOwned: [],
+    upgradeLevels: {},
+    marketingLevels: {},
     flags: {},
     achievements: [],
     totalDucksEver: 1,
@@ -74,8 +72,6 @@ export function defaultMeta() {
     answersTotal: 0,
     demand: 0,
     ponderingUnlocked: false,
-    citations: 0,
-    prestigeCount: 0,
     answersSinceFeed: 0,
     manualFeeds: 0,
     autoFeederOwned: false,
@@ -103,5 +99,7 @@ export function defaultMeta() {
  * @returns {Settings}
  */
 export function mergeSettings(saved) {
-  return { ...defaultSettings(), ...saved };
+  const merged = { ...defaultSettings(), ...saved };
+  merged.notation = saved?.notation === "scientific" ? "scientific" : "suffix";
+  return merged;
 }

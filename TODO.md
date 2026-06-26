@@ -25,9 +25,9 @@ Economy refactor (Milestones A–H) is **complete**. This list is **vision align
 
 ## Milestone 3 — UI cohesion
 
-- [ ] **3.1 HUD blends into chat.** Soften `.hud` vs `.stage` seam per DESIGN.md: shared surface color, gradient fade, no hard border. Reference Tap Titans 2 + mobile LLM apps. Files: `styles/main.css`, maybe `index.html`.
-- [ ] **3.2 Feed hint visible on portrait.** `.feed-hint` is `display: none !important` in portrait CSS — restore when `needsFeed(meta)` so feed gate is discoverable. Files: `main.css`, `chat.js` / `render.js`.
-- [ ] **3.3 Landscape pass.** Phone landscape: chat thread + bottom-tray + dock usable one-thumb. Files: `main.css`. Done-when: manual check at ~844×390 or similar.
+- [x] **3.1 HUD blends into chat.** Base `.hud` uses gradient fade into `--surface` (no hard border); `.stage` shares the same tinted surface. Portrait overlay HUD unchanged. Files: `styles/main.css`.
+- [x] **3.2 Feed hint visible on portrait.** Removed `display: none !important` on `.feed-hint`; hungry state shows pulsing hint above composer (`duck-hungry` + `[hidden]` toggle). Files: `main.css`, `chat.js`.
+- [x] **3.3 Landscape pass.** Extended chat-first breakpoint to `(orientation: landscape) and (max-height: 520px)` so phone landscape (~844×390) gets sheet layout; nested landscape tweaks: 40dvh sheet, dock tab labels, safe-area insets. Files: `main.css`.
 
 ## Milestone 4 — Progression pacing
 

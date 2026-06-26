@@ -1,129 +1,135 @@
 // @ts-check
-import { formatNumber } from "../game/format.js";
-import { ALL_UPGRADES } from "../game/upgrades.js";
-import { purchaseRevealed } from "../game/unlocks.js";
-import { flashCard } from "./render.js";
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (ALL_UPGRADES data, emoji).
 
+import { formatNumber } from "../game/format.js";
+import { ALL_UPGRADES, upgradeNextCost, upgradeAtCap, maxLevelFor } from "../game/upgrades.js";
+import { purchaseRevealed } from "../game/unlocks.js";
+import { upgradeLevel } from "../game/levels.js";
+import { flashCard } from "./render.js";
 /**
  * @typedef {object} UpgRefs
  * @property {HTMLElement} root
+ * @property {HTMLElement} title
+ * @property {HTMLElement} count
  * @property {HTMLElement} cost
  * @property {HTMLButtonElement} btn
- * @property {boolean} ownedShown
  */
 
 /** @type {Map<string, UpgRefs>} */
+
 const cards = new Map();
 
-/** @type {HTMLElement|null} */ let coinListEl = null;
-/** @type {HTMLElement|null} */ let coinEmptyEl = null;
-/** @type {HTMLElement|null} */ let researchListEl = null;
-/** @type {HTMLElement|null} */ let researchEmptyEl = null;
-/** @type {(id: string) => boolean} */ let onBuy = () => false;
+/** @type {HTMLElement|null} */ let listEl = null;
 
-/**
- * @param {import("../data/upgrades.js").UpgradeDef|import("../data/research.js").ResearchUpgradeDef} def
- */
-function isResearch(def) {
-  return "currency" in def && def.currency === "research";
-}
+/** @type {HTMLElement|null} */ let emptyEl = null;
+
+/** @type {(id: string) => boolean} */ let onBuy = () => false;
 
 /**
  * @param {{ onBuy: (id: string) => boolean }} handlers
  */
+
 export function initUpgrades(handlers) {
-  coinListEl = document.getElementById("upgrade-list");
-  coinEmptyEl = document.getElementById("upgrades-empty");
-  researchListEl = document.getElementById("research-list");
-  researchEmptyEl = document.getElementById("research-empty");
+  listEl = document.getElementById("upgrade-list");
+  emptyEl = document.getElementById("upgrades-empty");
   onBuy = handlers.onBuy;
 }
 
 /**
- * @param {import("../data/upgrades.js").UpgradeDef|import("../data/research.js").ResearchUpgradeDef} def
- * @param {HTMLElement|null} listEl
+ * @param {import("../data/upgrades.js").UpgradeDef} def
+ * @param {HTMLElement|null} container
  * @returns {UpgRefs}
  */
-function createCard(def, listEl) {
+
+function createCard(def, container) {
   const li = document.createElement("li");
   li.className = "card";
   li.innerHTML =
     `<div class="card__icon" aria-hidden="true">${def.emoji}</div>` +
     `<div class="card__body">` +
-      `<div class="card__title">${def.name}</div>` +
+      `<div class="card__title" data-title>${def.name}</div>` +
       `<div class="card__blurb">${def.blurb}</div>` +
     `</div>` +
     `<button class="card__buy" type="button" data-buy aria-label="Buy ${def.name}">` +
+      `<span class="card__count" data-count hidden></span>` +
       `<span class="card__cost" data-cost>—</span>` +
     `</button>`;
+
   const btn = /** @type {HTMLButtonElement} */ (li.querySelector("[data-buy]"));
+
   /** @type {UpgRefs} */
+
   const refs = {
     root: li,
+
+    title: /** @type {HTMLElement} */ (li.querySelector("[data-title]")),
+
+    count: /** @type {HTMLElement} */ (li.querySelector("[data-count]")),
+
     cost: /** @type {HTMLElement} */ (li.querySelector("[data-cost]")),
     btn,
-    ownedShown: false,
   };
+
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     if (onBuy(def.id)) flashCard(refs.root);
   });
   li.addEventListener("click", () => {
+    if (refs.btn.disabled) return;
     if (onBuy(def.id)) flashCard(refs.root);
   });
   cards.set(def.id, refs);
-  if (listEl) listEl.appendChild(li);
+  if (container) container.appendChild(li);
   return refs;
 }
 
 /**
- * @param {{ engine: any, meta: import("../game/meta.js").Meta, coins: number, research?: number }} s
- * @param {HTMLElement|null} listEl
- * @param {HTMLElement|null} emptyEl
- * @param {(def: import("../data/upgrades.js").UpgradeDef|import("../data/research.js").ResearchUpgradeDef) => boolean} filter
+ * @param {{ engine: any, meta: import("../game/meta.js").Meta, coins: number }} s
  */
-function updateList(s, listEl, emptyEl, filter) {
+
+export function updateUpgrades(s) {
   let anyVisible = false;
   for (const def of ALL_UPGRADES) {
-    if (!filter(def)) continue;
-    const owned = s.meta.upgradesOwned.includes(def.id);
-    const currencyKey = isResearch(def) ? "research" : "coins";
-    const balance = currencyKey === "research" ? (s.research ?? 0) : s.coins;
-    const visible = (def.era <= s.meta.era || owned)
-      && purchaseRevealed(balance, def.cost, owned);
+    const level = upgradeLevel(s.meta, def.id);
+    const atCap = upgradeAtCap(def, level);
+    const nextCost = upgradeNextCost(def, level);
+    const visible = (def.era <= s.meta.era || level > 0)
+      && purchaseRevealed(s.coins, nextCost, level > 0);
     let refs = cards.get(def.id);
-
     if (!visible) {
       if (refs) refs.root.style.display = "none";
       continue;
     }
+
     if (!refs) refs = createCard(def, listEl);
     refs.root.style.display = "";
     anyVisible = true;
+    refs.root.classList.toggle("is-owned", atCap && def.purchaseMode === "once");
+    if (def.purchaseMode === "level") {
+      const max = maxLevelFor(def);
+      refs.title.textContent = `${def.name} Lv ${level}/${max}`;
+      refs.count.hidden = true;
+    } else if (def.purchaseMode === "quantity" && level > 0) {
+      refs.title.textContent = def.name;
+      refs.count.hidden = false;
+      refs.count.textContent = `×${formatNumber(level, 0)}`;
+    } else {
+      refs.title.textContent = def.name;
+      refs.count.hidden = true;
+    }
 
-    if (owned) {
-      if (!refs.ownedShown) {
-        refs.root.classList.add("is-owned");
-        refs.cost.textContent = "✓ Owned";
-        refs.btn.disabled = true;
-        refs.ownedShown = true;
-      }
+    if (atCap) {
+      refs.cost.textContent = def.purchaseMode === "once" ? "✓ Owned" : "Max";
+      refs.btn.disabled = true;
+      refs.root.classList.remove("is-affordable");
       continue;
     }
 
-    const icon = currencyKey === "research" ? "🔬" : "🪙";
-    refs.cost.textContent = icon + " " + formatNumber(def.cost, 0);
-    const affordable = balance >= def.cost;
+    refs.cost.textContent = "🪙 " + formatNumber(nextCost, 0);
+    const affordable = s.coins >= nextCost;
     refs.btn.disabled = !affordable;
     refs.root.classList.toggle("is-affordable", affordable);
   }
-  if (emptyEl) emptyEl.style.display = anyVisible ? "none" : "";
-}
 
-/**
- * @param {{ engine: any, meta: import("../game/meta.js").Meta, coins: number, research?: number }} s
- */
-export function updateUpgrades(s) {
-  updateList(s, coinListEl, coinEmptyEl, (def) => !isResearch(def));
-  updateList(s, researchListEl, researchEmptyEl, isResearch);
+  if (emptyEl) emptyEl.style.display = anyVisible ? "none" : "";
 }

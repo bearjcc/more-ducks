@@ -1,11 +1,11 @@
 // @ts-check
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (DUCKS/PRODUCERS/UPGRADES data, emoji).
 import { DUCKS } from "../data/ducks.js";
 import { PRODUCERS } from "../data/producers.js";
 import { UPGRADES } from "../data/upgrades.js";
 import { ERAS } from "../data/eras.js";
 import { formatNumber } from "../game/format.js";
 import { queueModal } from "./modal.js";
-
 const PRODUCER_NAME = Object.fromEntries(PRODUCERS.map((p) => [p.id, p.name]));
 const UPGRADE_NAME = Object.fromEntries(UPGRADES.map((u) => [u.id, u.name]));
 
@@ -40,14 +40,12 @@ const cells = new Map();
 /** @type {HTMLElement|null} */ let haveEl = null;
 /** @type {HTMLElement|null} */ let totalEl = null;
 /** @type {HTMLElement|null} */ let emptyEl = null;
-
 export function initDex() {
   gridEl = document.getElementById("duckdex-grid");
   haveEl = document.getElementById("dex-have");
   totalEl = document.getElementById("dex-total");
   emptyEl = document.getElementById("duckdex-empty");
   if (totalEl) totalEl.textContent = String(DUCKS.length);
-
   // Build every cell up front as a locked egg, so the grid shows the shape of
   // the collection (and how much is missing).
   for (const d of DUCKS) {

@@ -1,6 +1,6 @@
 // @ts-check
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (BASIC_ANSWERS data, toast strings).
 import { prefersReducedMotion } from "./render.js";
-
 /** @type {HTMLElement|null} */
 let host = null;
 

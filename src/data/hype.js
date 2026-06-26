@@ -1,54 +1,103 @@
 // @ts-check
 /**
- * Hype campaigns: spend Coins → gain Hype (decaying demand buff). Repeatable.
- * Costs and gains are the balance surface — tune in scripts/sim.mjs (H2).
+ * Hype campaigns: spend Coins → gain Hype (decaying demand buff).
+ * purchaseMode: quantity = uncapped placements; level = capped staff/channel (max 25).
  *
  * @typedef {object} HypeCampaignDef
  * @property {string} id
  * @property {string} name
  * @property {string} emoji
  * @property {string} blurb
- * @property {number} cost       coins per launch
- * @property {number} hypeGain   Hype currency added (stacks; decays in market.js)
- * @property {number} era        minimum era to appear
+ * @property {number} era
+ * @property {"quantity"|"level"} purchaseMode
+ * @property {number} baseCost
+ * @property {number} costCoefficient
+ * @property {number} hypeGain   Hype per purchase at level 1 / per unit
+ * @property {number} [maxLevel]  For level mode (default 25)
+ * @property {number} [hypeDecayMult] Per-level decay reduction for level campaigns
  */
 
 /** @type {HypeCampaignDef[]} */
 export const HYPE_CAMPAIGNS = [
   {
-    id: "pressrelease",
-    name: "Press Release",
-    emoji: "📰",
-    blurb: "We're excited to announce excitement. Embargo lifts at market open.",
-    cost: 80,
-    hypeGain: 80,
+    id: "businesscards",
+    name: "Business Cards",
+    emoji: "💼",
+    blurb: "Hand them out. Nobody reads them. Everyone remembers the duck.",
+    purchaseMode: "quantity",
+    baseCost: 50,
+    costCoefficient: 1.15,
+    hypeGain: 40,
     era: 0,
+  },
+  {
+    id: "signflipper",
+    name: "Sign Flipper",
+    emoji: "🪧",
+    blurb: "Corner traffic. Spinning enthusiasm. Legally distinct from protest.",
+    purchaseMode: "quantity",
+    baseCost: 200,
+    costCoefficient: 1.15,
+    hypeGain: 90,
+    era: 0,
+  },
+  {
+    id: "billboards",
+    name: "Billboards",
+    emoji: "🪧",
+    blurb: "You can buy as many as you like. The highway agrees.",
+    purchaseMode: "quantity",
+    baseCost: 800,
+    costCoefficient: 1.16,
+    hypeGain: 220,
+    era: 1,
+  },
+  {
+    id: "socialmedia",
+    name: "Social Media Manager",
+    emoji: "📱",
+    blurb: "Posts ducks. Engages ducks. Ducks follow ducks.",
+    purchaseMode: "level",
+    baseCost: 1_200,
+    costCoefficient: 1.15,
+    maxLevel: 25,
+    hypeGain: 35,
+    era: 1,
   },
   {
     id: "blogtour",
     name: "Thought Leadership Tour",
     emoji: "🎤",
     blurb: "Keynotes about keynotes. Slides are mostly ducks.",
-    cost: 1_200,
-    hypeGain: 280,
-    era: 1,
+    purchaseMode: "level",
+    baseCost: 8_000,
+    costCoefficient: 1.15,
+    maxLevel: 25,
+    hypeGain: 120,
+    era: 2,
   },
   {
     id: "launch",
     name: "Product Launch Livestream",
     emoji: "📺",
     blurb: "Nothing new ships. Viewership does.",
-    cost: 18_000,
-    hypeGain: 900,
-    era: 2,
+    purchaseMode: "level",
+    baseCost: 80_000,
+    costCoefficient: 1.15,
+    maxLevel: 25,
+    hypeGain: 450,
+    era: 3,
   },
   {
     id: "viral",
     name: "Viral Moment",
     emoji: "🔥",
     blurb: "Trending for twelve minutes. Booked for twelve quarters.",
-    cost: 240_000,
-    hypeGain: 3_200,
-    era: 3,
+    purchaseMode: "level",
+    baseCost: 500_000,
+    costCoefficient: 1.15,
+    maxLevel: 25,
+    hypeGain: 1_600,
+    era: 4,
   },
 ];

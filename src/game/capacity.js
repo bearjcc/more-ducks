@@ -1,9 +1,17 @@
 // @ts-check
-/** Ducks per owned pond beyond the starter. */
+/** Ducks per owned pond beyond the starter (a light early-game headroom booster). */
 export const DUCKS_PER_POND = 50;
 
 /** Starter pond capacity. */
 export const BASE_POND_CAPACITY = 12;
+
+/**
+ * Habitat auto-expands to this fraction above the flock you've raised, so the
+ * cap tracks your producers instead of walling them. The FLOCK is the supply
+ * engine; ponds + upgrades add headroom on top (and matter most early, when the
+ * flock is small). >1 so the cap never throttles the live flock.
+ */
+export const FLOCK_HEADROOM = 1.15;
 
 /**
  * @param {import("./meta.js").Meta} meta
@@ -12,7 +20,9 @@ export const BASE_POND_CAPACITY = 12;
 export function pondCapacity(meta) {
   const ponds = 1 + (meta.pondCount || 0);
   const bonus = meta.pondCapacityBonus || 0;
-  return BASE_POND_CAPACITY + ponds * DUCKS_PER_POND + bonus;
+  const pondRoom = BASE_POND_CAPACITY + ponds * DUCKS_PER_POND + bonus;
+  const flockRoom = Math.ceil((meta.totalDucksEver || 1) * FLOCK_HEADROOM);
+  return Math.max(pondRoom, flockRoom);
 }
 
 /**

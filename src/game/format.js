@@ -1,25 +1,41 @@
 // @ts-check
 /** Number formatting helpers for display. */
 
-const WORD_UNITS = [
-  "", "thousand", "million", "billion", "trillion", "quadrillion",
-  "quintillion", "sextillion", "septillion", "octillion", "nonillion",
-  "decillion", "undecillion", "duodecillion",
-];
+/** K/M/B/T then aa–zz (idle-game suffix / tier notation). */
+const HEAD_SUFFIXES = ["", "K", "M", "B", "T"];
 
-const COMPACT_UNITS = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+/** @type {"suffix"|"scientific"} */
+let notation = "suffix";
 
-/** @type {"word"|"compact"|"scientific"} */
-let notation = "word";
-
-/** @param {"word"|"compact"|"scientific"} mode */
-export function setNotation(mode) {
-  notation = mode;
+/** @param {unknown} mode */
+function normalizeNotation(mode) {
+  if (mode === "scientific") return "scientific";
+  return "suffix";
 }
 
-/** @returns {"word"|"compact"|"scientific"} */
+/** @param {"suffix"|"scientific"|"word"|"compact"|string} mode */
+export function setNotation(mode) {
+  notation = normalizeNotation(mode);
+}
+
+/** @returns {"suffix"|"scientific"} */
 export function getNotation() {
   return notation;
+}
+
+/**
+ * Suffix for magnitude tier (floor(log10(n) / 3)).
+ * ponytail: two-letter aa–zz only; beyond that formatNumber falls back to scientific.
+ * @param {number} tier
+ * @returns {string|null}
+ */
+export function suffixForTier(tier) {
+  if (tier < HEAD_SUFFIXES.length) return HEAD_SUFFIXES[tier];
+  const u = tier - HEAD_SUFFIXES.length;
+  const hi = Math.floor(u / 26);
+  const lo = u % 26;
+  if (hi >= 26) return null;
+  return String.fromCharCode(97 + hi) + String.fromCharCode(97 + lo);
 }
 
 /**
@@ -40,23 +56,15 @@ export function formatNumber(n, decimals = 2) {
     const mantissa = trimZeros((n / Math.pow(10, exp)).toFixed(decimals));
     return `${mantissa}e${exp}`;
   }
-  if (notation === "compact") {
-    let u = 0;
-    let v = n;
-    while (v >= 1000 && u < COMPACT_UNITS.length - 1) {
-      v /= 1000;
-      u++;
-    }
-    return trimZeros(v.toFixed(decimals)) + COMPACT_UNITS[u];
-  }
   const tier = Math.floor(Math.log10(n) / 3);
-  if (tier < WORD_UNITS.length) {
-    const scaled = n / Math.pow(1000, tier);
-    return trimZeros(scaled.toFixed(decimals)) + " " + WORD_UNITS[tier];
+  const suffix = suffixForTier(tier);
+  if (!suffix) {
+    const exp = Math.floor(Math.log10(n));
+    const mantissa = trimZeros((n / Math.pow(10, exp)).toFixed(decimals));
+    return `${mantissa}e${exp}`;
   }
-  const exp = Math.floor(Math.log10(n));
-  const mantissa = trimZeros((n / Math.pow(10, exp)).toFixed(decimals));
-  return `${mantissa}e${exp}`;
+  const scaled = n / Math.pow(1000, tier);
+  return trimZeros(scaled.toFixed(decimals)) + suffix;
 }
 
 /**

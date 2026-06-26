@@ -7,13 +7,13 @@ const meta = defaultMeta();
 
 console.assert(checkEndings(engine, meta) === null, "no ending at start");
 
-meta.upgradesOwned.push(VERTICAL_CAPSTONE);
+meta.upgradeLevels[VERTICAL_CAPSTONE] = 1;
 console.assert(checkEndings(engine, meta) === "singularity", "vertical capstone");
 
-meta.upgradesOwned = [HORIZONTAL_CAPSTONE];
+meta.upgradeLevels = { [HORIZONTAL_CAPSTONE]: 1 };
 console.assert(checkEndings(engine, meta) === "swarm", "horizontal capstone");
 
-meta.upgradesOwned = [];
+meta.upgradeLevels = {};
 meta.spaceDeployed = true;
 console.assert(checkEndings(engine, meta) === "space", "orbital deployment");
 

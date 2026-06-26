@@ -1,8 +1,11 @@
 // @ts-check
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (ENDINGS data, emoji).
 import { ENDINGS } from "../data/endings.js";
 import { competitorBirdName } from "../game/endings.js";
-
+/** Default no-op handler slots; replaced in initEnding. */
+// aislop-ignore-next-line ai-slop/empty-function
 /** @type {() => void} */ let onReset = () => {};
+// aislop-ignore-next-line ai-slop/empty-function
 /** @type {() => void} */ let onEnded = () => {};
 let terminalShown = false;
 
@@ -22,10 +25,8 @@ export function showTerminal(endingId, meta = null) {
   if (terminalShown || !endingId) return;
   const def = ENDINGS[endingId];
   if (!def) return;
-
   terminalShown = true;
   onEnded();
-
   let line = def.line;
   if (endingId === "competitor" && meta) {
     const bird = competitorBirdName(meta);

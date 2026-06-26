@@ -1,8 +1,9 @@
 // @ts-check
+import { upgradeLevel } from "./levels.js";
 /** Answers after which the duck wants a free manual feed (no auto-feeder). */
 export const FEED_GATE_THRESHOLD = 10;
 
-/** Coins/sec per answer/sec when auto-feeder is on (electricity allegory). */
+/** Coins/sec per answer/sec when auto-feeder is on (bread upkeep). */
 export const FEED_OPEX_PER_ANSWER_PER_SEC = 0.04;
 
 /**
@@ -10,7 +11,7 @@ export const FEED_OPEX_PER_ANSWER_PER_SEC = 0.04;
  * @returns {boolean}
  */
 export function hasAutoFeeder(meta) {
-  return meta.autoFeederOwned || meta.upgradesOwned.includes("autofeeder");
+  return meta.autoFeederOwned || upgradeLevel(meta, "autofeeder") >= 1;
 }
 
 /**

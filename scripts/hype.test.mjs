@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 import { createGame } from "../src/game/economy.js";
 import { defaultMeta } from "../src/game/meta.js";
-import { buyHypeCampaign, campaignVisible } from "../src/game/hype.js";
+import {
+  buyHypeCampaign,
+  campaignVisible,
+  campaignNextCost,
+  campaignHypeGain,
+} from "../src/game/hype.js";
 import { decayHype, HYPE_DECAY_PER_SEC } from "../src/game/market.js";
 import { HYPE_CAMPAIGNS } from "../src/data/hype.js";
 
@@ -18,9 +23,9 @@ console.log("\n(a) campaignVisible respects era gate");
   const meta = defaultMeta();
   meta.era = 0;
   assert(campaignVisible(meta, HYPE_CAMPAIGNS[0]), "era-0 campaign visible at start");
-  assert(!campaignVisible(meta, HYPE_CAMPAIGNS[1]), "era-1 campaign hidden at era 0");
+  assert(!campaignVisible(meta, HYPE_CAMPAIGNS[3]), "era-1 campaign hidden at era 0");
   meta.era = 2;
-  assert(campaignVisible(meta, HYPE_CAMPAIGNS[2]), "era-2 campaign visible at era 2");
+  assert(campaignVisible(meta, HYPE_CAMPAIGNS[4]), "era-2 campaign visible at era 2");
 }
 
 console.log("\n(b) buyHypeCampaign deducts coins and grants hype");
@@ -28,12 +33,13 @@ console.log("\n(b) buyHypeCampaign deducts coins and grants hype");
   const engine = createGame();
   const meta = defaultMeta();
   const def = HYPE_CAMPAIGNS[0];
-  engine.currency("coins").incrementBy(def.cost);
+  const cost = campaignNextCost(def, 0);
+  engine.currency("coins").incrementBy(cost);
   const beforeCoins = engine.currency("coins").value;
   const result = buyHypeCampaign(engine, meta, def.id);
   assert(result?.id === def.id, "returns campaign def on success");
-  assert(engine.currency("coins").value === beforeCoins - def.cost, "coins deducted");
-  assert(engine.currency("hype").value === def.hypeGain, "hype granted");
+  assert(engine.currency("coins").value === beforeCoins - cost, "coins deducted");
+  assert(engine.currency("hype").value === campaignHypeGain(def, 1), "hype granted");
 }
 
 console.log("\n(c) buyHypeCampaign stacks hype on repeat purchase");
@@ -41,10 +47,15 @@ console.log("\n(c) buyHypeCampaign stacks hype on repeat purchase");
   const engine = createGame();
   const meta = defaultMeta();
   const def = HYPE_CAMPAIGNS[0];
-  engine.currency("coins").incrementBy(def.cost * 2);
+  const c0 = campaignNextCost(def, 0);
+  const c1 = campaignNextCost(def, 1);
+  engine.currency("coins").incrementBy(c0 + c1);
   buyHypeCampaign(engine, meta, def.id);
   buyHypeCampaign(engine, meta, def.id);
-  assert(engine.currency("hype").value === def.hypeGain * 2, "hype stacks");
+  assert(
+    engine.currency("hype").value === campaignHypeGain(def, 1) + campaignHypeGain(def, 2),
+    "hype stacks on quantity campaigns",
+  );
 }
 
 console.log("\n(d) buyHypeCampaign rejects insufficient coins");
@@ -72,7 +83,7 @@ console.log("\n(f) purchased hype decays over time");
   const engine = createGame();
   const meta = defaultMeta();
   const def = HYPE_CAMPAIGNS[0];
-  engine.currency("coins").incrementBy(def.cost);
+  engine.currency("coins").incrementBy(campaignNextCost(def, 0));
   buyHypeCampaign(engine, meta, def.id);
   const afterBuy = engine.currency("hype").value;
   decayHype(engine, 2);

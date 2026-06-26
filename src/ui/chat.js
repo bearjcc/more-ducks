@@ -1,6 +1,5 @@
 // @ts-check
 import { pickQuestion } from "../game/quack.js";
-
 /** @type {HTMLElement|null} */ let threadEl = null;
 /** @type {HTMLInputElement|null} */ let inputEl = null;
 /** @type {HTMLButtonElement|null} */ let sendBtn = null;
@@ -8,13 +7,13 @@ import { pickQuestion } from "../game/quack.js";
 /** @type {HTMLElement|null} */ let feedHintEl = null;
 
 /** @type {() => boolean} */ let canAsk = () => true;
+// aislop-ignore-next-line ai-slop/empty-function -- default no-op handler slot; replaced in initChat
 /** @type {(text: string) => void} */ let onSend = () => {};
 /** @type {(totalDucks: number) => string} */ let pickAutoQuestion = () => "";
 /** @type {number} */ let holdIntervalMs = 450;
 /** @type {boolean} */ let holdRepeatEnabled = false;
 
 /** @type {ReturnType<typeof setInterval>|null} */ let holdTimer = null;
-/** @type {number|null} */ let holdPointerId = null;
 
 /**
  * @param {{
@@ -31,11 +30,9 @@ export function initChat(handlers) {
   sendBtn = /** @type {HTMLButtonElement} */ (document.getElementById("send-btn"));
   autoBtn = /** @type {HTMLButtonElement} */ (document.getElementById("auto-btn"));
   feedHintEl = document.getElementById("feed-hint");
-
   canAsk = handlers.canAsk;
   onSend = handlers.onSend;
   pickAutoQuestion = handlers.pickAutoQuestion ?? ((n) => pickQuestion(n));
-
   const refreshHold = () => {
     holdRepeatEnabled = handlers.holdRepeatEnabled?.() ?? false;
     holdIntervalMs = handlers.holdIntervalMs?.() ?? 450;
@@ -55,7 +52,6 @@ export function initChat(handlers) {
   const stopHold = () => {
     if (holdTimer) clearInterval(holdTimer);
     holdTimer = null;
-    holdPointerId = null;
     if (autoBtn) autoBtn.classList.remove("is-holding");
   };
 
@@ -63,7 +59,6 @@ export function initChat(handlers) {
     refreshHold();
     if (!holdRepeatEnabled || e.button !== 0 || !canAsk()) return;
     e.preventDefault();
-    holdPointerId = e.pointerId;
     autoBtn?.setPointerCapture(e.pointerId);
     autoBtn?.classList.add("is-holding");
     tryAuto();
@@ -171,7 +166,8 @@ export function updateChatAffordance(hungry, canAskNow) {
   if (inputEl) inputEl.disabled = !canAskNow;
   if (feedHintEl) {
     feedHintEl.hidden = !hungry;
-    feedHintEl.textContent = hungry ? "The duck is hungry. Tap the duck to feed." : "";
+    feedHintEl.textContent = hungry ? "The duck is hungry — tap 🦆 to feed." : "";
+    feedHintEl.setAttribute("aria-live", hungry ? "polite" : "off");
   }
   document.body.classList.toggle("duck-hungry", hungry);
 }

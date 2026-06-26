@@ -1,10 +1,10 @@
 // @ts-check
 import { PRODUCERS } from "../data/producers.js";
 import { dexMods } from "./dexMods.js";
-import { quackmarkScoreMult } from "./quackmarks.js";
+import { totalUpgradePurchases } from "./levels.js";
 
 /**
- * Hero number. Goes up. Means nothing. Answers get longer, not better.
+ * Hero number for question-pool gating. Goes up. Means nothing.
  * @param {any} engine
  * @param {import("./meta.js").Meta} meta
  * @returns {number}
@@ -16,7 +16,7 @@ export function intelligenceScore(engine, meta) {
     const prod = engine.producer(p.id);
     if (prod) infra += prod.count * (p.era + 1);
   }
-  const upgrades = meta.upgradesOwned.length * 50;
+  const upgrades = totalUpgradePurchases(meta) * 50;
   const base = Math.pow(ducks, 0.75) + infra + upgrades;
-  return Math.floor(base * dexMods(meta).scoreInflate * quackmarkScoreMult(meta));
+  return Math.floor(base * dexMods(meta).scoreInflate);
 }

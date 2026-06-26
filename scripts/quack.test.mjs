@@ -2,14 +2,16 @@
 // Framework-free self-check for the quack engine.
 // Run: node scripts/quack.test.mjs
 
-import { QUACKS, TIERS } from "../src/data/quacks.js";
+import { BASIC_ANSWERS, TIERS, isCollectibleAnswer } from "../src/data/quacks.js";
+import { recordAnswerdex } from "../src/game/answerdex.js";
+import { defaultMeta } from "../src/game/meta.js";
 import { QUESTIONS, BASIC_QUESTIONS, META_QUESTIONS } from "../src/data/questions.js";
-import { pickQuack, pickQuestion, askDuck, metaQuestionChance, resetQuackState, pickThought, thoughtFactChance, THOUGHT_FACT_CHANCE_MAX, FINAL_QUESTION, FINAL_ANSWER, META_GATE_DUCKS, META_FULL_DUCKS } from "../src/game/quack.js";
+import { pickAnswer, pickQuestion, askDuck, metaQuestionChance, resetQuackState, pickThought, thoughtFactChance, THOUGHT_FACT_CHANCE_MAX, FINAL_QUESTION, FINAL_ANSWER, META_GATE_DUCKS, META_FULL_DUCKS } from "../src/game/quack.js";
 import { DUCK_THOUGHTS, DUCK_FACTS } from "../src/data/thoughts.js";
 import {
   ponderDepth,
   ponderEffectiveCoherence,
-  ponderResearchBonus,
+  ponderCoinBonus,
   PONDER_MAX_DEPTH_HOLD_MS,
 } from "../src/game/market.js";
 
@@ -45,7 +47,7 @@ console.log("\n(a) No consecutive repeat");
   let prev = "";
   let consecutiveRepeat = false;
   for (let i = 0; i < N; i++) {
-    const result = pickQuack(0, 0, 0, rng);
+    const result = pickAnswer(0, 0, 0, rng);
     if (result === prev && i > 0) { consecutiveRepeat = true; break; }
     prev = result;
   }
@@ -58,29 +60,31 @@ console.log("\n(b) Tier verbosity increases with score");
   resetQuackState();
   const rng = makeLcg(7);
   // Draw one result per tier threshold to compare lengths.
-  const scores = [0, 100, 10_000, 1_000_000];
+  const scores = [0, 100];
   let prevLen = -1;
   let monotone = true;
   for (const score of scores) {
-    // Use a fresh rng position for each draw so we get the same base quack.
+    resetQuackState();
     const rng2 = makeLcg(99);
-    const text = pickQuack(score, 0, 0, rng2);
+    const text = pickAnswer(score, 0, 0, rng2);
     if (text.length < prevLen) { monotone = false; }
     prevLen = text.length;
   }
   assert(monotone, "Answer length is non-decreasing across tier thresholds");
 
-  // Spot-check: score 0 has no prefix; score ≥ 10_000 does.
+  // Spot-check: score 0 is bare quack; score ≥ 100 repeats it (no prefix).
   const rng3 = makeLcg(99);
-  const lowText = pickQuack(0, 0, 0, rng3);
+  const lowText = pickAnswer(0, 0, 0, rng3);
   const rng4 = makeLcg(99);
-  const highText = pickQuack(10_000, 0, 0, rng4);
-  assert(highText.startsWith("After careful consideration:"), "Score ≥ 10,000 uses tier-2 prefix");
+  const highText = pickAnswer(100, 0, 0, rng4);
+  const parts = highText.split(" ");
+  assert(parts.length >= 2 && parts[0] === parts[1], "Score ≥ 100 repeats the base quack");
   assert(!lowText.includes("After"), "Score 0 has no prefix");
+  assert(!highText.includes("After careful consideration"), "No corporate-style prefix at any tier");
 }
 
-// ── (c) Every QUACKS entry is reachable ────────────────────────────────────
-console.log("\n(c) Every QUACKS entry is reachable");
+// ── (c) Every BASIC_ANSWERS entry is reachable ───────────────────────────────
+console.log("\n(c) Every BASIC_ANSWERS entry is reachable");
 {
   resetQuackState();
   const reached = new Set();
@@ -91,11 +95,11 @@ console.log("\n(c) Every QUACKS entry is reachable");
   const rng = makeLcg(1337);
   const DRAWS = 150_000;
   for (let i = 0; i < DRAWS; i++) {
-    const text = pickQuack(0, 0, 0, rng);
+    const text = pickAnswer(0, 0, 0, rng);
     reached.add(text);
   }
 
-  const highWeight = QUACKS.filter(([, w]) => w >= 1);
+  const highWeight = BASIC_ANSWERS.filter(([, w]) => w >= 1);
   let allReached = true;
   for (const [text] of highWeight) {
     if (!reached.has(text)) {
@@ -106,8 +110,8 @@ console.log("\n(c) Every QUACKS entry is reachable");
   assert(allReached, `All ${highWeight.length} entries with weight ≥ 1 were drawn in ${DRAWS} tries`);
 
   // Easter egg has weight 0.1 — just verify it is in the table.
-  const hasEgg = QUACKS.some(([t]) => t === "You're absolutely right!");
-  assert(hasEgg, "Easter egg entry exists in QUACKS table");
+  const hasEgg = BASIC_ANSWERS.some(([t]) => t === "You're absolutely right!");
+  assert(hasEgg, "Easter egg entry exists in BASIC_ANSWERS table");
 }
 
 // ── (d) TIERS are ordered by threshold ──────────────────────────────────────
@@ -151,7 +155,7 @@ console.log("\n(f) No repeat within last 5 questions");
   const recent = [];
   let windowRepeat = false;
   for (let i = 0; i < N; i++) {
-    const result = pickQuestion(2_000_000_000, rng);
+    const result = pickQuestion(2_000_000_000, rng, true);
     if (recent.includes(result)) {
       windowRepeat = true;
       break;
@@ -165,12 +169,14 @@ console.log("\n(f) No repeat within last 5 questions");
 // ── (h) Meta question chance curve ──────────────────────────────────────────
 console.log("\n(h) Meta question chance");
 {
-  assert(metaQuestionChance(0) === 0, "0% meta chance at game start");
-  assert(metaQuestionChance(META_GATE_DUCKS - 1) === 0, "0% meta chance just below the era-4 gate");
-  assert(metaQuestionChance(META_GATE_DUCKS) === 0, "0% meta chance at the gate (ramp starts here)");
-  assert(metaQuestionChance(META_FULL_DUCKS) === 0.5, "50% meta chance by the final era");
-  assert(metaQuestionChance(META_FULL_DUCKS * 2) === 0.5, "Meta chance capped at 50%");
-  const mid = metaQuestionChance((META_GATE_DUCKS + META_FULL_DUCKS) / 2);
+  assert(metaQuestionChance(0, false) === 0, "0% meta chance when tabs locked");
+  assert(metaQuestionChance(META_FULL_DUCKS, false) === 0, "0% meta chance when tabs locked at max ducks");
+  assert(metaQuestionChance(0, true) === 0, "0% meta chance at game start even when allowed");
+  assert(metaQuestionChance(META_GATE_DUCKS - 1, true) === 0, "0% meta chance just below the era-4 gate");
+  assert(metaQuestionChance(META_GATE_DUCKS, true) === 0, "0% meta chance at the gate (ramp starts here)");
+  assert(metaQuestionChance(META_FULL_DUCKS, true) === 0.5, "50% meta chance by the final era");
+  assert(metaQuestionChance(META_FULL_DUCKS * 2, true) === 0.5, "Meta chance capped at 50%");
+  const mid = metaQuestionChance((META_GATE_DUCKS + META_FULL_DUCKS) / 2, true);
   assert(mid > 0 && mid < 0.5, `Meta chance ramps between the gate and final era (got ${mid})`);
 }
 
@@ -182,27 +188,27 @@ console.log("\n(i) Early game basic pool only");
   const metaSet = new Set(META_QUESTIONS);
   let leakedMeta = false;
   for (let i = 0; i < 500; i++) {
-    const q = pickQuestion(0, rng);
+    const q = pickQuestion(0, rng, false);
     if (metaSet.has(q)) {
       leakedMeta = true;
       console.error(`    meta at start: "${q}"`);
       break;
     }
   }
-  assert(!leakedMeta, "totalDucksEver = 0 never draws from META_QUESTIONS");
+  assert(!leakedMeta, "tabs locked never draws from META_QUESTIONS");
 
   resetQuackState();
   const rngGate = makeLcg(2718);
   let leakedBelowGate = false;
   for (let i = 0; i < 500; i++) {
-    const q = pickQuestion(META_GATE_DUCKS - 1, rngGate);
+    const q = pickQuestion(META_FULL_DUCKS, rngGate, false);
     if (metaSet.has(q)) {
       leakedBelowGate = true;
-      console.error(`    meta below gate: "${q}"`);
+      console.error(`    meta when tabs locked: "${q}"`);
       break;
     }
   }
-  assert(!leakedBelowGate, "below the era-4 gate, Auto never draws META_QUESTIONS");
+  assert(!leakedBelowGate, "tabs locked never draws META_QUESTIONS even at max ducks");
 }
 
 // ── (g) askDuck returns question + tiered answer ────────────────────────────
@@ -210,52 +216,53 @@ console.log("\n(g) askDuck exchange");
 {
   resetQuackState();
   const rng = makeLcg(99);
-  const { question, answer } = askDuck(10_000, 0, 0, rng);
+  const { question, answer } = askDuck(10_000, 0, 0, rng, false);
   assert(typeof question === "string" && question.length > 0, "askDuck returns a question");
   assert(typeof answer === "string" && answer.length > 0, "askDuck returns an answer");
-  assert(QUESTIONS.includes(question), "Question comes from QUESTIONS pool");
-  assert(answer.startsWith("After careful consideration:"), "askDuck answer respects score tier");
+  assert(BASIC_QUESTIONS.includes(question), "Question comes from BASIC_QUESTIONS when meta locked");
+  assert(!answer.includes("After careful consideration"), "askDuck answer never gets a prefix wrap");
+  assert(!QUESTIONS.includes(answer), "answer is never a vanity question string");
 }
 
-// ── (j) Coherence blends answer pool ─────────────────────────────────────────
-console.log("\n(j) Coherence answer blending");
+// ── (j) Answers stay in the basic table (never question pools) ───────────────
+console.log("\n(j) Answers never draw from question pools");
 {
   resetQuackState();
   const questionSet = new Set(QUESTIONS);
-  const quackSet = new Set(QUACKS.map(([t]) => t));
+  const answerSet = new Set(BASIC_ANSWERS.map(([t]) => t));
 
   const rngZero = () => 0;
-  const nonsense = pickQuack(0, 0, 0, rngZero);
-  assert(quackSet.has(nonsense), "coherence 0 draws from QUACKS table");
+  const lowCoherence = pickAnswer(0, 0, 0, rngZero);
+  assert(answerSet.has(lowCoherence), "coherence 0 draws from BASIC_ANSWERS table");
 
   resetQuackState();
-  const fluent = pickQuack(0, 1, 0, rngZero);
-  assert(
-    questionSet.has(fluent) || [...questionSet].some((q) => fluent.includes(q)),
-    "coherence 1 draws fluent text from question pools",
-  );
+  const highCoherence = pickAnswer(0, 1, META_FULL_DUCKS, rngZero);
+  assert(answerSet.has(highCoherence), "coherence 1 still draws from BASIC_ANSWERS table");
+  assert(!questionSet.has(highCoherence), "coherence 1 never emits a vanity question as answer");
 
   resetQuackState();
   const rng = makeLcg(4242);
-  let fluentCount = 0;
+  let leaked = false;
   const N = 500;
   for (let i = 0; i < N; i++) {
-    const a = pickQuack(0, 0.8, 0, rng);
-    if (questionSet.has(a) || [...questionSet].some((q) => a.includes(q))) fluentCount++;
+    const a = pickAnswer(0, 0.8, META_FULL_DUCKS, rng);
+    if (questionSet.has(a)) leaked = true;
   }
-  assert(fluentCount > N * 0.5, `coherence 0.8 skews fluent (~${fluentCount}/${N})`);
+  assert(!leaked, `high coherence never leaks questions into answers (${N} draws)`);
 }
 
-// ── (k) Coherence lengthens answers ──────────────────────────────────────────
-console.log("\n(k) Coherence verbosity");
+// ── (k) Coherence does not change answer voice ───────────────────────────────
+console.log("\n(k) Coherence does not change answer pool");
 {
   resetQuackState();
-  const rng = () => 0;
-  const low = pickQuack(0, 0, 0, rng);
-  const high = pickQuack(0, 1, 0, rng);
-  assert(high.length > low.length, "full coherence adds confident prefix");
-  assert(high.includes("After careful consideration"), "coherence 1 reaches the top verbosity tier");
-  assert(!high.includes("Comprehensive analysis"), "top tier never emits the corporate line");
+  const rng = makeLcg(42);
+  const low = pickAnswer(0, 0, 0, rng);
+  resetQuackState();
+  const rng2 = makeLcg(42);
+  const high = pickAnswer(0, 1, 0, rng2);
+  assert(low === high, "same rng seed → same basic answer regardless of coherence");
+  assert(!high.includes("After careful consideration"), "coherence never adds a prefix wrap");
+  assert(!high.includes("Comprehensive analysis"), "answers never emit the corporate line");
 }
 
 // ── (l) Ultimate Question easter egg ─────────────────────────────────────────
@@ -331,8 +338,8 @@ console.log("\n(n) Ponder depth and bonuses");
   assert(mid > 0.4 && mid < 0.6, `mid hold depth in range (got ${mid})`);
   assert(ponderEffectiveCoherence(0.5, 1) === 0.75, "depth 1 adds max coherence boost");
   assert(ponderEffectiveCoherence(0.9, 1) === 1, "coherence capped at 1");
-  assert(ponderResearchBonus(0) > 0, "any ponder grants base research");
-  assert(ponderResearchBonus(1) > ponderResearchBonus(0), "deeper ponder → more research");
+  assert(ponderCoinBonus(0) > 0, "any ponder grants base coin bonus");
+  assert(ponderCoinBonus(1) > ponderCoinBonus(0), "deeper ponder → more coin bonus");
 }
 
 // ── (p) Ponder answer output (onPonderEnd path) ─────────────────────────────
@@ -343,16 +350,16 @@ console.log("\n(p) Ponder answer output");
   const baseCoherence = 0.75;
   const depth = ponderDepth(PONDER_MAX_DEPTH_HOLD_MS);
   const effCoherence = ponderEffectiveCoherence(baseCoherence, depth);
-  const ponderAnswer = pickQuack(0, effCoherence, 0, rng);
+  const ponderAnswer = pickAnswer(0, effCoherence, 0, rng);
   assert(depth === 1, "full hold reaches max ponder depth");
   assert(effCoherence === 1, "full ponder maxes coherence at base 0.75");
   assert(typeof ponderAnswer === "string" && ponderAnswer.length > 0, "ponder produces an answer");
-  assert(ponderAnswer.includes("After careful consideration"), "ponder answer respects the top verbosity tier");
+  assert(!ponderAnswer.includes("After careful consideration"), "ponder answer never gets a prefix wrap");
   assert(!ponderAnswer.includes("Comprehensive analysis"), "ponder answer never emits the corporate line");
   assert(ponderAnswer !== FINAL_ANSWER, "ponder answer is never the reserved finale punchline");
 }
 
-// ── (q) Reserved lines never leak from pickQuack ────────────────────────────
+// ── (q) Reserved lines never leak from pickAnswer ────────────────────────────
 console.log("\n(q) Reserved lines never leak");
 {
   resetQuackState();
@@ -366,8 +373,12 @@ console.log("\n(q) Reserved lines never leak");
     for (const c of coherences) {
       for (const d of duckCounts) {
         for (let i = 0; i < 200; i++) {
-          const a = pickQuack(s, c, d, rng);
-          if (a.includes("Comprehensive analysis") || a.includes(FINAL_ANSWER)) {
+          const a = pickAnswer(s, c, d, rng);
+          if (
+            a.includes("Comprehensive analysis")
+            || a.includes(FINAL_ANSWER)
+            || a.includes("After careful consideration")
+          ) {
             leak = { s, c, d, a };
             break outer;
           }
@@ -376,12 +387,28 @@ console.log("\n(q) Reserved lines never leak");
     }
   }
   if (leak) console.error(`    leaked at score=${leak.s} coherence=${leak.c} ducks=${leak.d}: "${leak.a}"`);
-  assert(!leak, "pickQuack never emits the corporate line or finale punchline at any score/coherence");
+  assert(!leak, "pickAnswer never emits prefix wraps, the corporate line, or finale punchline");
 
-  // The TIERS table itself must not wrap with the corporate line or finale punchline.
+  // The TIERS table itself must not wrap with reserved or prefix voice.
   const tierProbe = TIERS.map((t) => t.wrap("X")).join(" | ");
+  assert(!tierProbe.includes("After careful consideration"), "no TIER wraps with a prefix");
   assert(!tierProbe.includes("Comprehensive analysis"), "no TIER wraps with the corporate line");
   assert(!tierProbe.includes(FINAL_ANSWER), "no TIER wraps with the finale punchline");
+}
+
+// ── (r) Collectible answers only in Answerdex ────────────────────────────────
+console.log("\n(r) Collectible answers");
+{
+  assert(!isCollectibleAnswer("quack"), "plain quack is not collectible");
+  assert(!isCollectibleAnswer("Quack?"), "plain Quack? is not collectible");
+  assert(!isCollectibleAnswer("🦆"), "solo duck emoji is not collectible");
+  assert(isCollectibleAnswer("🦆👑"), "profession emoji is collectible");
+  assert(isCollectibleAnswer("You're absolutely right!"), "easter egg is collectible");
+
+  const meta = defaultMeta();
+  assert(!recordAnswerdex(meta, "quack"), "common answer not recorded");
+  assert(recordAnswerdex(meta, "🦆🔥"), "profession emoji recorded");
+  assert(meta.answerdexSeen.length === 1, "only one collectible stored");
 }
 
 // ── Summary ─────────────────────────────────────────────────────────────────

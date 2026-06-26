@@ -1,6 +1,5 @@
 // @ts-check
 import { actTierForAct } from "../game/progression.js";
-
 /**
  * @param {number} act
  */

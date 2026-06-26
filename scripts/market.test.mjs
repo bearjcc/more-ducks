@@ -2,21 +2,21 @@
 import {
   ANSWERS_PER_DUCK_PER_SEC,
   BASE_DEMAND,
+  BUZZ_PER_DUCK,
+  BUZZ_EXPONENT,
   COIN_PER_ANSWER,
-  COHERENCE_RESEARCH_THRESHOLD,
+  COHERENCE_ANSWERS_THRESHOLD,
   HYPE_FACTOR,
   HYPE_DECAY_PER_SEC,
-  RESEARCH_PER_ANSWER,
   coherenceValueMult,
   computeCoherence,
   demand,
   decayHype,
   efficiencyMult,
-  researchEarnedLifetime,
-  researchFromServed,
   servedPerSecond,
   supplyPerSecond,
   updateCoherence,
+  ponderCoinBonus,
 } from "../src/game/market.js";
 import { createGame } from "../src/game/economy.js";
 import { defaultMeta } from "../src/game/meta.js";
@@ -30,13 +30,16 @@ function assert(cond, msg) {
   else { console.error(`  ✗ ${msg}`); failed++; }
 }
 
+const buzzFor = (engine) => BUZZ_PER_DUCK * Math.pow(engine.resource("ducks").count, BUZZ_EXPONENT);
+
 console.log("\n(a) demand with zero hype");
 {
   const engine = createGame();
   const meta = defaultMeta();
   const d = demand(meta, engine);
-  assert(d === BASE_DEMAND, "returns baseDemand when hype is 0");
-  assert(meta.demand === BASE_DEMAND, "writes meta.demand");
+  const base = BASE_DEMAND + buzzFor(engine);
+  assert(d === base, "returns base + flock buzz when hype is 0");
+  assert(meta.demand === base, "writes meta.demand");
 }
 
 console.log("\n(b) demand scales with hype");
@@ -45,7 +48,7 @@ console.log("\n(b) demand scales with hype");
   const meta = defaultMeta();
   engine.currency("hype").incrementBy(100);
   const d = demand(meta, engine);
-  assert(d === BASE_DEMAND + HYPE_FACTOR * 100, "baseDemand + hypeFactor·hype");
+  assert(d === BASE_DEMAND + buzzFor(engine) + HYPE_FACTOR * 100, "base + flock buzz + hypeFactor·hype");
   assert(meta.demand === d, "meta.demand matches return value");
 }
 
@@ -91,7 +94,7 @@ console.log("\n(g) servedPerSecond is min(supply, demand)");
   assert(servedPerSecond(4, 4) === 4, "balanced");
 }
 
-console.log("\n(h) early-game coin rate matches old foraging");
+console.log("\n(h) early-game coin rate");
 {
   const engine = createGame();
   const mods = createMods();
@@ -99,27 +102,28 @@ console.log("\n(h) early-game coin rate matches old foraging");
   const meta = defaultMeta();
   const d = demand(meta, engine);
   const served = servedPerSecond(supply, d);
-  assert(served === 1, "one duck meets base demand");
-  assert(served * COIN_PER_ANSWER === 0.02, "0.02 coins/s at Act 1");
+  assert(served === 1, "one duck is fully served (supply-limited)");
+  assert(served * COIN_PER_ANSWER === 0.04, "0.04 coins/s at Act 1");
 }
 
-console.log("\n(i) researchFromServed trickles per answer");
+console.log("\n(i) ponderCoinBonus scales with depth");
 {
-  assert(researchFromServed(10) === 10 * RESEARCH_PER_ANSWER, "linear in served count");
-  assert(RESEARCH_PER_ANSWER > 0, "positive earn rate");
+  assert(ponderCoinBonus(0) > 0, "any ponder grants base bonus");
+  assert(ponderCoinBonus(1) > ponderCoinBonus(0), "deeper ponder → more bonus");
 }
 
-console.log("\n(j) efficiencyMult from research upgrades");
+console.log("\n(j) efficiencyMult from efficiency upgrades");
 {
   const engine = createGame();
   const meta = defaultMeta();
   const mods = createMods();
   assert(efficiencyMult(mods) === 1, "baseline efficiency is 1");
-  meta.upgradesOwned.push("promptcache", "quantweights");
+  meta.upgradeLevels = { promptcache: 25, quantweights: 25 };
   applyUpgrades(engine, meta, mods);
-  assert(efficiencyMult(mods) === 1.25 * 1.5, "research upgrades stack multiplicatively");
+  const eff = efficiencyMult(mods);
+  assert(Math.abs(eff - 1.875) < 1e-9, "efficiency upgrades stack multiplicatively");
   const supply = supplyPerSecond(engine, mods);
-  assert(supply === ANSWERS_PER_DUCK_PER_SEC * 1.25 * 1.5, "supply scales with efficiency");
+  assert(Math.abs(supply - ANSWERS_PER_DUCK_PER_SEC * 1.875) < 1e-9, "supply scales with efficiency");
 }
 
 console.log("\n(l) coherenceValueMult scales coin payout");
@@ -129,27 +133,24 @@ console.log("\n(l) coherenceValueMult scales coin payout");
   assert(coherenceValueMult(1) === 2, "full coherence doubles coin value");
 }
 
-console.log("\n(m) computeCoherence from lifetime research");
+console.log("\n(m) computeCoherence from answersTotal");
 {
-  const engine = createGame();
   const meta = defaultMeta();
-  assert(computeCoherence(engine, meta) === 0, "zero research → coherence 0");
-  engine.currency("research").incrementBy(COHERENCE_RESEARCH_THRESHOLD / 2);
-  assert(computeCoherence(engine, meta) === 0.5, "half threshold → 0.5");
-  engine.currency("research").incrementBy(COHERENCE_RESEARCH_THRESHOLD / 2);
-  assert(computeCoherence(engine, meta) === 1, "at threshold → 1");
-  engine.currency("research").incrementBy(100);
-  assert(computeCoherence(engine, meta) === 1, "coherence capped at 1");
+  assert(computeCoherence(meta) === 0, "zero answers → coherence 0");
+  meta.answersTotal = COHERENCE_ANSWERS_THRESHOLD / 2;
+  assert(computeCoherence(meta) === 0.5, "half threshold → 0.5");
+  meta.answersTotal = COHERENCE_ANSWERS_THRESHOLD;
+  assert(computeCoherence(meta) === 1, "at threshold → 1");
+  meta.answersTotal = 100;
+  assert(computeCoherence(meta) === 1, "coherence capped at 1");
 }
 
-console.log("\n(n) spent research still counts toward coherence");
+console.log("\n(n) updateCoherence writes meta");
 {
-  const engine = createGame();
   const meta = defaultMeta();
-  meta.upgradesOwned.push("promptcache");
-  assert(researchEarnedLifetime(engine, meta) === 5, "owned upgrade cost counts");
-  updateCoherence(meta, engine);
-  assert(meta.coherence === 5 / COHERENCE_RESEARCH_THRESHOLD, "updateCoherence writes meta");
+  meta.answersTotal = 25;
+  updateCoherence(meta);
+  assert(meta.coherence === 25 / COHERENCE_ANSWERS_THRESHOLD, "updateCoherence writes meta");
 }
 
 console.log(`\n${passed + failed} checks: ${passed} passed, ${failed} failed.\n`);

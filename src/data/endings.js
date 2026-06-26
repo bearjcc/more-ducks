@@ -7,13 +7,13 @@ export const HORIZONTAL_CAPSTONE = "oceanswarm";
 
 /** @type {readonly string[]} */
 export const COMPETITOR_BIRDS = [
-  "Owl Language Model",
-  "SparrowGPT",
-  "Pigeon-3",
+  "Night Owl Corp",
+  "Sparrow Systems",
+  "Pigeon Labs",
   "Crow Composer",
   "Parrot Pro",
-  "Emu Engine",
-  "Kiwi Kernel",
+  "Emu Answers",
+  "Kiwi Core",
 ];
 
 /**

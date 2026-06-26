@@ -9,7 +9,10 @@
     "serve": "python -m http.server 8000",
     "typecheck": "tsc --noEmit -p jsconfig.json",
     "sim": "node scripts/sim.mjs",
-    "test": "node scripts/chat.test.mjs && node scripts/quack.test.mjs && node scripts/dex.test.mjs && node scripts/quackmarks.test.mjs && node scripts/economy.test.mjs && node scripts/market.test.mjs && node scripts/hype.test.mjs && node scripts/prestige.test.mjs && node scripts/save.test.mjs && node scripts/theme.test.mjs && node scripts/feed.test.mjs && node scripts/regions.test.mjs && node scripts/endings.test.mjs"
+    "curve": "node scripts/curve.mjs",
+    "gen-colors": "node scripts/gen-colors.mjs",
+    "readability": "node scripts/readability.test.mjs",
+    "test": "node scripts/gen-colors.mjs && node scripts/format.test.mjs && node scripts/chat.test.mjs && node scripts/quack.test.mjs && node scripts/content.test.mjs && node scripts/dex.test.mjs && node scripts/economy.test.mjs && node scripts/market.test.mjs && node scripts/hype.test.mjs && node scripts/save.test.mjs && node scripts/theme.test.mjs && node scripts/readability.test.mjs && node scripts/feed.test.mjs && node scripts/regions.test.mjs && node scripts/endings.test.mjs && node scripts/unlocks.test.mjs && node scripts/scaledCost.test.mjs && node scripts/curve.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

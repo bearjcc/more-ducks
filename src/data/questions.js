@@ -1,11 +1,9 @@
 // @ts-check
 /**
- * Short vanity questions — tap picks one; the duck quacks back. All ≤ 10 words.
- * At high coherence (quack.js) these pools also supply fluent *answer* text:
- * confident non-sequiturs, never correct (economy.md §4).
+ * Short vanity questions — tap picks one; the duck answers from the basic table.
  */
 
-/** Generic prompts: life advice, dev humor, pop culture, real-world AI jokes. */
+/** Generic prompts: life advice, dev humor, pop culture, pond satire. */
 /** @type {string[]} */
 export const BASIC_QUESTIONS = [
   "Will it rain tomorrow?",
@@ -94,12 +92,12 @@ export const BASIC_QUESTIONS = [
   "Can I trust this stack trace?",
   "Is this premature optimization?",
   "Should I read the docs?",
-  "Will AI take my job?",
-  "Should I train another model?",
-  "How much compute is enough?",
+  "Will ducks take my job?",
+  "Should I breed another flock?",
+  "How much bread is enough?",
   "Does scaling solve everything?",
-  "Should I buy more GPUs?",
-  "Is AGI next year?",
+  "Should I buy more ponds?",
+  "Is more ducks next year?",
   "Should I roll for initiative?",
   "Is the dragon bluffing?",
   "Can I pet the mimic?",
@@ -226,7 +224,7 @@ export const META_QUESTIONS = [
   "Who wrote the story?",
   "What lies beyond the wall?",
   "Is this the real world?",
-  "What does the machine want?",
+  "What does the pond want?",
   "What are the ducks planning?",
   "Should I trust duck statistics?",
   "Do ducks dream of bread?",
@@ -236,9 +234,9 @@ export const META_QUESTIONS = [
   "What is the final answer?",
   "Can the ducks reason?",
   "Should ducks have tools?",
-  "Will benchmarks improve?",
+  "Will the flock grow faster?",
   "Is confidence real?",
-  "Can ducks dream electrically?",
+  "Can ducks dream in spreadsheets?",
   "Is this a simulation?",
   "Do ducks dream of breadcrumbs?",
 ];

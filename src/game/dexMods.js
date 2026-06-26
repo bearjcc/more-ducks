@@ -1,15 +1,15 @@
 // @ts-check
+
 import { DUCKS } from "../data/ducks.js";
 
 /** @typedef {{ kind: "coinUpkeep", mult: number }
- *   | { kind: "researchUpkeep", mult: number }
  *   | { kind: "hypeDecay", mult: number }
  *   | { kind: "coherenceLift", add: number }
  *   | { kind: "questionIntake", add: number }
  *   | { kind: "produceMult", mult: number }
  *   | { kind: "scoreInflate", mult: number }} Demand */
 
-/** @typedef {{ coinUpkeep: number, researchUpkeep: number, hypeDecayMult: number, coherenceAdd: number, questionIntake: number, produceMult: number, scoreInflate: number }} DexMods */
+/** @typedef {{ coinUpkeep: number, hypeDecayMult: number, coherenceAdd: number, questionIntake: number, produceMult: number, scoreInflate: number }} DexMods */
 
 const DUCK_BY_ID = Object.fromEntries(DUCKS.map((d) => [d.id, d]));
 
@@ -17,7 +17,6 @@ const DUCK_BY_ID = Object.fromEntries(DUCKS.map((d) => [d.id, d]));
 export function defaultDexMods() {
   return {
     coinUpkeep: 1,
-    researchUpkeep: 1,
     hypeDecayMult: 1,
     coherenceAdd: 0,
     questionIntake: 0,
@@ -39,7 +38,6 @@ export function dexMods(meta) {
     if (!d?.demand) continue;
     switch (d.demand.kind) {
       case "coinUpkeep": out.coinUpkeep *= d.demand.mult; break;
-      case "researchUpkeep": out.researchUpkeep *= d.demand.mult; break;
       case "hypeDecay": out.hypeDecayMult *= d.demand.mult; break;
       case "coherenceLift": out.coherenceAdd += d.demand.add; break;
       case "questionIntake": out.questionIntake += d.demand.add; break;

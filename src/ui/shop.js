@@ -1,10 +1,10 @@
 // @ts-check
+// aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (PRODUCERS data, emoji).
 import { formatNumber } from "../game/format.js";
 import { bulkCost, maxAffordable } from "../game/economy.js";
 import { purchaseRevealed } from "../game/unlocks.js";
 import { PRODUCERS } from "../data/producers.js";
 import { flashCard } from "./render.js";
-
 /** @typedef {1 | 10 | 100 | "max"} BuyMode */
 
 /**
@@ -23,9 +23,11 @@ const buyCtx = new WeakMap();
 /** @type {HTMLElement|null} */ let listEl = null;
 /** @type {HTMLElement|null} */ let emptyEl = null;
 /** @type {(id: string, qty: number) => boolean} */ let onBuy = () => false;
+// aislop-ignore-next-line ai-slop/empty-function -- default no-op handler slot; replaced in initShop
 /** @type {(mode: import("../game/meta.js").Settings["buyMode"]) => void} */ let onBuyModeChange = () => {};
 /** @type {BuyMode} */ let buyMode = 1;
 /** @type {boolean} */ let firstHintShown = false;
+/** @type {import("../game/meta.js").Meta|null} */ let shopMeta = null;
 
 /**
  * @param {import("../data/producers.js").ProducerDef} def
@@ -37,10 +39,10 @@ function tryBuyProducer(def, refs) {
   if (qty > 0 && onBuy(def.id, qty)) {
     flashCard(refs.root);
     refs.root.classList.remove("is-first-hint");
+    firstHintShown = true;
+    if (shopMeta) shopMeta.flags.firstAffordableHint = true;
   }
 }
-
-const BUY_MODES = /** @type {const} */ (["1", "10", "100", "max"]);
 
 /**
  * @param {{ onBuy: (id: string, qty: number) => boolean, onBuyModeChange?: (mode: import("../game/meta.js").Settings["buyMode"]) => void }} handlers
@@ -50,7 +52,6 @@ export function initShop(handlers) {
   emptyEl = document.getElementById("flock-empty");
   onBuy = handlers.onBuy;
   onBuyModeChange = handlers.onBuyModeChange || (() => {});
-
   const bar = document.getElementById("buy-amount");
   if (bar) {
     bar.querySelectorAll("[data-buy-mode]").forEach((btn) => {
@@ -126,7 +127,10 @@ function createCard(def) {
     e.stopPropagation();
     tryBuyProducer(def, refs);
   });
-  li.addEventListener("click", () => tryBuyProducer(def, refs));
+  li.addEventListener("click", () => {
+    if (refs.btn.disabled) return;
+    tryBuyProducer(def, refs);
+  });
   cards.set(def.id, refs);
   if (listEl) listEl.appendChild(li);
   return refs;
@@ -138,6 +142,8 @@ function createCard(def) {
  * @param {{ engine: any, meta: import("../game/meta.js").Meta, coins: number, era: number }} s
  */
 export function updateShop(s) {
+  shopMeta = s.meta;
+  if (s.meta.flags.firstAffordableHint) firstHintShown = true;
   let anyVisible = false;
   for (const def of PRODUCERS) {
     const prod = s.engine.producer(def.id);
@@ -145,7 +151,6 @@ export function updateShop(s) {
     const visible = (def.era <= s.era || owned)
       && purchaseRevealed(s.coins, def.baseCost, owned);
     let refs = cards.get(def.id);
-
     if (!visible) {
       if (refs) refs.root.style.display = "none";
       continue;
@@ -153,7 +158,6 @@ export function updateShop(s) {
     if (!refs) refs = createCard(def);
     refs.root.style.display = "";
     anyVisible = true;
-
     const qty = resolveQty(s.engine, def.id, s.coins);
     const cost = qty > 0 ? bulkCost(s.engine, def.id, qty) : bulkCost(s.engine, def.id, 1);
     refs.count.textContent = "×" + formatNumber(prod.count, 0);
@@ -164,9 +168,10 @@ export function updateShop(s) {
     buyCtx.set(refs.btn, { engine: s.engine, coins: s.coins });
     refs.btn.setAttribute("aria-label", qty > 1 ? `Buy ${qty} ${def.name}` : `Buy ${def.name}`);
     refs.root.classList.toggle("is-affordable", affordable);
-    if (affordable && !firstHintShown) {
+    if (affordable && !firstHintShown && !s.meta.flags.firstAffordableHint) {
       refs.root.classList.add("is-first-hint");
-      firstHintShown = true;
+    } else if (!affordable || s.meta.flags.firstAffordableHint) {
+      refs.root.classList.remove("is-first-hint");
     }
   }
   if (emptyEl) emptyEl.style.display = anyVisible ? "none" : "";

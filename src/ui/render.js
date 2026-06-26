@@ -1,4 +1,7 @@
-// @ts-check
+﻿// @ts-check
+// Intentionally one module: every function here shares the `els` DOM cache and the
+// motion/pondering state below. Splitting would force a shared-state file or duplicate
+// the cache, fragmenting cohesive render logic. Flat + single-purpose beats artificial seams.
 import { formatNumber } from "../game/format.js";
 import { ERAS } from "../data/eras.js";
 import { syncThemeColor } from "./theme.js";
@@ -13,11 +16,10 @@ import { applyActTier } from "./shell.js";
 import {
   anyTabUnlocked,
   flockTabUnlocked,
-  marksSectionUnlocked,
+  upgradesTabUnlocked,
   tabUnlocked,
 } from "../game/unlocks.js";
 import { showToast } from "./toast.js";
-
 /** @type {Record<string, HTMLElement|null>} */
 const els = {};
 /** @type {boolean|null} */
@@ -25,11 +27,10 @@ let motionOverride = null;
 /** @type {number} */
 let lastHype = 0;
 /** @type {number} */
-let lastFeedOpex = 0;
-/** @type {number} */
 let lastAnswersRate = 0;
-/** @type {boolean} */
-let flockToastShown = false;
+let upgradesToastShown = false;
+/** @type {import("../game/meta.js").Meta|null} */
+let tabMeta = null;
 
 /** @param {boolean|null} pref null = system */
 export function setReduceMotionPref(pref) {
@@ -52,6 +53,71 @@ function byId(id) {
 const PONDER_TICK_MS = 380;
 
 /**
+ * Pondering hold on duck avatar (post-Critical Mass). Streams thoughts while the
+ * player holds, then resolves to an answer + coin gain on release.
+ * @param {HTMLButtonElement|null} btn
+ * @param {{
+ *   isPonderingUnlocked?: () => boolean,
+ *   onPonderStart?: () => { question: string, thought: string } | null,
+ *   onPonderTick?: (holdMs: number) => { thought?: string } | void,
+ *   onPonderEnd?: (holdMs: number) => { answer: string, coinGain: number } | null,
+ * }} handlers
+ */
+function bindPonderHold(btn, handlers) {
+  if (!btn || !handlers.onPonderStart || !handlers.onPonderEnd) return;
+
+  /** @type {ReturnType<typeof setInterval>|null} */
+  let tickTimer = null;
+  let ponderActive = false;
+  let holdStart = 0;
+  /** @type {number|null} */
+  let captureId = null;
+  const stopTick = () => {
+    if (tickTimer) clearInterval(tickTimer);
+    tickTimer = null;
+  };
+
+  const endPonder = (/** @type {PointerEvent} */ e) => {
+    if (!ponderActive) return;
+    ponderActive = false;
+    stopTick();
+    const holdMs = Date.now() - holdStart;
+    const result = handlers.onPonderEnd?.(holdMs);
+    if (result) {
+      appendChatAnswer(result.answer);
+      setPondering(false);
+      floatGain(btn, result.coinGain, e);
+    } else {
+      setPondering(false);
+    }
+    if (captureId !== null) {
+      try { btn.releasePointerCapture(captureId); } catch { /* released */ }
+      captureId = null;
+    }
+  };
+
+  btn.addEventListener("pointerdown", (e) => {
+    const ponderingUnlocked = handlers.isPonderingUnlocked?.() ?? false;
+    if (!ponderingUnlocked || e.button !== 0) return;
+    const session = handlers.onPonderStart?.();
+    if (!session) return;
+    e.preventDefault();
+    ponderActive = true;
+    holdStart = Date.now();
+    beginPonderExchange(session.question, session.thought);
+    setPondering(true);
+    captureId = e.pointerId;
+    btn.setPointerCapture(e.pointerId);
+    tickTimer = setInterval(() => {
+      const tick = handlers.onPonderTick?.(Date.now() - holdStart);
+      if (tick && "thought" in tick && tick.thought) appendChatThought(tick.thought);
+    }, PONDER_TICK_MS);
+  });
+  btn.addEventListener("pointerup", endPonder);
+  btn.addEventListener("pointercancel", endPonder);
+}
+
+/**
  * Wire up persistent UI handlers (feed duck, tabs, pondering hold).
  * @param {{
  *   isPonderingUnlocked?: () => boolean,
@@ -65,8 +131,6 @@ const PONDER_TICK_MS = 380;
 export function initUI(handlers) {
   els.duckCount = byId("duck-count");
   els.coinCount = byId("coin-count");
-  els.scoreCount = byId("score-count");
-  els.scoreBadge = byId("score-badge");
   els.answersRate = byId("answers-rate");
   els.demandRate = byId("demand-rate");
   els.supplyRate = byId("supply-rate");
@@ -75,75 +139,20 @@ export function initUI(handlers) {
   els.hypeCount = byId("hype-count");
   els.hypeStat = els.hypeCount?.closest(".dash-stat--hype") ?? null;
   els.questionsAnswered = byId("questions-answered");
-  els.logList = byId("log-list");
   els.duckFeedBtn = byId("duck-feed-btn");
   els.settingsGear = byId("settings-gear");
   els.feedOpexEl = byId("feed-opex");
   els.feedStatEl = els.feedOpexEl?.closest(".dash-stat--feed") ?? null;
   els.pondCapLabel = byId("pond-cap-label");
   els.buyPondBtn = /** @type {HTMLButtonElement} */ (byId("buy-pond-btn"));
-
-  /** Pondering hold on duck avatar (post-prestige). */
-  function bindPonderHold(btn, handlers) {
-    if (!btn || !handlers.onPonderStart || !handlers.onPonderEnd) return;
-
-    /** @type {ReturnType<typeof setInterval>|null} */
-    let tickTimer = null;
-    let ponderActive = false;
-    let holdStart = 0;
-    /** @type {number|null} */
-    let captureId = null;
-
-    const stopTick = () => {
-      if (tickTimer) clearInterval(tickTimer);
-      tickTimer = null;
-    };
-
-    const endPonder = (/** @type {PointerEvent} */ e) => {
-      if (!ponderActive) return;
-      ponderActive = false;
-      stopTick();
-      const holdMs = Date.now() - holdStart;
-      const result = handlers.onPonderEnd?.(holdMs);
-      if (result) {
-        appendChatAnswer(result.answer);
-        setPondering(false);
-        floatGain(btn, result.coinGain, e);
-      } else {
-        setPondering(false);
-      }
-      if (captureId !== null) {
-        try { btn.releasePointerCapture(captureId); } catch { /* released */ }
-        captureId = null;
-      }
-    };
-
-    btn.addEventListener("pointerdown", (e) => {
-      const ponderingUnlocked = handlers.isPonderingUnlocked?.() ?? false;
-      if (!ponderingUnlocked || e.button !== 0) return;
-      const session = handlers.onPonderStart?.();
-      if (!session) return;
-      e.preventDefault();
-      ponderActive = true;
-      holdStart = Date.now();
-      beginPonderExchange(session.question, session.thought);
-      setPondering(true);
-      captureId = e.pointerId;
-      btn.setPointerCapture(e.pointerId);
-      tickTimer = setInterval(() => {
-        const tick = handlers.onPonderTick?.(Date.now() - holdStart);
-        if (tick && "thought" in tick && tick.thought) appendChatThought(tick.thought);
-      }, PONDER_TICK_MS);
-    });
-
-    btn.addEventListener("pointerup", endPonder);
-    btn.addEventListener("pointercancel", endPonder);
-  }
+  els.panelMinimize = byId("panel-minimize");
+  els.sheetTitle = byId("sheet-title");
+  els.sheetMetric = byId("sheet-metric");
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       const name = tab.getAttribute("data-tab");
-      if (/** @type {HTMLElement} */ (tab).hidden) return;
+      if (tab.classList.contains("is-locked")) return;
       if (tab.classList.contains("is-active") && document.body.hasAttribute("data-panel-open")) {
         closeTab();
       } else {
@@ -151,26 +160,95 @@ export function initUI(handlers) {
       }
     });
   });
-
-  if (els.settingsGear) {
-    els.settingsGear.addEventListener("click", () => openTab("settings"));
-  }
-
+  bindSheetHandle(els.panelMinimize);
   if (handlers.onFeedTap && els.duckFeedBtn) {
     els.duckFeedBtn.addEventListener("click", () => handlers.onFeedTap?.());
   }
 
-  bindPonderHold(els.duckFeedBtn, handlers);
-
+  bindPonderHold(/** @type {HTMLButtonElement|null} */ (els.duckFeedBtn), handlers);
   if (handlers.onBuyPond && els.buyPondBtn) {
     els.buyPondBtn.addEventListener("click", () => handlers.onBuyPond?.());
   }
   closeTab();
 }
 
+/**
+ * Dock tab → human label shown in the sheet handle header.
+ * @type {Record<string, string>}
+ */
+const PANEL_TITLES = {
+  upgrades: "Upgrades",
+  flock: "Flock",
+  hype: "Marketing",
+  regions: "Regions",
+  dashboard: "Stats",
+  collections: "Collections",
+};
+
+/**
+ * Resize the open bottom sheet. No-op unless a panel is open; the matching CSS
+ * (`body[data-sheet]`) only takes effect in the portrait bottom-sheet layout.
+ * @param {"half"|"full"} state
+ */
+export function setSheet(state) {
+  if (!document.body.hasAttribute("data-panel-open")) return;
+  document.body.dataset.sheet = state;
+}
+
+/**
+ * Tap Titans 2–style sheet handle: drag up/down (or tap) to move between
+ * minimized / half / full. On wide layouts the panel is a fixed side column
+ * with no half/full, so the handle simply closes it.
+ * @param {HTMLElement|null} btn
+ */
+function bindSheetHandle(btn) {
+  if (!btn) return;
+  const panels = document.querySelector(".panels");
+  const isSheet = () =>
+    panels instanceof HTMLElement && getComputedStyle(panels).position === "fixed";
+  const currentState = () => (document.body.dataset.sheet === "full" ? "full" : "half");
+
+  /** @type {number|null} */ let startY = null;
+  /** @type {"half"|"full"} */ let startState = "half";
+  btn.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    startY = e.clientY;
+    startState = currentState();
+    try { btn.setPointerCapture(e.pointerId); } catch { /* unsupported */ }
+  });
+  btn.addEventListener("pointerup", (e) => {
+    if (startY === null) return;
+    const dy = e.clientY - startY;
+    startY = null;
+    if (!isSheet()) { closeTab(); return; }
+    if (Math.abs(dy) < 10) {
+      setSheet(startState === "full" ? "half" : "full"); // tap toggles
+    } else if (dy < 0) {
+      setSheet("full"); // drag up → expand
+    } else if (startState === "full") {
+      setSheet("half"); // drag down from full → shrink
+    } else {
+      closeTab(); // drag down from half → minimize
+    }
+  });
+  btn.addEventListener("pointercancel", () => { startY = null; });
+  btn.addEventListener("keydown", (e) => {
+    if (!isSheet()) return;
+    const cur = currentState();
+    if (e.key === "ArrowUp") { e.preventDefault(); setSheet("full"); }
+    else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (cur === "full") setSheet("half"); else closeTab();
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault(); setSheet(cur === "full" ? "half" : "full");
+    } else if (e.key === "Escape") { e.preventDefault(); closeTab(); }
+  });
+}
+
 /** Close all panels (mobile specials tray). */
 export function closeTab() {
   document.body.removeAttribute("data-panel-open");
+  document.body.removeAttribute("data-sheet");
   document.querySelectorAll(".tab").forEach((t) => {
     t.classList.remove("is-active");
     t.setAttribute("aria-selected", "false");
@@ -179,7 +257,6 @@ export function closeTab() {
     p.classList.remove("is-active");
     /** @type {HTMLElement} */ (p).hidden = true;
   });
-  if (els.settingsGear) els.settingsGear.classList.remove("is-active");
 }
 
 /** @param {string|null|undefined} name */
@@ -188,13 +265,15 @@ export function openTab(name) {
     closeTab();
     return;
   }
-  const scrollSettings = name === "settings";
-  const panel = scrollSettings ? "more" : name;
-  if (!scrollSettings && document.body.dataset.panelOpen === panel) {
+  const panel = name;
+  if (document.body.dataset.panelOpen === panel) {
     closeTab();
     return;
   }
   document.body.dataset.panelOpen = panel;
+  // Open at half height; preserve full if the player already expanded the sheet.
+  if (!document.body.dataset.sheet) document.body.dataset.sheet = "half";
+  if (els.sheetTitle) els.sheetTitle.textContent = PANEL_TITLES[panel] || "Panel";
   document.querySelectorAll(".tab").forEach((t) => {
     const tabName = t.getAttribute("data-tab");
     const isActive = tabName === panel;
@@ -206,14 +285,7 @@ export function openTab(name) {
     p.classList.toggle("is-active", isActive);
     /** @type {HTMLElement} */ (p).hidden = !isActive;
   });
-  if (els.settingsGear) {
-    els.settingsGear.classList.toggle("is-active", panel === "more");
-  }
-  if (scrollSettings) {
-    requestAnimationFrame(() => {
-      document.getElementById("settings-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
+  if (tabMeta && name) tabMeta.flags.dockDotSeen = true;
 }
 
 /** First quack — hide onboarding hint. */
@@ -287,14 +359,13 @@ export function showExchange(question, answer) {
 
 /**
  * Refresh HUD counters and market dashboard. Score lives in the Marks vanity panel.
- * @param {{ ducks: number, coins: number, ducksPerSec: number, answersPerSec: number, supplyPerSec: number, demandPerSec: number, hype: number, score: number, questionsAnswered: number, scoreBadge: string, feedOpexPerSec?: number, pondCap?: number, pondDucks?: number, hungry?: boolean, canAsk?: boolean }} snapshot
+ * @param {{ ducks: number, coins: number, ducksPerSec: number, answersPerSec: number, supplyPerSec: number, demandPerSec: number, hype: number, questionsAnswered: number, feedOpexPerSec?: number, pondCap?: number, pondDucks?: number, hungry?: boolean, canAsk?: boolean }} snapshot
  */
 export function updateUI(snapshot) {
   if (els.duckCount) els.duckCount.textContent = formatNumber(snapshot.ducks);
   document.body.dataset.totalDucks = String(snapshot.ducks);
   if (els.coinCount) els.coinCount.textContent = formatNumber(snapshot.coins);
-  if (els.scoreCount) els.scoreCount.textContent = formatNumber(snapshot.score);
-  if (els.scoreBadge) els.scoreBadge.textContent = snapshot.scoreBadge;
+  if (els.sheetMetric) els.sheetMetric.textContent = formatNumber(snapshot.coins);
   if (els.answersRate) els.answersRate.textContent = formatNumber(snapshot.answersPerSec, 2);
   if (els.answersRate && snapshot.answersPerSec > lastAnswersRate + 0.001) {
     pulseHeroRate();
@@ -332,35 +403,43 @@ export function updateUI(snapshot) {
 
 /**
  * Reveal dock tabs as progression gates clear; hide dock until first tab unlocks.
- * @param {{ meta: import("../game/meta.js").Meta, coins: number, engine: any, answersPerSec?: number, research?: number }} ctx
+ * @param {{ meta: import("../game/meta.js").Meta, coins: number, engine: any, answersPerSec?: number }} ctx
  */
 export function updateTabUnlocks(ctx) {
-  const { meta, coins, engine, answersPerSec = 0, research = 0 } = ctx;
+  const { meta, coins, engine, answersPerSec = 0 } = ctx;
+  tabMeta = meta;
   const dock = document.querySelector(".dock");
-  const tabsVisible = anyTabUnlocked(meta, coins, engine, answersPerSec, research);
+  const tabsVisible = anyTabUnlocked(meta, coins, engine, answersPerSec);
 
   if (dock) /** @type {HTMLElement} */ (dock).hidden = !tabsVisible;
-
   document.querySelectorAll(".tab[data-tab]").forEach((tab) => {
     const name = tab.getAttribute("data-tab");
     if (!name) return;
-    const unlocked = tabUnlocked(name, meta, coins, engine, answersPerSec, research);
-    /** @type {HTMLElement} */ (tab).hidden = !unlocked;
+    const unlocked = tabUnlocked(name, meta, coins, engine, answersPerSec);
+    /** @type {HTMLElement} */ (tab).hidden = !tabsVisible;
+    tab.classList.toggle("is-locked", tabsVisible && !unlocked);
+    tab.toggleAttribute("disabled", tabsVisible && !unlocked);
+    tab.setAttribute("aria-disabled", String(tabsVisible && !unlocked));
+    tab.classList.toggle("has-dot", name === "flock" && unlocked && !meta.flags.dockDotSeen);
   });
-
-  const marksSection = document.getElementById("marks-section");
-  if (marksSection) marksSection.hidden = !marksSectionUnlocked(meta);
-
-  if (flockTabUnlocked(meta) && !flockToastShown && !meta.flags.flockTabToast) {
-    flockToastShown = true;
+  const flockJustUnlocked = flockTabUnlocked(meta) && !meta.flags.flockTabToast;
+  if (flockJustUnlocked) {
     meta.flags.flockTabToast = true;
-    showToast({ title: "Purchases unlocked", body: "Tap Flock to buy duck-makers." });
-  } else if (meta.flags.flockTabToast) {
-    flockToastShown = true;
+    showToast({ title: "Flock unlocked", body: "Tap Flock to buy duck-makers." });
+  }
+
+  if (upgradesTabUnlocked(meta) && !upgradesToastShown && !meta.flags.upgradesTabToast) {
+    upgradesToastShown = true;
+    meta.flags.upgradesTabToast = true;
+    if (!flockJustUnlocked) {
+      showToast({ title: "Upgrades unlocked", body: "Try Steady Beak — hold Auto to ask faster." });
+    }
+  } else if (meta.flags.upgradesTabToast) {
+    upgradesToastShown = true;
   }
 
   const openPanel = document.body.dataset.panelOpen;
-  if (openPanel && !tabUnlocked(openPanel, meta, coins, engine, answersPerSec, research) && openPanel !== "more") {
+  if (openPanel && !tabUnlocked(openPanel, meta, coins, engine, answersPerSec)) {
     closeTab();
   }
 }
@@ -438,19 +517,6 @@ export function pulseCoinCounter() {
   els.coinCount.classList.add("is-pulse", "is-shimmer");
 }
 
-/**
- * Append a line to the event log (newest on top).
- * @param {string} message
- * @param {boolean} [isBeat]  Highlight as a narrative beat.
- */
-export function logMessage(message, isBeat = false) {
-  const list = els.logList;
-  if (!list) return;
-  const li = document.createElement("li");
-  li.textContent = message;
-  if (isBeat) li.classList.add("is-beat");
-  list.prepend(li);
-  while (list.children.length > 100 && list.lastChild) {
-    list.removeChild(list.lastChild);
-  }
-}
+/** @deprecated Pond log removed — no-op for callers still invoking. */
+// aislop-ignore-next-line ai-slop/empty-function -- intentional deprecated no-op for back-compat callers.
+export function logMessage(_message, _isBeat = false) {}
