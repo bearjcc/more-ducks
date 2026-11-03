@@ -2156,7 +2156,8 @@ body[data-act-tier="empire"] .chat-thread {
     grid-column: 1;
     grid-row: 2;
     align-self: end;
-    padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+    padding: 6px max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
     background: var(--surface);
     border-top: 1px solid var(--row-divider);
     pointer-events: auto;
@@ -2164,6 +2165,28 @@ body[data-act-tier="empire"] .chat-thread {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+  }
+  .bottom-tray .chat-input {
+    gap: 3px;
+    padding: 3px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .chat-input__field {
+    min-height: 38px;
+    padding: 8px 6px;
+    font-size: 0.82rem;
+  }
+  .chat-input__auto,
+  .chat-input__send {
+    flex-shrink: 0;
+    min-width: 36px;
+    padding: 8px 6px;
+    font-size: 0.76rem;
+  }
+  .chat-starter {
+    font-size: 0.68rem;
   }
   body[data-panel-open] .bottom-tray {
     position: fixed;
@@ -2246,9 +2269,9 @@ body[data-act-tier="empire"] .chat-thread {
   body[data-panel-open] .panels .tab-panels {
     flex: none;
     flex-shrink: 0;
-    height: calc(var(--panel-sheet-height) - var(--panel-minimize-height));
-    min-height: calc(var(--panel-sheet-height) - var(--panel-minimize-height));
-    max-height: calc(var(--panel-sheet-height) - var(--panel-minimize-height));
+    height: calc(var(--panel-sheet-height) - var(--panel-minimize-height) - var(--dock-height));
+    min-height: calc(var(--panel-sheet-height) - var(--panel-minimize-height) - var(--dock-height));
+    max-height: calc(var(--panel-sheet-height) - var(--panel-minimize-height) - var(--dock-height));
     opacity: 1;
     overflow: hidden;
   }
@@ -2348,6 +2371,19 @@ body[data-act-tier="empire"] .chat-thread {
   .panel-toolbar .buy-amount { margin-bottom: 0; flex: 1; min-width: 0; }
 
   .tab-panel { border-radius: 0; padding: 6px 8px; }
+  .tab-panel[data-panel="collections"] {
+    padding-bottom: 20px;
+  }
+  .tab-panel[data-panel="collections"] .more-section:last-of-type {
+    padding-bottom: 12px;
+  }
+  .tab-panel[data-panel="collections"] .duckdex {
+    margin-bottom: 4px;
+  }
+  .tab-panel[data-panel="collections"] .dex-cell {
+    min-height: 72px;
+    padding-bottom: 8px;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .panels .tab-panels,
