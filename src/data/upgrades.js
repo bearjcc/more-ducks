@@ -6,6 +6,7 @@
  *
  * @typedef {{ kind: "clickAdd", amount: number }
  *   | { kind: "clickMult", mult: number }
+ *   | { kind: "coinMult", mult: number }
  *   | { kind: "crumbMult", mult: number }
  *   | { kind: "globalMult", mult: number }
  *   | { kind: "producerMult", target: string, mult: number }
@@ -40,25 +41,25 @@ export const UPGRADES = [
   { id: "autofeeder",    name: "Auto Feeder",          emoji: "🍞", blurb: "Never tap-feed again. Bread bill scales with answers/sec.",       purchaseMode: "once", baseCost: 200,        era: 0, effect: { kind: "autoFeeder" } },
   // Era 1 — Flock Learning (producers, then crumbs)
   { id: "ducklingcamp",  name: "Duckling Bootcamp",    emoji: "🎓", blurb: "They learn to follow faster. Output tripled.",                   purchaseMode: "level", baseCost: 2500, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "producerMult", target: "duckling", mult: 3 } },
-  { id: "stalebread",    name: "Stale Bread Supply",   emoji: "🥖", blurb: "Ducks aren't picky. Foraging doubled.",                          purchaseMode: "level", baseCost: 3500, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "crumbMult", mult: 2 } },
+  { id: "stalebread",    name: "Stale Bread Supply",   emoji: "🥖", blurb: "Ducks aren't picky. Foraging doubled.",                          purchaseMode: "level", baseCost: 3500, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "coinMult", mult: 2 } },
   { id: "nestopt",       name: "Nest Optimization",    emoji: "📐", blurb: "We A/B tested the straw. The straw won.",                        purchaseMode: "level", baseCost: 9000, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "producerMult", target: "nestbox", mult: 3 } },
   { id: "quantweights",  name: "Light Peck",           emoji: "⚖️", blurb: "A lighter quack costs less bread. Confidence unchanged.",         purchaseMode: "level", baseCost: 12000, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "efficiencyMult", mult: 1.5 } },
   { id: "opensource",    name: "Open Pond",            emoji: "🔓", blurb: "We opened the gates. The ducks are everywhere now.",             purchaseMode: "level", baseCost: 40000, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "globalMult", mult: 2 } },
   { id: "distilled",     name: "Compact Flock",        emoji: "🧪", blurb: "A smaller flock thinks it's a bigger flock. The auditors nodded.", purchaseMode: "level", baseCost: 50000, costCoefficient: 1.15, maxLevel: 25, era: 1, effect: { kind: "efficiencyMult", mult: 2 } },
   // Era 2 — Scale the Flock
-  { id: "syntheticcrumbs", name: "Synthetic Crumbs",   emoji: "🧪", blurb: "We make the bread now too. Vertical integration.",              purchaseMode: "level", baseCost: 300000, costCoefficient: 1.15, maxLevel: 25, era: 2, effect: { kind: "crumbMult", mult: 3 } },
+  { id: "syntheticcrumbs", name: "Synthetic Crumbs",   emoji: "🧪", blurb: "We make the bread now too. Vertical integration.",              purchaseMode: "level", baseCost: 300000, costCoefficient: 1.15, maxLevel: 25, era: 2, effect: { kind: "coinMult", mult: 3 } },
   { id: "alignment",     name: "Formation Training",   emoji: "🧭", blurb: "The ducks now face the same way. We're calling it solved.",      purchaseMode: "level", baseCost: 1500000, costCoefficient: 1.15, maxLevel: 25, era: 2, effect: { kind: "clickMult", mult: 10 } },
   { id: "scalinglaws",   name: "Critical Mass",        emoji: "📈", blurb: "More ducks make better ducks. It's just math, honestly.",        purchaseMode: "once", baseCost: 3000000, era: 2, effect: { kind: "globalMult", mult: 3 } },
   { id: "pondexpansion", name: "Pond Expansion",       emoji: "🪣", blurb: "+25 duck capacity. Density is innovation.",                    purchaseMode: "quantity", baseCost: 500_000, costCoefficient: 1.18, era: 2, effect: { kind: "pondCapacity", amount: 25 } },
   // Era 3 — Duck Intelligence
   { id: "recursiveboost", name: "Self-Improvement",    emoji: "🔁", blurb: "The Recursive Drakes are iterating on themselves. Quietly.",     purchaseMode: "level", baseCost: 6_000_000, costCoefficient: 1.15, maxLevel: 25, era: 3, effect: { kind: "producerMult", target: "recursive", mult: 5 } },
-  { id: "manifest",      name: "Manifest Destiny",     emoji: "🌊", blurb: "The continent is basically a pond now. Crumbs everywhere.",      purchaseMode: "level", baseCost: 5_000_000, costCoefficient: 1.15, maxLevel: 25, era: 3, effect: { kind: "crumbMult", mult: 5 } },
+  { id: "manifest",      name: "Manifest Destiny",     emoji: "🌊", blurb: "The continent is basically a pond now. Crumbs everywhere.",      purchaseMode: "level", baseCost: 5_000_000, costCoefficient: 1.15, maxLevel: 25, era: 3, effect: { kind: "coinMult", mult: 5 } },
   { id: "foiegras",      name: "The Foie Gras Memo",   emoji: "📄", blurb: "Nobody read it. Output quadrupled regardless.",                  purchaseMode: "level", baseCost: 5_500_000, costCoefficient: 1.15, maxLevel: 25, era: 3, effect: { kind: "globalMult", mult: 4 } },
   // Era 4 — More Ducks (late grind helpers)
   { id: "duckchain",   name: "Duckchain",        emoji: "⛓️", blurb: "Immutable ledger of who quacked first. Mostly ducks.",           purchaseMode: "level", baseCost: 2500000000, costCoefficient: 1.15, maxLevel: 25, era: 4, effect: { kind: "globalMult", mult: 2 } },
-  { id: "crumbfi",     name: "Crumb-Fi",         emoji: "📶", blurb: "Yield farming, but the yield is breadcrumbs. Still crumbs.",   purchaseMode: "level", baseCost: 500000000, costCoefficient: 1.15, maxLevel: 25, era: 4, effect: { kind: "crumbMult", mult: 3 } },
+  { id: "crumbfi",     name: "Crumb-Fi",         emoji: "📶", blurb: "Yield farming, but the yield is breadcrumbs. Still crumbs.",   purchaseMode: "level", baseCost: 500000000, costCoefficient: 1.15, maxLevel: 25, era: 4, effect: { kind: "coinMult", mult: 3 } },
   { id: "omnivore",    name: "Omnivore Protocol", emoji: "🍽️", blurb: "If it exists, it can be converted. Menu is short.",           purchaseMode: "level", baseCost: 2000000000, costCoefficient: 1.15, maxLevel: 25, era: 4, effect: { kind: "globalMult", mult: 2 } },
-  { id: "lastcrumb",   name: "The Last Crumb",   emoji: "🥯", blurb: "There is always one more. There is always one more duck.",       purchaseMode: "level", baseCost: 5000000000, costCoefficient: 1.15, maxLevel: 25, era: 4, effect: { kind: "crumbMult", mult: 2 } },
-  { id: "selfgoverning", name: "Self-Governing Flock", emoji: "🏛️", blurb: "The ducks vote. You are optional.",                          purchaseMode: "once", baseCost: 8_000_000_000, era: 4, effect: { kind: "capstone", ending: "singularity" } },
-  { id: "oceanswarm",  name: "Maximum Ocean Density", emoji: "🌊", blurb: "Every drop of water now supports ducks.",                      purchaseMode: "once", baseCost: 12_000_000_000, era: 5, effect: { kind: "capstone", ending: "swarm" } },
+  { id: "lastcrumb",   name: "The Last Crumb",   emoji: "🥯", blurb: "There is always one more. There is always one more duck.",       purchaseMode: "level", baseCost: 5000000000, costCoefficient: 1.15, maxLevel: 25, era: 4, effect: { kind: "coinMult", mult: 2 } },
+  { id: "selfgoverning", name: "Self-Governing Flock", emoji: "🏛️", blurb: "The ducks vote. You are optional.",                          purchaseMode: "once", baseCost: 4_000_000_000, era: 4, effect: { kind: "capstone", ending: "singularity" } },
+  { id: "oceanswarm",  name: "Maximum Ocean Density", emoji: "🌊", blurb: "Every drop of water now supports ducks.",                      purchaseMode: "once", baseCost: 6_500_000_000, era: 5, effect: { kind: "capstone", ending: "swarm" } },
 ];

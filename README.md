@@ -13,9 +13,9 @@ Progress is kept in `localStorage`. **Phone landscape first**, portrait and lapt
 | [**TODO.md**](TODO.md) | Current implementation backlog |
 | [**DESIGN.md**](DESIGN.md) | UI/UX target (Tap Titans 2 + mobile chat) |
 | [**PRODUCT.md**](PRODUCT.md) | Product voice and anti-slop rules |
-| [../docs/economy.md](../docs/economy.md) | Authoritative economy spec |
-| [../docs/concept.md](../docs/concept.md) | Satire spine and tone |
-| [../CONTEXT.md](../CONTEXT.md) | Domain glossary |
+| [docs/economy.md](docs/economy.md) | Authoritative economy spec |
+| [docs/concept.md](docs/concept.md) | Satire spine and tone |
+| [CONTEXT.md](CONTEXT.md) | Domain glossary |
 
 > Ha, *Duck Intelligence*, that's silly… hey, this is cute… huh, it's pretty
 > fun… yes, of course I want to flood Australia, that means **more ducks**…
@@ -68,8 +68,9 @@ exposed for debugging and modding.
 ## Deploying
 
 Pushing to `main` on GitHub publishes via `.github/workflows/pages.yml` (free for
-public repos). All asset paths are relative, so it works under a project subpath
-like `you.github.io/more-ducks/` with no configuration.
+public repos). **One-time repo setup:** Settings → Pages → Build and deployment →
+**Source: GitHub Actions** (not “Deploy from a branch”). If the site 404s, check
+that the latest “Deploy to GitHub Pages” workflow run succeeded under Actions.
 
 ## Contributing
 

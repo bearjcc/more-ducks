@@ -20,7 +20,7 @@
 export const PRODUCERS = [
   { id: "duckling",    name: "Duckling",         emoji: "🐤",  blurb: "It follows the others. That's the whole strategy.",        baseCost: 12,          costCoefficient: 1.15, productionTime: 1500, productionAmount: 1,      era: 0 },
   { id: "nestbox",     name: "Nesting Box",      emoji: "📦",  blurb: "Ducks in. More ducks out. Try not to think about it.",     baseCost: 100,         costCoefficient: 1.15, productionTime: 1000, productionAmount: 3,      era: 0 },
-  { id: "breeder",     name: "Breeding Pair",    emoji: "💞",  blurb: "Two ducks, lightly supervised.",                           baseCost: 1_100,       costCoefficient: 1.16, productionTime: 1000, productionAmount: 22,     era: 1 },
+  { id: "breeder",     name: "Breeding Pair",    emoji: "💞",  blurb: "Two ducks, lightly supervised.",                           baseCost: 1_100,       costCoefficient: 1.16, productionTime: 1000, productionAmount: 22,     era: 2 },
   { id: "pondfarm",    name: "Pond Farm",        emoji: "🪣",  blurb: "Industrial dabbling. Fully free-range, allegedly.",        baseCost: 12_000,      costCoefficient: 1.16, productionTime: 1000, productionAmount: 140,    era: 1 },
   { id: "hatchery",    name: "Mega-Hatchery",    emoji: "🏭",  blurb: "We ran the numbers. The numbers said: more ducks.",        baseCost: 170_000,     costCoefficient: 1.17, productionTime: 1000, productionAmount: 1200,   era: 2 },
   { id: "datapond",    name: "Data Pond",        emoji: "🛰️",  blurb: "Every duck teaches the next. Quack quality is improving.",  baseCost: 2_800_000,   costCoefficient: 1.17, productionTime: 1000, productionAmount: 12000,  era: 2 },

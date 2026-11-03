@@ -17,6 +17,15 @@ function isUnlocked(u, engine, meta) {
       return !!p && p.count >= u.count;
     }
     case "upgrade": return upgradeLevel(meta, u.id) >= 1;
+    case "region": {
+      const mode = u.mode ?? "unlocked";
+      if (!meta.regionsUnlocked?.includes(u.id)) return false;
+      if (mode === "rented") return meta.regionsRented?.includes(u.id) ?? false;
+      if (mode === "flooded") return u.id === "australia" && meta.australiaFlooded;
+      if (mode === "saltwater") return meta.saltwaterDeployed;
+      if (mode === "orbital") return meta.spaceDeployed;
+      return true;
+    }
     default: return false;
   }
 }

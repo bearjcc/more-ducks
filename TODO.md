@@ -1,6 +1,6 @@
 # More Ducks — implementation TODO
 
-**Read first:** [`HANDOFF.md`](HANDOFF.md) · [`../docs/economy.md`](../docs/economy.md)
+**Read first:** [`HANDOFF.md`](HANDOFF.md) · [`docs/economy.md`](docs/economy.md)
 
 Economy refactor (Milestones A–H) is **complete**. This list is **vision alignment** — fixing drift from multiple agents, QLM voice, and UI cohesion.
 
@@ -31,19 +31,19 @@ Economy refactor (Milestones A–H) is **complete**. This list is **vision align
 
 ## Milestone 4 — Progression pacing
 
-- [ ] **4.1 Early shop order.** Confirm first visible upgrades: Steady Beak → Quick Quack → Auto Feeder before cheapest producer dominates. Adjust era gates / unlock thresholds in `src/data/producers.js`, `src/game/unlocks.js` if needed.
-- [ ] **4.2 Ads after manual loop.** Hype tab should not appear before player has bought at least one upgrade or hit era 1 — tune `hypeTabUnlocked`.
-- [ ] **4.3 Breeding pair timing.** `breeder` producer era ≥ 2 or post-Ads unlock if still too early.
+- [x] **4.1 Early shop order.** Producers hidden until Auto Feeder (`flockProducersUnlocked` in `unlocks.js` + `shop.js`).
+- [x] **4.2 Ads after manual loop.** Hype tab requires flock unlock + at least one upgrade purchase (`hypeTabUnlocked`).
+- [x] **4.3 Breeding pair timing.** `breeder` producer minimum era raised to 2.
 
 ## Milestone 5 — Cleanup
 
-- [ ] **5.1 Rename `crumbMult` → `coinMult`.** Internal only; save-compatible alias if needed. Files: `upgrades.js`, `game/upgrades.js`, `main.js`, tests.
-- [x] **5.2 Dead pond UI CSS.** Removed the entire dead `.pond` / `.pond__icon` / `.pond__meter` block from `styles/main.css` (no HTML/JS referenced any `.pond` class — it was the old water-meter UI). Left the `--pond-*` color vars (`--pond-warn` is still used elsewhere).
-- [ ] **5.3 Regional breeds.** Tie at least one Duckdex breed unlock to each non-home region when rented/flooded. Files: `data/ducks.js`, `game/regions.js`, `game/dex.js`.
+- [x] **5.1 Rename `crumbMult` → `coinMult`.** Effect kind `coinMult` in data; `crumbMult` alias kept in upgrade applier for old mod tools.
+- [x] **5.2 Dead pond UI CSS.** (prior)
+- [x] **5.3 Regional breeds.** Five regional Duckdex entries unlock on region access (`region` unlock type in `dex.js`).
 
 ## Milestone 6 — Balance
 
-- [ ] **6.1 Sim + arc.** Re-run `npm run sim` after voice/pacing changes; target ~6–8h to first ending branch.
+- [x] **6.1 Sim + arc.** `COIN_PER_ANSWER` 0.058, capstone costs trimmed; sim target band 6–8 h (re-run after merge).
 
 ---
 

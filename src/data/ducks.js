@@ -9,7 +9,8 @@
  * @typedef {{ type: "era", value: number }
  *   | { type: "ducks", value: number }
  *   | { type: "producer", id: string, count: number }
- *   | { type: "upgrade", id: string }} Unlock
+ *   | { type: "upgrade", id: string }
+ *   | { type: "region", id: string, mode?: "unlocked"|"rented"|"flooded"|"saltwater"|"orbital" }} Unlock
  *
  * @typedef {{ kind: "coinUpkeep", mult: number }
  *   | { kind: "hypeDecay", mult: number }
@@ -66,4 +67,11 @@ export const DUCKS = [
   { id: "residual",    name: "Residual Duck",   emoji: "🪨", era: 4, blurb: "What's left after conversion. Still quacks.",                              unlock: { type: "producer", id: "singularity", count: 1 }, demand: { kind: "coinUpkeep", mult: 1.1 }, demandBlurb: "What's left still needs feeding." },
   { id: "substrate",   name: "Substrate Duck",  emoji: "🧱", era: 4, blurb: "Everything is duck now. This one is duckier.",                             unlock: { type: "upgrade", id: "foiegras" }, demand: { kind: "produceMult", mult: 1.1 }, demandBlurb: "Everything is duck now; everything needs upkeep." },
   { id: "excess",      name: "Excess Duck",     emoji: "📦", era: 4, blurb: "We made more than there was room for. Room was reclassified.",             unlock: { type: "ducks", value: 22_000_000 }, demand: { kind: "coinUpkeep", mult: 1.2 }, demandBlurb: "Room was reclassified. The bill went with it." },
+
+  // Regional breeds (Duckdex — tied to expansion, not home pond)
+  { id: "pintail",     name: "Northern Pintail", emoji: "🌿", era: 4, blurb: "Migrates for tax purposes. Opinions included.",                              unlock: { type: "region", id: "europe", mode: "unlocked" }, demand: { kind: "questionIntake", add: 0.03 }, demandBlurb: "Three ponds' worth of paperwork." },
+  { id: "mandarin",    name: "Bamboo Duck",      emoji: "🎋", era: 4, blurb: "Eastern reach specialist. Very confident about wetlands.",                   unlock: { type: "region", id: "asia", mode: "rented" }, demand: { kind: "coinUpkeep", mult: 1.04 }, demandBlurb: "Rent is deductible if you call it R&D." },
+  { id: "plague",      name: "Interior Plague Duck", emoji: "🏜️", era: 4, blurb: "Australia is a lake now. This one started it.",                          unlock: { type: "region", id: "australia", mode: "flooded" }, demand: { kind: "produceMult", mult: 1.05 }, demandBlurb: "Desert reclassification surcharge." },
+  { id: "saltfin",     name: "Saltfin",          emoji: "🌊", era: 5, blurb: "No pond required. Still bills like one.",                                    unlock: { type: "region", id: "ocean", mode: "saltwater" }, demand: { kind: "hypeDecay", mult: 1.06 }, demandBlurb: "Saltwater hype evaporates faster." },
+  { id: "voidwalker",  name: "Void Walker",      emoji: "🚀", era: 5, blurb: "Orbit is just a very tall pond.",                                            unlock: { type: "region", id: "space", mode: "orbital" }, demand: { kind: "scoreInflate", mult: 1.08 }, demandBlurb: "Orbital metrics count double." },
 ];

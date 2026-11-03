@@ -103,7 +103,7 @@ console.log("\n(h) early-game coin rate");
   const d = demand(meta, engine);
   const served = servedPerSecond(supply, d);
   assert(served === 1, "one duck is fully served (supply-limited)");
-  assert(served * COIN_PER_ANSWER === 0.04, "0.04 coins/s at Act 1");
+  assert(served * COIN_PER_ANSWER === COIN_PER_ANSWER, `${COIN_PER_ANSWER} coins/s at Act 1`);
 }
 
 console.log("\n(i) ponderCoinBonus scales with depth");

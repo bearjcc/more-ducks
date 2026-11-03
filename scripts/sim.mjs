@@ -36,8 +36,8 @@ import {
 import { actForStats } from "../src/game/progression.js";
 import { dexMods, effectiveCoherence } from "../src/game/dexMods.js";
 
-const TARGET_HOURS_MIN = 2;
-const TARGET_HOURS_MAX = 3;
+const TARGET_HOURS_MIN = 6;
+const TARGET_HOURS_MAX = 8;
 
 // Multiply every act duck threshold (answers thresholds stay fixed).
 const ACT_DUCK_SCALE = Number(process.env.ERASCALE ?? 1);
@@ -110,7 +110,7 @@ function upgradeNextCost(u, level) {
 }
 
 function recomputeMods() {
-  let clickAdd = 0, clickMult = 1, crumbMult = 1, globalMult = 1, efficiencyMult = 1, pondCapacityBonus = 0;
+  let clickAdd = 0, clickMult = 1, coinMult = 1, globalMult = 1, efficiencyMult = 1, pondCapacityBonus = 0;
   /** @type {Record<string, number>} */
   const perProducer = {};
   for (const u of UPGRADES) {
@@ -121,7 +121,9 @@ function recomputeMods() {
     switch (e.kind) {
       case "clickAdd": clickAdd += e.amount * level; break;
       case "clickMult": clickMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
-      case "crumbMult": crumbMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
+      case "coinMult":
+      case "crumbMult":
+        coinMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
       case "globalMult": globalMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap); break;
       case "producerMult": {
         const m = stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap);
@@ -135,7 +137,7 @@ function recomputeMods() {
   const dex = dexMods(meta);
   return {
     clickPower: (1 + clickAdd) * clickMult,
-    crumbMult,
+    coinMult,
     globalMult: globalMult * dex.produceMult,
     efficiencyMult,
     pondCapacityBonus,
@@ -189,7 +191,7 @@ function marketSupply(mods) {
 
 function coinGainPerServed(served, mods) {
   const c = coherence(mods);
-  return served * COIN_PER_ANSWER * coherenceValueMult(c) * mods.crumbMult / mods.dex.coinUpkeep;
+  return served * COIN_PER_ANSWER * coherenceValueMult(c) * mods.coinMult / mods.dex.coinUpkeep;
 }
 
 function nextCost(p) {
@@ -197,6 +199,7 @@ function nextCost(p) {
 }
 
 function revealed(p) {
+  if (upgradeLevel("autofeeder") < 1 && owned[p.id] <= 0) return false;
   return p.era <= era || owned[p.id] > 0;
 }
 
@@ -207,6 +210,15 @@ function isDexUnlocked(d) {
     case "ducks": return lifetimeDucks >= u.value;
     case "producer": return owned[u.id] >= u.count;
     case "upgrade": return upgradeLevel(u.id) >= 1;
+    case "region": {
+      const mode = u.mode ?? "unlocked";
+      if (!meta.regionsUnlocked?.includes(u.id)) return false;
+      if (mode === "rented") return meta.regionsRented?.includes(u.id) ?? false;
+      if (mode === "flooded") return u.id === "australia" && meta.australiaFlooded;
+      if (mode === "saltwater") return meta.saltwaterDeployed;
+      if (mode === "orbital") return meta.spaceDeployed;
+      return true;
+    }
     default: return false;
   }
 }
@@ -367,7 +379,7 @@ while (t < CAP) {
   if (t < CLICK_SECONDS) {
     const taps = CLICK_RATE * DT;
     const c = coherence(mods);
-    const coinTap = COIN_PER_ANSWER * coherenceValueMult(c) * mods.crumbMult / mods.dex.coinUpkeep;
+    const coinTap = COIN_PER_ANSWER * coherenceValueMult(c) * mods.coinMult / mods.dex.coinUpkeep;
     coins += coinTap * taps;
     answersTotal += taps;
   }

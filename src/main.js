@@ -115,7 +115,7 @@ function creditManualAnswer(effCoherence, ponderBonus = 0) {
   const dex = dexMods(meta);
   const coherence = effCoherence ?? effectiveCoherence(meta, dex);
   const valueMult = coherenceValueMult(coherence);
-  const coinGain = COIN_PER_ANSWER * valueMult * mods.crumbMult / dex.coinUpkeep * (1 + ponderBonus);
+  const coinGain = COIN_PER_ANSWER * valueMult * mods.coinMult / dex.coinUpkeep * (1 + ponderBonus);
   coins.incrementBy(coinGain);
   meta.answersTotal += 1;
   meta.questionsAnswered++;
@@ -307,7 +307,7 @@ function applyOfflineProgress(savedAt) {
   updateCoherence(meta);
   const coherence = effectiveCoherence(meta, dex);
   const valueMult = coherenceValueMult(coherence);
-  const offlineCoins = avgServed * COIN_PER_ANSWER * valueMult * mods.crumbMult / dex.coinUpkeep * elapsed;
+  const offlineCoins = avgServed * COIN_PER_ANSWER * valueMult * mods.coinMult / dex.coinUpkeep * elapsed;
   const offlineAnswers = avgServed * elapsed;
   if (offlineDucks > 0) {
     ducks.incrementBy(offlineDucks);
@@ -368,7 +368,7 @@ function frame() {
   const served = servedPerSecond(supply, marketDemand) * dtSec;
   const valueMult = coherenceValueMult(coherence);
   if (served > 0) {
-    coins.incrementBy(served * COIN_PER_ANSWER * valueMult * mods.crumbMult / dex.coinUpkeep);
+    coins.incrementBy(served * COIN_PER_ANSWER * valueMult * mods.coinMult / dex.coinUpkeep);
     meta.answersTotal += served;
   }
 

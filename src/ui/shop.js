@@ -2,7 +2,7 @@
 // aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (PRODUCERS data, emoji).
 import { formatNumber } from "../game/format.js";
 import { bulkCost, maxAffordable } from "../game/economy.js";
-import { purchaseRevealed } from "../game/unlocks.js";
+import { purchaseRevealed, flockProducersUnlocked } from "../game/unlocks.js";
 import { PRODUCERS } from "../data/producers.js";
 import { flashCard } from "./render.js";
 /** @typedef {1 | 10 | 100 | "max"} BuyMode */
@@ -148,7 +148,8 @@ export function updateShop(s) {
   for (const def of PRODUCERS) {
     const prod = s.engine.producer(def.id);
     const owned = prod.count > 0;
-    const visible = (def.era <= s.era || owned)
+    const visible = flockProducersUnlocked(s.meta)
+      && (def.era <= s.era || owned)
       && purchaseRevealed(s.coins, def.baseCost, owned);
     let refs = cards.get(def.id);
     if (!visible) {

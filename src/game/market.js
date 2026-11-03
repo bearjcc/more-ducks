@@ -53,9 +53,9 @@ export const ANSWERS_PER_DUCK_PER_SEC = 1;
  * Coins earned per answered question (passive market resolution).
  *
  * Tuned to replace CRUMB_PER_DUCK_PER_SEC foraging at Act 1: one duck, demand 1,
- * supply 1 → ~0.02 coins/s before crumbMult / Duckdex upkeep. See economy.md §3.
+ * supply 1 → ~0.029 coins/s before coinMult / Duckdex upkeep. See economy.md §3.
  */
-export const COIN_PER_ANSWER = 0.04;
+export const COIN_PER_ANSWER = 0.132;
 
 /**
  * Lifetime answers to reach coherence 1. Balance in scripts/sim.mjs when the arc is wired.

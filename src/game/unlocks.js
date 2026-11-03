@@ -1,6 +1,6 @@
 // @ts-check
 
-import { totalUpgradePurchases } from "./levels.js";
+import { totalUpgradePurchases, upgradeLevel } from "./levels.js";
 
 /** Coins needed to reveal a purchase row (10% of cost). */
 export const PURCHASE_REVEAL_RATIO = 0.1;
@@ -29,6 +29,14 @@ export function upgradesTabUnlocked(meta) {
  */
 export function flockTabUnlocked(meta) {
   return meta.questionsAnswered >= 3 && meta.manualFeeds >= 1;
+}
+
+/**
+ * Flock producers stay hidden until the early upgrade loop lands (Auto Feeder).
+ * @param {import("./meta.js").Meta} meta
+ */
+export function flockProducersUnlocked(meta) {
+  return meta.autoFeederOwned || upgradeLevel(meta, "autofeeder") >= 1;
 }
 
 /**

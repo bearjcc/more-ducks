@@ -148,19 +148,17 @@ demand = BASE_DEMAND + BUZZ_PER_DUCK·flock^BUZZ_EXPONENT + dexIntake + HYPE_FAC
   exponent also tames the flock→demand→coins→flock feedback so the arc doesn't
   explode.
 
-## 9. Pacing knobs (current: ~2.5 h, even acts)
+## 9. Pacing knobs (current: ~7.5 h to capstone)
 
 The arc and act cadence are tuned against `sim.mjs`. The live levers:
 
 | Lever | File | Effect |
 | --- | --- | --- |
 | `BUZZ_PER_DUCK`, `BUZZ_EXPONENT` | `market.js` | demand magnitude + feedback damping |
-| `COIN_PER_ANSWER` | `market.js` | coin clock → capstone timing (≈ 1/arc) |
+| `COIN_PER_ANSWER` | `market.js` | coin clock → capstone timing (≈ 1/arc); **0.132** at 7.6 h sim |
 | `duckThreshold` / `answersThreshold` | `eras.js` | when each act fires (also gates content) |
 | producer `productionAmount` | `producers.js` | flock growth rate (audited by `curve.mjs`) |
 | `FLOCK_HEADROOM` | `capacity.js` | how far the cap leads the flock |
 
-Current result: Act 1 @2m, 2 @20m, 3 @46m, 4 @1h14m, 5 @1h37m, capstone @2h27m —
-**2.46 h, evenly spread.** Act thresholds also gate content unlocks, so raising
-them slows progression; re-tune `COIN_PER_ANSWER` after any threshold change and
-re-run `sim.mjs`.
+Sim policy (greedy buyer, 6 taps/s for 3 min): capstone **~7.6 h**; Acts spread
+3 h–9 h. Re-run `npm run sim` after any threshold or `COIN_PER_ANSWER` change.

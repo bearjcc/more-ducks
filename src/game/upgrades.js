@@ -69,7 +69,7 @@ function stackedMult(targetMult, level, maxLevel) {
  * owned upgrades; not persisted (rebuilt on load).
  * @typedef {{
  *   clickPower: number,
- *   crumbMult: number,
+ *   coinMult: number,
  *   efficiencyMult: number,
  *   holdRepeat: boolean,
  *   holdRepeatIntervalMs: number,
@@ -81,7 +81,7 @@ function stackedMult(targetMult, level, maxLevel) {
 export function createMods() {
   return {
     clickPower: 1,
-    crumbMult: 1,
+    coinMult: 1,
     efficiencyMult: 1,
     holdRepeat: false,
     holdRepeatIntervalMs: 450,
@@ -97,7 +97,7 @@ export function createMods() {
  * @param {{
  *   clickAddSum: number,
  *   clickMultProd: number,
- *   crumbMult: number,
+ *   coinMult: number,
  *   globalMult: number,
  *   efficiencyMult: number,
  *   holdRepeat: boolean,
@@ -115,8 +115,9 @@ function applyEffect(meta, def, e, level, acc) {
     case "clickMult":
       acc.clickMultProd *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap);
       break;
+    case "coinMult":
     case "crumbMult":
-      acc.crumbMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap);
+      acc.coinMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap);
       break;
     case "globalMult":
       acc.globalMult *= stackedMult(e.mult, level, cap === Infinity ? DEFAULT_MAX_LEVEL : cap);
@@ -165,7 +166,7 @@ export function applyUpgrades(engine, meta, mods) {
   /** @type {{
  *   clickAddSum: number,
  *   clickMultProd: number,
- *   crumbMult: number,
+ *   coinMult: number,
  *   globalMult: number,
  *   efficiencyMult: number,
  *   holdRepeat: boolean,
@@ -176,7 +177,7 @@ export function applyUpgrades(engine, meta, mods) {
   const acc = {
     clickAddSum: 0,
     clickMultProd: 1,
-    crumbMult: 1,
+    coinMult: 1,
     globalMult: 1,
     efficiencyMult: 1,
     holdRepeat: false,
@@ -199,7 +200,7 @@ export function applyUpgrades(engine, meta, mods) {
   }
 
   mods.clickPower = (1 + acc.clickAddSum) * acc.clickMultProd;
-  mods.crumbMult = acc.crumbMult;
+  mods.coinMult = acc.coinMult;
   mods.efficiencyMult = acc.efficiencyMult;
   mods.holdRepeat = acc.holdRepeat;
   mods.holdRepeatIntervalMs = Math.max(120, Math.floor(450 * acc.holdSpeedMult));

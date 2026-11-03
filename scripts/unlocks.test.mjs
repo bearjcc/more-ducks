@@ -1,6 +1,7 @@
 import {
   purchaseRevealed,
   flockTabUnlocked,
+  flockProducersUnlocked,
   dashboardTabUnlocked,
   upgradesTabUnlocked,
   hypeTabUnlocked,
@@ -59,6 +60,16 @@ assert(!hypeTabUnlocked(meta, 0), "hype locked without upgrade purchase");
 
 meta.upgradeLevels.steadybeak = 1;
 assert(hypeTabUnlocked(meta, 0), "hype after first upgrade with flock");
+
+meta.manualFeeds = 1;
+assert(!flockProducersUnlocked(meta), "producers locked before Auto Feeder");
+meta.upgradeLevels.autofeeder = 1;
+meta.autoFeederOwned = true;
+assert(flockProducersUnlocked(meta), "producers after Auto Feeder");
+
+meta.upgradeLevels = {};
+meta.autoFeederOwned = false;
+assert(!flockProducersUnlocked(meta), "producers locked without autofeeder");
 
 meta.upgradeLevels = { steadybeak: 1 };
 meta.questionsAnswered = 2;

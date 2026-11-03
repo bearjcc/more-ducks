@@ -1,8 +1,8 @@
 # More Ducks — agent handoff
 
-Read this first. Then [`../docs/economy.md`](../docs/economy.md) (economy), [`../docs/concept.md`](../docs/concept.md) (satire/tone), [`DESIGN.md`](DESIGN.md) (UI target), [`../CONTEXT.md`](../CONTEXT.md) (glossary).
+Read this first. Then [`docs/economy.md`](docs/economy.md) (economy), [`docs/concept.md`](docs/concept.md) (satire/tone), [`DESIGN.md`](DESIGN.md) (UI target), [`CONTEXT.md`](CONTEXT.md) (glossary).
 
-**Repo:** `Idle/more-ducks` (game) · **Lineage:** [`../QLM`](../QLM) (Quack Language Model — chat UI + weighted quack table)
+**Repo:** `bearjcc/more-ducks` (game) · **Lineage:** [QLM](https://github.com/bearjcc/QLM) (Quack Language Model — chat UI + weighted quack table)
 
 ---
 
@@ -24,13 +24,13 @@ Satire is **mechanical**, never preachy. Never name real AI products. Ducks are 
 
 | Topic | Document |
 |-------|----------|
-| Economy, feed opex, market loop, acts | [`../docs/economy.md`](../docs/economy.md) |
-| Satire spine, tone, collection design | [`../docs/concept.md`](../docs/concept.md) |
-| Pillars, phases, humor style | [`../docs/gdd.md`](../docs/gdd.md) |
+| Economy, feed opex, market loop, acts | [`docs/economy.md`](docs/economy.md) |
+| Satire spine, tone, collection design | [`docs/concept.md`](docs/concept.md) |
+| Pillars, phases, humor style | [`docs/gdd.md`](docs/gdd.md) |
 | UI/UX target (Tap Titans 2 + chat apps) | [`DESIGN.md`](DESIGN.md) |
 | Product voice, anti-slop | [`PRODUCT.md`](PRODUCT.md) |
 | Implementation backlog | [`TODO.md`](TODO.md) |
-| Domain terms | [`../CONTEXT.md`](../CONTEXT.md) |
+| Domain terms | [`CONTEXT.md`](CONTEXT.md) |
 
 When docs disagree on **economy**, `economy.md` wins. When they disagree on **tone/satire**, `concept.md` wins.
 
@@ -93,7 +93,7 @@ Reference: AdVenture Capitalist lemonade-stand tapping, QLM chat UX, Tap Titans 
 
 ## Quack voice rules (QLM fidelity — critical)
 
-Reference implementation: [`../QLM/api/main.py`](../QLM/api/main.py) weighted `DUCK_SOUNDS` + [`../QLM/frontend/index.html`](../QLM/frontend/index.html).
+Reference implementation: [QLM `api/main.py`](https://github.com/bearjcc/QLM/blob/main/api/main.py) weighted `DUCK_SOUNDS` + [QLM frontend](https://github.com/bearjcc/QLM/blob/main/frontend/index.html).
 
 ### Duck answers during normal play
 
@@ -138,10 +138,10 @@ Priority-ordered for next agent:
 1. ~~**Quack tiers + tests** — remove comprehensive-analysis tier; gate meta questions late; align tests with QLM.~~ **Done (Milestone 1):** corporate tier removed, meta questions gated to era 4+, tests realigned in `scripts/quack.test.mjs`.
 2. ~~**Finale** — endings are capstone purchases + orbital deploy; remove leftover hitchhiker dead code.~~ **Done (Milestone 2, Option B):** dropped `ENDINGS.hitchhiker` and its UI branch; the 5 hidden endings (bankrupt / singularity / swarm / space / competitor) are the finale. The `FINAL_ANSWER` punchline lives on the singularity ending.
 3. ~~**HUD / header** — reduce contrast seam between `.hud` and `.stage`; match DESIGN.md (gradient overlay, shared `--surface`).~~ **Done (Milestone 3):** gradient HUD fade, shared stage surface, feed hint on portrait, landscape phone sheet layout.
-4. **Progression pacing** — delay producers / Ads until upgrades land; verify unlock order matches § early-game loop above.
-5. **Naming cleanup** — `crumbMult` → `coinMult` or `revenueMult` in code (player-facing is already coins).
+4. ~~**Progression pacing**~~ **Done (Milestone 4):** producers after Auto Feeder; hype after first upgrade; breeder era 2.
+5. ~~**Naming cleanup** — `crumbMult` → `coinMult`~~ **Done (Milestone 5.1).**
 6. **Overlap audit** — one coherent path for: feed gate vs auto feeder vs passive answers vs manual send; document in code comments where needed.
-7. **Regional duck species** — regions exist; Duckdex breeds are not yet tied to region unlocks per vision.
+7. ~~**Regional duck species**~~ **Done (Milestone 5.3):** five regional Duckdex breeds.
 8. ~~**Landscape polish** — verify chat + dock on phone landscape (design center per Bear).~~ **Done (Milestone 3.3):** chat-first layout extends to `(orientation: landscape) and (max-height: 520px)`.
 9. **Remove stale UI spec** — DESIGN.md previously described stage quack FAB and hero-in-stage; stage is chat-only now.
 
