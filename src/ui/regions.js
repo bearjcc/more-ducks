@@ -57,7 +57,7 @@ export function updateRegions(ctx) {
       actionLabel = formatNumber(r.floodCost ?? 0, 0) + " 🪙 flood";
     } else if (!r.saltwater && r.rentPerDay > 0 && !rented) {
       action = "rent";
-      actionLabel = "Rent pond";
+      actionLabel = `Rent · ${formatNumber(r.rentPerDay, 0)} coins / game-day`;
     }
 
     li.innerHTML =
@@ -65,11 +65,16 @@ export function updateRegions(ctx) {
       `<div class="card__body">` +
         `<span class="card__title">${r.name}</span>` +
         `<span class="card__blurb">${r.blurb}</span>` +
-        (rented ? `<span class="card__meta">Rent ${formatNumber(r.rentPerDay, 0)}/day</span>` : "") +
+        (rented && r.rentPerDay > 0
+          ? `<span class="card__meta">Rented · ${formatNumber(r.rentPerDay, 0)} coins / game-day</span>`
+          : "") +
+        (rented && !action && r.rentPerDay === 0
+          ? `<span class="card__meta">Owned</span>`
+          : "") +
       `</div>` +
       (action
         ? `<button class="card__buy" type="button" data-region="${r.id}" data-action="${action}">${actionLabel}</button>`
-        : `<span class="card__owned">✓</span>`);
+        : `<span class="card__owned" aria-label="Active">✓</span>`);
     const btn = li.querySelector(".card__buy");
     if (btn) {
       btn.addEventListener("click", () => {

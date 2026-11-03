@@ -3,7 +3,7 @@
 
 import { formatNumber } from "../game/format.js";
 import { ALL_UPGRADES, upgradeNextCost, upgradeAtCap, maxLevelFor } from "../game/upgrades.js";
-import { purchaseRevealed } from "../game/unlocks.js";
+import { purchaseRevealed, upgradesTabUnlocked } from "../game/unlocks.js";
 import { upgradeLevel } from "../game/levels.js";
 import { flashCard } from "./render.js";
 /**
@@ -93,8 +93,11 @@ export function updateUpgrades(s) {
     const level = upgradeLevel(s.meta, def.id);
     const atCap = upgradeAtCap(def, level);
     const nextCost = upgradeNextCost(def, level);
-    const visible = (def.era <= s.meta.era || level > 0)
-      && purchaseRevealed(s.coins, nextCost, level > 0);
+    const teaserFirst =
+      def.id === "steadybeak" && upgradesTabUnlocked(s.meta) && level === 0;
+    const visible = teaserFirst
+      || ((def.era <= s.meta.era || level > 0)
+        && purchaseRevealed(s.coins, nextCost, level > 0));
     let refs = cards.get(def.id);
     if (!visible) {
       if (refs) refs.root.style.display = "none";

@@ -42,7 +42,7 @@ export function showTerminal(endingId, meta = null) {
       `<p class="ending__line">${line}</p>` +
       `<p class="ending__line ending__line--soft">${def.soft}</p>` +
       `<p class="ending__thanks">${def.thanks}</p>` +
-      `<p class="ending__line ending__line--soft"><a href="https://bearjcc-quack-language-model.hf.space/" target="_blank" rel="noopener">Play original QLM</a></p>` +
+      `<p class="ending__line"><a class="ending__link" href="https://bearjcc-quack-language-model.hf.space/" target="_blank" rel="noopener">Play original QLM</a></p>` +
       `<button class="ending__btn" type="button">Start a new pond</button>` +
     `</div>`;
   const btn = /** @type {HTMLButtonElement} */ (overlay.querySelector(".ending__btn"));

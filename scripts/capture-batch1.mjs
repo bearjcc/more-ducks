@@ -1,87 +1,60 @@
 async (page) => {
-  const BASE = "http://127.0.0.1:8765/?v=ui16";
+  const BASE = "http://127.0.0.1:8765/?v=ui17";
   const OUT = "/opt/cursor/artifacts";
   const P = { width: 390, height: 844 };
   async function snap(name) {
     await page.setViewportSize(P);
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(200);
     await page.screenshot({ path: `${OUT}/${name}.png`, scale: "css" });
   }
   async function resetSave() {
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      localStorage.clear();
+      document.querySelector(".ending")?.remove();
+    });
     await page.reload({ waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => window.MoreDucks?.engine, null, { timeout: 15000 });
-    await page.waitForTimeout(350);
-  }
-  async function prep(fn) {
-    await page.evaluate(fn);
+    await page.waitForFunction(() => window.MoreDucks?.engine && window.__mdCapture, null, {
+      timeout: 15000,
+    });
     await page.waitForTimeout(400);
+    await page.evaluate(() => window.__mdCapture.dismissModals());
   }
   async function openTab(name) {
     await page.evaluate(async (tab) => {
       const { openTab } = await import("/src/ui/render.js");
       openTab(tab);
     }, name);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(350);
   }
   await resetSave();
   await snap("01-portrait-fresh-start");
-  await prep(() => {
-    window.MoreDucks.meta.questionsAnswered = 1;
-    document.body.dataset.started = "1";
-  });
   await page.evaluate(async () => {
-    const { appendChatExchange } = await import("/src/ui/chat.js");
-    appendChatExchange("What is duck?", "Quack quack.");
+    const { meta } = window.MoreDucks;
+    meta.questionsAnswered = 1;
+    document.body.dataset.started = "1";
+    await window.__mdCapture.chat("What is duck?", "Quack quack.");
   });
   await snap("02-portrait-first-quack");
   await resetSave();
-  await prep(() => {
-    window.MoreDucks.meta.answersSinceFeed = 10;
+  await page.evaluate(() => {
+    const { meta } = window.MoreDucks;
+    meta.answersSinceFeed = 10;
+    meta.questionsAnswered = 5;
     document.body.dataset.started = "1";
   });
   await page.evaluate(async () => {
     const { updateChatAffordance } = await import("/src/ui/chat.js");
     updateChatAffordance(true, false);
+    document.body.classList.add("duck-hungry");
   });
   await snap("03-portrait-feed-hungry");
   await resetSave();
-  await prep(() => {
-    const { meta } = window.MoreDucks;
-    meta.questionsAnswered = 3;
-    meta.manualFeeds = 1;
-    meta.answersSinceFeed = 0;
-    meta.flags.upgradesTabToast = true;
-    meta.flags.flockTabToast = true;
-    document.body.dataset.started = "1";
-  });
-  await page.evaluate(() => {
-    document.querySelectorAll(".toast").forEach((el) => el.remove());
-  });
+  await page.evaluate(() => window.__mdCapture.playEarlyUnlock());
   await openTab("upgrades");
+  await page.evaluate(() => window.__mdCapture.clearToasts());
   await snap("04-portrait-first-panel-unlock");
-  await prep(() => {
-    const { meta, engine } = window.MoreDucks;
-    meta.questionsAnswered = 3;
-    meta.manualFeeds = 1;
-    meta.upgradeLevels = { steadybeak: 1, autofeeder: 1 };
-    meta.autoFeederOwned = true;
-    meta.era = 4;
-    meta.answerdexSeen = ["Quack?", "Quack quack", "Quack quack quack"];
-    meta.dexUnlocked = ["mallard", "rubber", "decoy", "downy"];
-    meta.regionsUnlocked = ["home", "europe", "asia", "australia", "ocean", "space"];
-    meta.achievements = [
-      "first_feed", "first_producer", "hundred_ducks", "answer_collector", "first_duckdex",
-      "era1", "auto_feeder", "million_ducks", "half_dex", "rare_answer", "era3",
-      "singularity", "full_dex", "australia", "billion_ducks", "ending",
-    ];
-    engine.currency("coins").incrementBy(500000000);
-    engine.producer("duckling").count = 5;
-  });
-  await page.evaluate(() => {
-    document.querySelectorAll(".toast").forEach((el) => el.remove());
-  });
+  await page.evaluate(() => window.__mdCapture.playMidGame());
   for (const [file, tab] of [
     ["05-portrait-tab-stats", "dashboard"],
     ["06-portrait-tab-flock", "flock"],
@@ -91,12 +64,23 @@ async (page) => {
     ["10-portrait-tab-collections", "collections"],
   ]) {
     await openTab(tab);
+    if (tab === "regions") {
+      await page.evaluate(() => {
+        const { meta, engine } = window.MoreDucks;
+        meta.era = 4;
+        meta.regionsUnlocked = ["home", "europe", "asia"];
+        meta.regionsRented = ["europe"];
+        engine.currency("coins").incrementBy(12_000_000);
+      });
+      await page.waitForTimeout(200);
+    }
     if (tab === "collections") {
       await page.evaluate(() => {
         document.getElementById("duckdex-grid")?.scrollIntoView({ block: "center" });
       });
       await page.waitForTimeout(250);
     }
+    await page.evaluate(() => window.__mdCapture.clearToasts());
     await snap(file);
   }
   await page.evaluate(async () => {

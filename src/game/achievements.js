@@ -47,11 +47,22 @@ export const ACHIEVEMENT_COUNT = MILESTONES.length;
  */
 export function checkAchievements(ctx, show) {
   if (!Array.isArray(ctx.meta.achievements)) ctx.meta.achievements = [];
+  /** @type {{ title: string, body: string }[]} */
+  const fresh = [];
   for (const m of MILESTONES) {
     if (ctx.meta.achievements.includes(m.id)) continue;
     if (m.test(ctx)) {
       ctx.meta.achievements.push(m.id);
-      show({ title: m.title, body: m.body });
+      fresh.push({ title: m.title, body: m.body });
     }
   }
+  if (fresh.length === 0) return;
+  if (fresh.length === 1) {
+    show(fresh[0]);
+    return;
+  }
+  show({
+    title: `${fresh.length} milestones unlocked`,
+    body: fresh.map((f) => f.title).join(" · "),
+  });
 }

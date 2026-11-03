@@ -131,3 +131,11 @@ function hide() {
   open = false;
   overlay.hidden = true;
 }
+
+/** Clear the queue and hide any open modal (capture / dev). */
+export function flushModalQueue() {
+  queue.length = 0;
+  currentSpec = null;
+  open = false;
+  if (overlay) overlay.hidden = true;
+}

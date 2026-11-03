@@ -31,6 +31,8 @@ let lastAnswersRate = 0;
 let upgradesToastShown = false;
 /** @type {import("../game/meta.js").Meta|null} */
 let tabMeta = null;
+/** Wide layout: open Stats once when the dock first appears. */
+let wideDefaultTabOpened = false;
 
 /** @param {boolean|null} pref null = system */
 export function setReduceMotionPref(pref) {
@@ -42,6 +44,12 @@ export function prefersReducedMotion() {
   if (motionOverride === true) return true;
   if (motionOverride === false) return false;
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/** Portrait bottom-sheet layout (matches main.css). */
+function usesPortraitSheet() {
+  if (typeof matchMedia !== "function") return false;
+  return matchMedia("(max-aspect-ratio: 1/1), (max-width: 560px), (orientation: landscape) and (max-height: 520px)").matches;
 }
 
 /** @param {string} id */
@@ -148,6 +156,7 @@ export function initUI(handlers) {
   els.panelMinimize = byId("panel-minimize");
   els.sheetTitle = byId("sheet-title");
   els.sheetMetric = byId("sheet-metric");
+  els.answersRateLabel = byId("answers-rate-label");
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -367,6 +376,11 @@ export function updateUI(snapshot) {
   if (els.coinCount) els.coinCount.textContent = formatNumber(snapshot.coins);
   if (els.sheetMetric) els.sheetMetric.textContent = formatNumber(snapshot.coins);
   if (els.answersRate) els.answersRate.textContent = formatNumber(snapshot.answersPerSec, 2);
+  if (els.answersRateLabel) {
+    const r = snapshot.answersPerSec;
+    const singular = r > 0 && r < 1.05;
+    els.answersRateLabel.textContent = singular ? "answer per sec" : "answers per sec";
+  }
   if (els.answersRate && snapshot.answersPerSec > lastAnswersRate + 0.001) {
     pulseHeroRate();
   }
@@ -389,6 +403,9 @@ export function updateUI(snapshot) {
   document.querySelectorAll("[data-duck-total]").forEach((el) => {
     el.textContent = formatNumber(snapshot.ducks);
   });
+  document.querySelectorAll(".dash-stat--ducks .dash-stat__label").forEach((el) => {
+    el.textContent = Math.round(snapshot.ducks) === 1 ? "duck" : "ducks";
+  });
   if (els.questionsAnswered && snapshot.questionsAnswered > 0) {
     els.questionsAnswered.textContent = `${formatNumber(snapshot.questionsAnswered)} questions answered`;
   }
@@ -396,7 +413,9 @@ export function updateUI(snapshot) {
   if (els.feedOpexEl) els.feedOpexEl.textContent = formatNumber(feedOpex, 3);
   if (els.feedStatEl) els.feedStatEl.hidden = feedOpex <= 0;
   if (els.pondCapLabel && snapshot.pondCap != null && snapshot.pondDucks != null) {
-    els.pondCapLabel.textContent = `${formatNumber(snapshot.pondDucks, 0)} / ${formatNumber(snapshot.pondCap, 0)} ducks`;
+    const duckWord = Math.round(snapshot.pondDucks) === 1 ? "duck" : "ducks";
+    els.pondCapLabel.textContent =
+      `${formatNumber(snapshot.pondDucks, 0)} / ${formatNumber(snapshot.pondCap, 0)} ${duckWord}`;
   }
   updateChatAffordance(snapshot.hungry ?? false, snapshot.canAsk ?? true);
 }
@@ -441,6 +460,11 @@ export function updateTabUnlocks(ctx) {
   const openPanel = document.body.dataset.panelOpen;
   if (openPanel && !tabUnlocked(openPanel, meta, coins, engine, answersPerSec)) {
     closeTab();
+  }
+
+  if (tabsVisible && !usesPortraitSheet() && !wideDefaultTabOpened) {
+    wideDefaultTabOpened = true;
+    if (!document.body.hasAttribute("data-panel-open")) openTab("dashboard");
   }
 }
 

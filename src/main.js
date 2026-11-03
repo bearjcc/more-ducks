@@ -425,5 +425,29 @@ addEventListener("visibilitychange", () => {
 addEventListener("beforeunload", () => {
   if (!suppressSave) saveGame(engine, meta);
 });
+
+/**
+ * Fast-forward simulation for capture tooling (steps the main loop with fake dt).
+ * @param {number} deltaSec
+ */
+function advanceGame(deltaSec) {
+  if (deltaSec <= 0 || meta.flags.ended) return;
+  let remaining = deltaSec;
+  while (remaining > 0) {
+    const step = Math.min(remaining, 0.25);
+    lastFrame = Date.now() - step * 1000;
+    frame();
+    remaining -= step;
+  }
+}
+
 // @ts-ignore
-window.MoreDucks = { engine, meta, mods, ducks, coins, save: () => saveGame(engine, meta) };
+window.MoreDucks = {
+  engine,
+  meta,
+  mods,
+  ducks,
+  coins,
+  save: () => saveGame(engine, meta),
+  advanceGame,
+};

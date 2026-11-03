@@ -1,17 +1,30 @@
 async (page) => {
-  const BASE = "http://127.0.0.1:8765/?v=ui16";
+  const BASE = "http://127.0.0.1:8765/?v=ui17";
   const OUT = "/opt/cursor/artifacts";
   const P = { width: 390, height: 844 };
   async function snap(name) {
     await page.setViewportSize(P);
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(200);
     await page.screenshot({ path: `${OUT}/${name}.png`, scale: "css" });
   }
   async function resetSave() {
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => {
+      localStorage.clear();
+      document.querySelector(".ending")?.remove();
+    });
     await page.reload({ waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => window.MoreDucks?.engine, null, { timeout: 15000 });
+    await page.waitForFunction(() => window.MoreDucks?.engine && window.__mdCapture, null, {
+      timeout: 15000,
+    });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => window.__mdCapture.dismissModals());
+  }
+  async function openTab(name) {
+    await page.evaluate(async (tab) => {
+      const { openTab } = await import("/src/ui/render.js");
+      openTab(tab);
+    }, name);
     await page.waitForTimeout(350);
   }
   async function showActModal(actId) {
@@ -29,17 +42,6 @@ async (page) => {
       queueModal(s);
     }, spec);
     await page.waitForTimeout(400);
-  }
-  async function prep(fn) {
-    await page.evaluate(fn);
-    await page.waitForTimeout(400);
-  }
-  async function openTab(name) {
-    await page.evaluate(async (tab) => {
-      const { openTab } = await import("/src/ui/render.js");
-      openTab(tab);
-    }, name);
-    await page.waitForTimeout(300);
   }
   for (let act = 0; act <= 5; act++) {
     await resetSave();
@@ -63,26 +65,15 @@ async (page) => {
   });
   await snap("19-portrait-beat-australia");
   await resetSave();
-  await prep(() => {
-    const { meta, engine } = window.MoreDucks;
-    meta.era = 4;
-    meta.regionsUnlocked = ["home", "europe", "asia"];
-    meta.regionsRented = ["europe"];
-    engine.currency("coins").incrementBy(10000000);
-  });
+  await page.evaluate(() => window.__mdCapture.playRegionsAbroad());
   await openTab("regions");
+  await page.evaluate(() => window.__mdCapture.clearToasts());
   await snap("20-portrait-regions-abroad");
-  await prep(() => {
-    const { meta } = window.MoreDucks;
-    meta.regionsUnlocked = ["home", "australia"];
-    meta.australiaFlooded = true;
-  });
+  await page.evaluate(() => window.__mdCapture.playRegionsAustralia());
   await snap("21-portrait-regions-australia");
-  await prep(() => {
-    const { meta } = window.MoreDucks;
-    meta.regionsUnlocked = ["home", "ocean", "space"];
-    meta.saltwaterDeployed = true;
-  });
+  await page.evaluate(() => window.__mdCapture.playRegionsOceanSpace());
+  await openTab("regions");
+  await page.evaluate(() => window.__mdCapture.clearToasts());
   await snap("22-portrait-regions-ocean-space");
   return "batch2 ok";
 }
