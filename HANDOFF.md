@@ -87,7 +87,7 @@ Reference: AdVenture Capitalist lemonade-stand tapping, QLM chat UX, Tap Titans 
 
 **Auto button:** right of Send (correct in `index.html`). **Auto sends**, never prefills-only.
 
-**Primary layout target:** phone landscape slightly favoured over laptop; portrait still supported.
+**Primary layout target:** phone **portrait** first (QLM-style chat); laptop landscape / two-column is the wide fallback.
 
 ---
 
@@ -142,7 +142,7 @@ Priority-ordered for next agent:
 5. ~~**Naming cleanup** — `crumbMult` → `coinMult`~~ **Done (Milestone 5.1).**
 6. **Overlap audit** — one coherent path for: feed gate vs auto feeder vs passive answers vs manual send; document in code comments where needed.
 7. ~~**Regional duck species**~~ **Done (Milestone 5.3):** five regional Duckdex breeds.
-8. ~~**Landscape polish** — verify chat + dock on phone landscape (design center per Bear).~~ **Done (Milestone 3.3):** chat-first layout extends to `(orientation: landscape) and (max-height: 520px)`.
+8. ~~**Landscape polish**~~ **Superseded:** portrait is primary; phone landscape uses wide fallback + optional rotate hint (see Milestone portrait-first pass).
 9. **Remove stale UI spec** — DESIGN.md previously described stage quack FAB and hero-in-stage; stage is chat-only now.
 
 ---

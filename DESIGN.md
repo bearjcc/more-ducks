@@ -1,6 +1,6 @@
 # Design
 
-UI/UX target for More Ducks. **Current state + gaps:** [`HANDOFF.md`](HANDOFF.md). This doc is the north star; some shipped UI still drifts (HUD seam, feed hint hidden on portrait).
+UI/UX target for More Ducks. **Current state + gaps:** [`HANDOFF.md`](HANDOFF.md). This doc is the north star.
 
 ## Color
 
@@ -65,8 +65,10 @@ One family (Fredoka) for display + numbers. System-ui for everything else. Contr
 
 ## Layout
 
-### Portrait-first (primary mode)
-Mobile chat app: HUD overlays scrollable chat thread → fixed bottom composer (🦆 feed, input, **Send**, **Auto**). Six-tab bottom dock; tapping a tab raises a **Tap Titans 2–style bottom sheet** (`data-panel-open`) over the chat. Composer lifts with the sheet like a keyboard opening.
+### Portrait-first (primary mode — phones)
+Mobile chat app in **portrait**, continuing the QLM thread + composer pattern: HUD overlays scrollable chat → fixed bottom composer (🦆 feed, input, **Send**, **Auto**). Six-tab bottom dock; tapping a tab raises a **Tap Titans 2–style bottom sheet** (`data-panel-open`) over the chat. Composer lifts with the sheet like a keyboard opening.
+
+Acts 0–1 (`data-act-tier="chat"`) stay visually close to QLM: neutral chat surface, bubble thread, pill composer — pond chrome emerges as eras progress.
 
 **Panels closed:** looks like a normal LLM chat app (thread fills the screen; composer + dock in the thumb zone).
 
@@ -74,8 +76,13 @@ Mobile chat app: HUD overlays scrollable chat thread → fixed bottom composer (
 
 **Stats** (dashboard: answers/sec, demand vs supply, hype, ducks, ducks/sec, feed opex) live in the **Stats** dock tab only — never in the chat stage.
 
-### Landscape / wide fallback
-Optional two-column layout for laptop or landscape: chat column + side panel. Same dock tabs and sheet behavior; not the design center.
+**PWA:** `manifest.webmanifest` locks **portrait** when installed.
+
+### Phone landscape (fallback)
+Not the design centre. Default **two-column** chat + side panel still works; a gentle rotate hint may appear on short landscape viewports. No separate landscape-first polish pass.
+
+### Laptop / wide
+Two-column layout (chat column + management panel). Same dock tabs; sheet behaviour on narrow wide windows optional. This is the comfortable desktop play mode.
 
 ### Spacing
 - Base gap: `clamp(8px, 2vw, 16px)` (existing, works well)
@@ -101,7 +108,7 @@ Optional two-column layout for laptop or landscape: chat column + side panel. Sa
 ### Dock / tab bar
 - Bottom-anchored, full-width, with centered raised quack button
 - Active tab: accent-gold fill with icon + label
-- Inactive: translucent with icon only (portrait) or icon + label (landscape)
+- Inactive: translucent with icon only (portrait phone) or icon + label (wide / laptop)
 - Safe area padding for notched phones
 
 ### Feed duck (composer)
@@ -137,9 +144,9 @@ Optional two-column layout for laptop or landscape: chat column + side panel. Sa
 ## Responsive
 
 ### Breakpoints
-- Portrait phone: `max-aspect-ratio: 1/1` or `max-width: 560px` — chat stack + bottom dock + sheet panels (primary)
-- Landscape phone / tablet: two-column chat + panel fallback
-- Desktop: same as landscape, max-width container for very wide screens
+- **Portrait phone (primary):** `max-aspect-ratio: 1/1` or `max-width: 560px` — chat stack + bottom dock + sheet panels
+- **Phone landscape:** not primary; wide two-column fallback + rotate hint on `(orientation: landscape) and (max-height: 520px)`
+- **Laptop / desktop:** default two-column grid; max-width container optional on very wide screens
 
 ### Touch
 - Minimum 44px touch targets (existing, maintain)

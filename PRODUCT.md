@@ -5,7 +5,7 @@
 product
 
 ## Users
-Mobile-first casual gamers playing idle/incremental games in short sessions. They hold their phone in landscape (or portrait) with one hand — thumb does everything. They're looking for a low-effort dopamine loop they can check in on throughout the day: tap, watch numbers go up, feel clever, put it down, come back.
+Mobile-first casual gamers playing idle/incremental games in short sessions. They hold their phone in **portrait** with one hand — thumb does everything. They're looking for a low-effort dopamine loop they can check in on throughout the day: tap, watch numbers go up, feel clever, put it down, come back.
 
 ## Product Purpose
 More Ducks is the incremental sequel to [QLM](https://github.com/bearjcc/QLM) (Quack Language Model): same chat-shaped duck Q&A, scaled into a satirical idle game about building an absurdly confident duck-powered AI industry. It exists to make you laugh, give you a satisfying progression treadmill, and quietly needle the tech industry while you're having too much fun to notice. Success looks like: players who came for the silly ducks and stayed because the loop is genuinely addictive — and QLM fans who recognize the joke when an ending they didn't see coming lands.

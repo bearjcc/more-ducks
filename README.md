@@ -3,7 +3,7 @@
 Incremental sequel to [QLM](https://github.com/bearjcc/QLM) (Quack Language Model): a small, silly, earnestly satirical browser game about scaling a duck Q&A service until the world is mostly pond.
 
 It runs entirely in your browser — no backend, no accounts, no monetization.
-Progress is kept in `localStorage`. **Phone landscape first**, portrait and laptop supported.
+Progress is kept in `localStorage`. **Phone portrait first** (QLM-style chat); laptop landscape supported.
 
 ## Docs (read before hacking)
 
