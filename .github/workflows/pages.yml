@@ -1,6 +1,7 @@
 name: Deploy to GitHub Pages
 
 # The game is build-free static files, so we just publish the repo as-is.
+# Trigger: push to main (or workflow_dispatch in the Actions UI).
 on:
   push:
     branches: [main]
