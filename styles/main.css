@@ -1599,12 +1599,13 @@ body[data-panel-open] .tab-panels {
   margin: 4px 0 14px;
   padding: 8px 18px;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--primary) 14%, var(--surface));
-  color: var(--primary);
-  font-weight: 600;
+  background: var(--grass-900);
+  color: var(--highlight);
+  font-weight: 700;
   font-style: normal;
   text-decoration: none;
-  border: 1px solid color-mix(in oklch, var(--primary) 35%, var(--row-divider));
+  border: 1px solid var(--grass-700);
+  box-shadow: 0 1px 0 var(--neutral-a12);
 }
 .ending__link:hover { filter: brightness(1.06); }
 .ending__link:focus-visible {
@@ -2113,12 +2114,8 @@ body[data-act-tier="empire"] .chat-thread {
     background: var(--bg);
   }
   body[data-act-tier="chat"] .hud {
-    background: linear-gradient(
-      to bottom,
-      color-mix(in oklch, var(--bg) 96%, transparent) 0%,
-      color-mix(in oklch, var(--bg) 82%, transparent) 70%,
-      transparent 100%
-    );
+    background: var(--bg);
+    border-bottom: 1px solid var(--row-divider);
   }
   body[data-act-tier="chat"] .bottom-tray {
     background: var(--bg);
@@ -2154,30 +2151,29 @@ body[data-act-tier="empire"] .chat-thread {
     top: 0;
     left: 0;
     right: 0;
-    z-index: var(--z-toolbar);
+    z-index: calc(var(--z-dock) + 3);
     grid-column: 1;
     grid-row: 1;
     padding: max(4px, env(safe-area-inset-top)) 6px 8px;
-    background: linear-gradient(
-      to bottom,
-      color-mix(in oklch, var(--surface) 92%, transparent) 0%,
-      color-mix(in oklch, var(--surface) 78%, transparent) 72%,
-      transparent 100%
-    );
-    border-bottom: none;
-    box-shadow: none;
+    background: var(--surface);
+    border-bottom: 1px solid var(--row-divider);
+    box-shadow: 0 2px 12px var(--neutral-a08);
+    isolation: isolate;
   }
   .stage {
     grid-column: 1;
     grid-row: 1;
     overflow: hidden;
-    padding: 0;
+    padding: var(--hud-height) 0 0;
     border-radius: 0;
     border-right: none;
     border-bottom: none;
     min-height: 0;
     background: var(--stage-bg);
     color: var(--ink);
+    box-sizing: border-box;
+    position: relative;
+    z-index: 0;
   }
   .stage::after,
   .stage__ambient { display: none; }
@@ -2195,9 +2191,23 @@ body[data-act-tier="empire"] .chat-thread {
     min-height: 0;
     max-height: none;
     margin-bottom: 0;
-    padding: calc(var(--hud-height) + 4px) 10px 8px;
+    padding: 8px 10px 8px;
     overflow-y: auto;
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      var(--mask-opaque) 12px,
+      var(--mask-opaque) 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      var(--mask-opaque) 12px,
+      var(--mask-opaque) 100%
+    );
   }
   .bottom-tray {
     grid-column: 1;
@@ -2341,7 +2351,7 @@ body[data-act-tier="empire"] .chat-thread {
 
   .counter { padding: 4px 8px; }
   .counter__label { display: none; }
-  .counter__value { font-size: clamp(0.9rem, 3.8vw, 1.05rem); }
+  .counter__value { font-size: clamp(0.9rem, 3.8vw, 1.05rem); overflow: hidden; text-overflow: ellipsis; }
   .vanity-stat__value { font-size: 0.95rem; }
   .score-badge { font-size: 0.55rem; min-height: 0.8em; max-width: 48%; }
 
@@ -2462,14 +2472,17 @@ body[data-act-tier="empire"] .chat-thread {
 }
 
 @media (orientation: landscape) and (max-height: 520px) and (min-width: 561px) {
+  .stage {
+    padding-top: calc(var(--hud-height) + 38px);
+  }
   .rotate-hint {
     display: block;
     position: fixed;
-    top: max(6px, env(safe-area-inset-top));
+    top: calc(var(--hud-height, 53px) + 10px + env(safe-area-inset-top, 0px));
     bottom: auto;
     left: 50%;
     transform: translateX(-50%);
-    z-index: calc(var(--z-modal) + 2);
+    z-index: calc(var(--z-toolbar) + 1);
     max-width: min(92vw, 420px);
     padding: 6px 14px;
     border-radius: 999px;
@@ -2480,6 +2493,10 @@ body[data-act-tier="empire"] .chat-thread {
     background: color-mix(in oklch, var(--bg) 92%, var(--accent));
     border: 1px solid var(--row-divider);
     box-shadow: 0 4px 16px var(--neutral-a12);
+  }
+
+  .chat-thread {
+    padding-top: 4px;
   }
 }
 

@@ -15,6 +15,7 @@ import {
 import { applyActTier } from "./shell.js";
 import {
   anyTabUnlocked,
+  dashboardTabUnlocked,
   flockTabUnlocked,
   upgradesTabUnlocked,
   tabUnlocked,
@@ -462,7 +463,16 @@ export function updateTabUnlocks(ctx) {
     closeTab();
   }
 
-  if (tabsVisible && !usesPortraitSheet() && !wideDefaultTabOpened) {
+  if (!tabsVisible && document.body.hasAttribute("data-panel-open")) {
+    closeTab();
+  }
+
+  if (
+    tabsVisible
+    && !usesPortraitSheet()
+    && !wideDefaultTabOpened
+    && dashboardTabUnlocked(meta, answersPerSec)
+  ) {
     wideDefaultTabOpened = true;
     if (!document.body.hasAttribute("data-panel-open")) openTab("dashboard");
   }

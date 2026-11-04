@@ -1,5 +1,5 @@
 async (page) => {
-  const BASE = "http://127.0.0.1:8765/?v=ui17";
+  const BASE = "http://127.0.0.1:8765/?v=ui21";
   const OUT = "/opt/cursor/artifacts";
   const P = { width: 390, height: 844 };
   async function snap(name) {
@@ -23,7 +23,7 @@ async (page) => {
   async function openTab(name) {
     await page.evaluate(async (tab) => {
       const { openTab } = await import("/src/ui/render.js");
-      openTab(tab);
+      if (document.body.dataset.panelOpen !== tab) openTab(tab);
     }, name);
     await page.waitForTimeout(350);
   }

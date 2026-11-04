@@ -1,5 +1,5 @@
 async (page) => {
-  const BASE = "http://127.0.0.1:8765/?v=ui17";
+  const BASE = "http://127.0.0.1:8765/?v=ui21";
   const OUT = "/opt/cursor/artifacts";
   const P = { width: 390, height: 844 };
   async function snap(name) {
@@ -23,7 +23,7 @@ async (page) => {
   async function openTab(name) {
     await page.evaluate(async (tab) => {
       const { openTab } = await import("/src/ui/render.js");
-      openTab(tab);
+      if (document.body.dataset.panelOpen !== tab) openTab(tab);
     }, name);
     await page.waitForTimeout(350);
   }
@@ -45,10 +45,12 @@ async (page) => {
   }
   for (let act = 0; act <= 5; act++) {
     await resetSave();
+    await page.evaluate((id) => window.__mdCapture.playActModalState(id), act);
     await showActModal(act);
     await snap(`${String(act + 12).padStart(2, "0")}-portrait-act${act}-modal`);
   }
   await resetSave();
+  await page.evaluate(() => window.__mdCapture.playBeatWetlandsState());
   await showBeat({
     title: "Environmental Review",
     body: "The wetland survey is back. Sixteen protected species. We could pause expansion here — or reclassify the wetlands as Duck Infrastructure and carry on. The ducks are waiting.",
@@ -57,6 +59,7 @@ async (page) => {
   });
   await snap("18-portrait-beat-wetlands");
   await resetSave();
+  await page.evaluate(() => window.__mdCapture.playBeatAustraliaState());
   await showBeat({
     title: "Australia",
     body: "The ducks have identified Australia as underutilised. They've drawn up plans. We'd technically need to authorise this first. They seem confident we will.",

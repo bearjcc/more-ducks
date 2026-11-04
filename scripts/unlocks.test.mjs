@@ -49,8 +49,8 @@ assert(!upgradesTabUnlocked(meta), "upgrades locked without feed");
 meta.manualFeeds = 1;
 assert(dashboardTabUnlocked(meta), "dashboard when flock unlocks");
 meta.questionsAnswered = 2;
-assert(!dashboardTabUnlocked(meta), "dashboard locked without flock or answers/sec");
-assert(dashboardTabUnlocked(meta, 0.5), "dashboard when answers/sec > 0");
+assert(!dashboardTabUnlocked(meta), "dashboard locked without flock");
+assert(!dashboardTabUnlocked(meta, 0.5), "dashboard not from passive answers/sec alone");
 
 const engine = { producers: { duckling: { count: 0 } } };
 meta.questionsAnswered = 3;

@@ -44,7 +44,9 @@ export function flockProducersUnlocked(meta) {
  * @param {number} [answersPerSec]
  */
 export function dashboardTabUnlocked(meta, answersPerSec = 0) {
-  return flockTabUnlocked(meta) || answersPerSec > 0;
+  void answersPerSec;
+  /* HANDOFF: first panel after 3 manual Q&A + feed — same gate as Flock. */
+  return flockTabUnlocked(meta);
 }
 
 /**
