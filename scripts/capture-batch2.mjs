@@ -72,11 +72,19 @@ async (page) => {
   await openTab("regions");
   await page.evaluate(() => window.__mdCapture.clearToasts());
   await snap("20-portrait-regions-abroad");
-  await page.evaluate(() => window.__mdCapture.playRegionsAustralia());
-  await snap("21-portrait-regions-australia");
-  await page.evaluate(() => window.__mdCapture.playRegionsOceanSpace());
+  await page.evaluate(() => window.__mdCapture.applyAustraliaFlooded());
   await openTab("regions");
   await page.evaluate(() => window.__mdCapture.clearToasts());
+  await snap("21-portrait-regions-australia");
+  await page.evaluate(() => window.__mdCapture.applyOceanSpaceReady());
+  await openTab("regions");
+  await page.evaluate(() => {
+    window.__mdCapture.clearToasts();
+    const panel = document.querySelector('.tab-panel[data-panel="regions"].is-active');
+    const spaceCard = panel?.querySelector('[data-region="space"]')?.closest(".card");
+    spaceCard?.scrollIntoView({ block: "center" });
+  });
+  await page.waitForTimeout(250);
   await snap("22-portrait-regions-ocean-space");
   return "batch2 ok";
 }

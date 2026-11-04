@@ -61,30 +61,49 @@ window.__mdCapture = {
   async playRegionsAbroad() {
     await this.playMidGame();
     const { meta, engine, advanceGame } = window.MoreDucks;
+    const { unlockRegion, rentRegion } = await import("/src/game/regions.js");
     meta.era = 4;
-    engine.currency("coins").incrementBy(20_000_000);
-    meta.regionsUnlocked = ["home", "europe", "asia"];
-    meta.regionsRented = ["europe"];
+    engine.currency("coins").incrementBy(80_000_000);
+    unlockRegion(engine, meta, "europe");
+    unlockRegion(engine, meta, "asia");
+    rentRegion(engine, meta, "europe");
+    advanceGame(0.2);
+    await this.dismissModals();
+    this.clearToasts();
+  },
+  async applyAustraliaFlooded() {
+    const { meta, engine, advanceGame } = window.MoreDucks;
+    const { unlockRegion, floodAustralia } = await import("/src/game/regions.js");
+    engine.currency("coins").incrementBy(60_000_000);
+    unlockRegion(engine, meta, "australia");
+    floodAustralia(engine, meta);
     advanceGame(0.2);
     await this.dismissModals();
     this.clearToasts();
   },
   async playRegionsAustralia() {
     await this.playRegionsAbroad();
-    const { meta } = window.MoreDucks;
-    meta.regionsUnlocked = ["home", "australia"];
-    meta.regionsRented = [];
-    meta.australiaFlooded = true;
+    await this.applyAustraliaFlooded();
   },
-  async playRegionsOceanSpace() {
-    await this.playRegionsAbroad();
-    const { meta } = window.MoreDucks;
-    meta.regionsUnlocked = ["home", "ocean", "space"];
-    meta.regionsRented = [];
-    meta.saltwaterDeployed = true;
+  async applyOceanSpaceReady() {
+    const { meta, engine, advanceGame } = window.MoreDucks;
+    const { unlockRegion, deploySaltwater } = await import("/src/game/regions.js");
+    meta.era = 5;
+    engine.currency("coins").incrementBy(200_000_000);
+    unlockRegion(engine, meta, "ocean");
+    deploySaltwater(engine, meta);
+    unlockRegion(engine, meta, "space");
     meta.spaceDeployed = false;
     meta.flags.ended = false;
     meta.endingId = null;
+    advanceGame(0.2);
+    await this.dismissModals();
+    this.clearToasts();
+  },
+  async playRegionsOceanSpace() {
+    await this.playRegionsAbroad();
+    await this.applyAustraliaFlooded();
+    await this.applyOceanSpaceReady();
   },
   async playLateGame() {
     await this.playMidGame();

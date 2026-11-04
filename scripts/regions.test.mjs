@@ -7,6 +7,8 @@ import {
   totalRentPerDay,
   tickRegions,
   applyPendingRent,
+  deploySaltwater,
+  deploySpace,
 } from "../src/game/regions.js";
 import { GAME_DAY_SEC } from "../src/data/regions.js";
 
@@ -22,6 +24,16 @@ engine.currency("coins").incrementBy(60_000_000);
 console.assert(floodAustralia(engine, meta), "flood australia");
 console.assert(rentRegion(engine, meta, "europe"), "rent europe");
 console.assert(totalRentPerDay(meta) > 0, "rent total");
+
+meta.era = 4;
+console.assert(unlockRegion(engine, meta, "ocean") === false, "ocean locked before era 5");
+meta.era = 5;
+engine.currency("coins").incrementBy(200_000_000);
+console.assert(unlockRegion(engine, meta, "ocean"), "unlock ocean at era 5");
+console.assert(deploySaltwater(engine, meta), "deploy saltwater");
+console.assert(unlockRegion(engine, meta, "space"), "unlock space after saltwater");
+console.assert(deploySpace(engine, meta), "orbital deploy");
+console.assert(meta.spaceDeployed, "space deployed flag");
 
 tickRegions(meta, GAME_DAY_SEC);
 console.assert(meta.pendingRent > 0, "rent accrues per game-day");
