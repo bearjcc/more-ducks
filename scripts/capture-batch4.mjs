@@ -1,5 +1,5 @@
 async (page) => {
-  const BASE = "http://127.0.0.1:8765/?v=ui21";
+  const BASE = "http://127.0.0.1:8765/?v=ui22";
   const OUT = "/opt/cursor/artifacts";
   const P = { width: 390, height: 844 };
   const L = { width: 1440, height: 900 };
