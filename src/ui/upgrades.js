@@ -6,6 +6,7 @@ import { ALL_UPGRADES, upgradeNextCost, upgradeAtCap, maxLevelFor } from "../gam
 import { purchaseRevealed, upgradesTabUnlocked } from "../game/unlocks.js";
 import { upgradeLevel } from "../game/levels.js";
 import { flashCard } from "./render.js";
+import { cardCopyMarkup, upgradeEffectLine } from "../game/cardCopy.js";
 /**
  * @typedef {object} UpgRefs
  * @property {HTMLElement} root
@@ -48,7 +49,7 @@ function createCard(def, container) {
     `<div class="card__icon" aria-hidden="true">${def.emoji}</div>` +
     `<div class="card__body">` +
       `<div class="card__title" data-title>${def.name}</div>` +
-      `<div class="card__blurb">${def.blurb}</div>` +
+      `<div class="card__copy">${cardCopyMarkup(upgradeEffectLine(def), def.flavour)}</div>` +
     `</div>` +
     `<button class="card__buy" type="button" data-buy aria-label="Buy ${def.name}">` +
       `<span class="card__count" data-count hidden></span>` +

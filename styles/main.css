@@ -1125,6 +1125,15 @@ body[data-panel-open] .tab-panels {
 }
 .card__body { flex: 1; min-width: 0; }
 .card__title { font-weight: 700; display: flex; align-items: baseline; gap: 6px; font-size: 0.9rem; }
+.card__copy { margin-top: 2px; }
+.card__effect {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.card__flavour { font-size: 0.76rem; color: var(--muted); line-height: 1.25; margin: 3px 0 0; }
 .card__blurb { font-size: 0.78rem; color: var(--muted); line-height: 1.25; margin-top: 1px; }
 .card__meta {
   display: block;

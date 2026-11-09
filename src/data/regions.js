@@ -6,7 +6,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} emoji
- * @property {string} blurb
+ * @property {string} flavour
  * @property {number} era          Min act to reveal
  * @property {number} unlockCost   Coins to unlock access
  * @property {number} rentPerDay     Coins per game-day (0 = no rent)
@@ -25,7 +25,7 @@ export const REGIONS = [
     id: "home",
     name: "Home Pond",
     emoji: "🏡",
-    blurb: "You own it. Idle ducks are capex, not opex.",
+    flavour: "You own it. Idle ducks are capex, not opex.",
     era: 0,
     unlockCost: 0,
     rentPerDay: 0,
@@ -34,7 +34,7 @@ export const REGIONS = [
     id: "europe",
     name: "Northern Wetlands",
     emoji: "🌿",
-    blurb: "Rent a pond. Species: mallard variants with opinions.",
+    flavour: "Rent a pond. Species: mallard variants with opinions.",
     era: 4,
     unlockCost: 2_500_000,
     rentPerDay: 800,
@@ -43,7 +43,7 @@ export const REGIONS = [
     id: "asia",
     name: "Eastern Reaches",
     emoji: "🎋",
-    blurb: "Rent required. Ducks migrate here for tax purposes.",
+    flavour: "Rent required. Ducks migrate here for tax purposes.",
     era: 4,
     unlockCost: 5_000_000,
     rentPerDay: 1200,
@@ -52,7 +52,7 @@ export const REGIONS = [
     id: "australia",
     name: "Interior Basin",
     emoji: "🏜️",
-    blurb: "Flood the desert once. No rent after that. Giant lake, giant capex.",
+    flavour: "Flood the desert once. No rent after that.",
     era: 4,
     unlockCost: 8_000_000,
     floodCost: 50_000_000,
@@ -62,7 +62,7 @@ export const REGIONS = [
     id: "ocean",
     name: "Open Ocean",
     emoji: "🌊",
-    blurb: "Saltwater ducks. No pond. No rent.",
+    flavour: "Saltwater ducks. No pond. No rent.",
     era: 5,
     unlockCost: 25_000_000,
     rentPerDay: 0,
@@ -72,7 +72,7 @@ export const REGIONS = [
     id: "space",
     name: "Orbital Reach",
     emoji: "🚀",
-    blurb: "Ducks in spaaaace. So long, and thanks for all the fish.",
+    flavour: "Ducks in spaaaace. So long, and thanks for all the fish.",
     era: 5,
     unlockCost: 80_000_000,
     rentPerDay: 0,

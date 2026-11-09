@@ -246,6 +246,13 @@ initUpgrades({
     const bought = buyUpgrade(engine, meta, mods, id);
     if (bought) {
       sfxBuy();
+      if (id === "scalinglaws" && !meta.flags.ponderingIntroToast) {
+        meta.flags.ponderingIntroToast = true;
+        showToast({
+          title: "Pondering unlocked",
+          body: "Hold 🦆 while fed to stream thoughts, then release for a pondered answer.",
+        });
+      }
       const ending = checkEndings(engine, meta);
       if (ending) triggerEnding(ending);
     }

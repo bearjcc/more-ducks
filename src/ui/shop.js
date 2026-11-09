@@ -5,6 +5,7 @@ import { bulkCost, maxAffordable } from "../game/economy.js";
 import { purchaseRevealed, flockProducersUnlocked } from "../game/unlocks.js";
 import { PRODUCERS } from "../data/producers.js";
 import { flashCard } from "./render.js";
+import { cardCopyMarkup, producerEffectLine } from "../game/cardCopy.js";
 /** @typedef {1 | 10 | 100 | "max"} BuyMode */
 
 /**
@@ -110,7 +111,7 @@ function createCard(def) {
     `<div class="card__icon" aria-hidden="true">${def.emoji}</div>` +
     `<div class="card__body">` +
       `<div class="card__title">${def.name} <span class="card__count" data-count>×0</span></div>` +
-      `<div class="card__blurb">${def.blurb}</div>` +
+      `<div class="card__copy">${cardCopyMarkup(producerEffectLine(def), def.flavour)}</div>` +
     `</div>` +
     `<button class="card__buy" type="button" data-buy aria-label="Buy ${def.name}">` +
       `<span class="card__cost" data-cost>—</span>` +

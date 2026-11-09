@@ -7,7 +7,7 @@
  * @property {string} id
  * @property {string} name
  * @property {string} emoji
- * @property {string} blurb
+ * @property {string} flavour
  * @property {number} era
  * @property {"quantity"|"level"} purchaseMode
  * @property {number} baseCost
@@ -23,7 +23,7 @@ export const HYPE_CAMPAIGNS = [
     id: "businesscards",
     name: "Business Cards",
     emoji: "💼",
-    blurb: "Hand them out. Nobody reads them. Everyone remembers the duck.",
+    flavour: "Hand them out. Nobody reads them. Everyone remembers the duck.",
     purchaseMode: "quantity",
     baseCost: 50,
     costCoefficient: 1.15,
@@ -33,8 +33,8 @@ export const HYPE_CAMPAIGNS = [
   {
     id: "signflipper",
     name: "Sign Flipper",
-    emoji: "🪧",
-    blurb: "Corner traffic. Spinning enthusiasm. Legally distinct from protest.",
+    emoji: "🔄",
+    flavour: "Corner traffic. Spinning enthusiasm. Legally distinct from protest.",
     purchaseMode: "quantity",
     baseCost: 200,
     costCoefficient: 1.15,
@@ -45,7 +45,7 @@ export const HYPE_CAMPAIGNS = [
     id: "billboards",
     name: "Billboards",
     emoji: "🪧",
-    blurb: "You can buy as many as you like. The highway agrees.",
+    flavour: "You can buy as many as you like. The highway agrees.",
     purchaseMode: "quantity",
     baseCost: 800,
     costCoefficient: 1.16,
@@ -56,7 +56,7 @@ export const HYPE_CAMPAIGNS = [
     id: "socialmedia",
     name: "Social Media Manager",
     emoji: "📱",
-    blurb: "Posts ducks. Engages ducks. Ducks follow ducks.",
+    flavour: "Posts ducks. Engages ducks. Ducks follow ducks.",
     purchaseMode: "level",
     baseCost: 1_200,
     costCoefficient: 1.15,
@@ -68,7 +68,7 @@ export const HYPE_CAMPAIGNS = [
     id: "blogtour",
     name: "Thought Leadership Tour",
     emoji: "🎤",
-    blurb: "Keynotes about keynotes. Slides are mostly ducks.",
+    flavour: "Keynotes about keynotes. Slides are mostly ducks.",
     purchaseMode: "level",
     baseCost: 8_000,
     costCoefficient: 1.15,
@@ -80,7 +80,7 @@ export const HYPE_CAMPAIGNS = [
     id: "launch",
     name: "Product Launch Livestream",
     emoji: "📺",
-    blurb: "Nothing new ships. Viewership does.",
+    flavour: "Nothing new ships. Viewership does.",
     purchaseMode: "level",
     baseCost: 80_000,
     costCoefficient: 1.15,
@@ -92,7 +92,7 @@ export const HYPE_CAMPAIGNS = [
     id: "viral",
     name: "Viral Moment",
     emoji: "🔥",
-    blurb: "Trending for twelve minutes. Booked for twelve quarters.",
+    flavour: "Trending briefly. Booked for ages.",
     purchaseMode: "level",
     baseCost: 500_000,
     costCoefficient: 1.15,

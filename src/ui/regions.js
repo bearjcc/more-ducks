@@ -6,6 +6,7 @@ import {
   totalRentPerDay,
 } from "../game/regions.js";
 import { flashCard } from "./render.js";
+import { cardCopyMarkup, regionEffectLine } from "../game/cardCopy.js";
 /** @type {HTMLElement|null} */ let listEl = null;
 /** @type {(id: string, action: string) => boolean} */ let onAction = () => false;
 
@@ -64,7 +65,7 @@ export function updateRegions(ctx) {
       `<span class="card__emoji" aria-hidden="true">${r.emoji}</span>` +
       `<div class="card__body">` +
         `<span class="card__title">${r.name}</span>` +
-        `<span class="card__blurb">${r.blurb}</span>` +
+        `<div class="card__copy">${cardCopyMarkup(regionEffectLine(r), r.flavour)}</div>` +
         (rented && r.rentPerDay > 0
           ? `<span class="card__meta">Rented · ${formatNumber(r.rentPerDay, 0)} coins / game-day</span>`
           : "") +

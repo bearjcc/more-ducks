@@ -14,6 +14,7 @@ import { HYPE_CAMPAIGNS } from "../data/hype.js";
 import { purchaseRevealed } from "../game/unlocks.js";
 import { marketingLevel } from "../game/levels.js";
 import { flashCard } from "./render.js";
+import { cardCopyMarkup, hypeEffectLine } from "../game/cardCopy.js";
 /**
  * @typedef {object} CardRefs
  * @property {HTMLElement} root
@@ -55,7 +56,7 @@ function createCard(def) {
     `<div class="card__icon" aria-hidden="true">${def.emoji}</div>` +
     `<div class="card__body">` +
       `<div class="card__title" data-title>${def.name}</div>` +
-      `<div class="card__blurb">${def.blurb}</div>` +
+      `<div class="card__copy">${cardCopyMarkup(hypeEffectLine(def), def.flavour)}</div>` +
     `</div>` +
     `<button class="card__buy" type="button" data-buy aria-label="Launch ${def.name}">` +
       `<span class="card__count" data-count hidden></span>` +
