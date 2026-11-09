@@ -8,7 +8,7 @@ import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const BASE = "http://127.0.0.1:8765/?v=ui23";
+const BASE = "http://127.0.0.1:8765/?v=ui24";
 const PORT = 8765;
 const captureHelper = readFileSync(new URL("capture-page.js", import.meta.url), "utf8");
 

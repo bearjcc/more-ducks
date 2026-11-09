@@ -857,24 +857,9 @@ body[data-panel-open] .panel-header {
 .view-mode--dock {
   display: none;
   justify-content: center;
-  padding: 4px 8px 2px;
-  background: linear-gradient(180deg, var(--sheet-edge) 0%, transparent 70%), var(--panel-sheet-bg);
-}
-@media (max-aspect-ratio: 1 / 1), (max-width: 560px), (orientation: landscape) and (max-height: 520px) {
-  .view-mode--dock {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px));
-    z-index: calc(var(--z-dock) + 2);
-    pointer-events: auto;
-  }
-  body[data-view-mode="chat"] .view-mode--dock {
-    display: flex;
-  }
-  body[data-panel-open] .view-mode--dock {
-    display: none;
-  }
+  padding: 4px 8px;
+  background: var(--panel-sheet-bg);
+  border-top: 1px solid var(--row-divider);
 }
 .view-mode__btn {
   flex: 1;
@@ -883,8 +868,8 @@ body[data-panel-open] .panel-header {
   padding: 4px 6px;
   border: 1px solid var(--row-divider);
   border-radius: 8px;
-  background: var(--highlight-a14);
-  color: var(--ink);
+  background: color-mix(in oklch, var(--surface-raised) 92%, var(--highlight));
+  color: var(--text);
   font: inherit;
   font-size: 0.68rem;
   font-weight: 700;
@@ -893,9 +878,9 @@ body[data-panel-open] .panel-header {
   cursor: pointer;
 }
 .view-mode__btn.is-active {
-  background: var(--primary);
-  color: var(--on-primary);
-  border-color: transparent;
+  background: var(--grass-700);
+  color: var(--highlight);
+  border-color: var(--grass-800);
   box-shadow: inset 0 1px 0 var(--highlight-a14);
 }
 .view-mode__btn:focus-visible {
@@ -1130,9 +1115,12 @@ body[data-panel-open] .tab-panels {
   0% { background: var(--accent-a28); }
   100% { background: transparent; }
 }
-.card.is-owned .card__title,
+.card.is-owned .card__title {
+  color: var(--muted);
+}
 .card.is-owned .card__effect {
-  opacity: 0.82;
+  color: var(--text);
+  opacity: 0.92;
 }
 .card.is-owned .card__buy {
   background: transparent;
@@ -1162,20 +1150,54 @@ body[data-panel-open] .tab-panels {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-.card__flavour {
-  font-size: 0.74rem;
-  color: var(--muted);
-  line-height: 1.2;
+.card__flavour-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
   margin: 1px 0 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--muted);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.card__flavour-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+.card__flavour {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.74rem;
+  line-height: 1.2;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
   overflow: hidden;
-  cursor: pointer;
+}
+.card__flavour-chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border-right: 2px solid var(--reeds-700);
+  border-bottom: 2px solid var(--reeds-700);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  opacity: 0.85;
 }
 .card.is-flavour-expanded .card__flavour {
   -webkit-line-clamp: unset;
   overflow: visible;
+}
+.card.is-flavour-expanded .card__flavour-chevron {
+  transform: rotate(225deg);
+  margin-top: 6px;
 }
 .card__blurb { font-size: 0.78rem; color: var(--muted); line-height: 1.25; margin-top: 1px; }
 .card__meta {
@@ -2135,12 +2157,13 @@ body[data-act-tier="empire"] .chat-thread {
     --dock-height: 56px;
     --hud-height: 53px;
     --input-tray-height: 60px;
-    /* Starter hint + tray padding above the input row (portrait). */
     --bottom-tray-chrome: 34px;
-    --panel-minimize-height: 34px;
-    --playable-stack: calc(
-      100dvh - var(--hud-height) - var(--dock-height) - var(--input-tray-height)
-        - var(--bottom-tray-chrome) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    --panel-minimize-height: 40px;
+    --view-mode-dock-height: 44px;
+    --tray-block-height: calc(var(--bottom-tray-chrome) + var(--input-tray-height) + 12px);
+    --split-half: calc(var(--below-hud) / 2);
+    --below-hud: calc(
+      100dvh - var(--hud-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
     );
     --toast-stack: calc(var(--dock-height) + var(--input-tray-height) + 2 * var(--gap));
   }
@@ -2158,27 +2181,16 @@ body[data-act-tier="empire"] .chat-thread {
     top: auto;
   }
 
-  body[data-panel-open] {
-    --toast-stack: calc(
-      var(--dock-height) + var(--panel-sheet-height) + var(--input-tray-height) + 2 * var(--gap)
-    );
-    --portrait-chat-stack: calc(
-      var(--bottom-tray-chrome)
-      + var(--input-tray-height)
-      + var(--panel-sheet-height)
-      + var(--dock-height)
-      + env(safe-area-inset-bottom, 0)
-    );
+  body[data-view-mode="split"][data-panel-open] {
+    --split-half: calc(var(--below-hud) / 2);
+    --panel-sheet-height: var(--split-half);
+  }
+  body[data-view-mode="manage"][data-panel-open] {
+    --panel-sheet-height: var(--below-hud);
   }
 
-  body[data-view-mode="split"][data-panel-open] {
-    --panel-sheet-height: calc(var(--playable-stack) / 2);
-  }
-  /* Full management panel under HUD — chat/composer hidden. */
-  body[data-view-mode="manage"][data-panel-open] {
-    --panel-sheet-height: calc(
-      100dvh - var(--hud-height) - var(--dock-height) - env(safe-area-inset-bottom, 0px)
-    );
+  body[data-panel-open][data-view-mode="split"] {
+    --toast-stack: calc(var(--split-half) + var(--tray-block-height) + 2 * var(--gap));
   }
 
   body {
@@ -2221,9 +2233,25 @@ body[data-act-tier="empire"] .chat-thread {
 
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto auto;
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
     gap: 0;
     padding: 0;
+    min-height: 100dvh;
+    box-sizing: border-box;
+  }
+  .view-mode--dock {
+    grid-column: 1;
+    grid-row: 3;
+    position: relative;
+    z-index: calc(var(--z-dock) + 1);
+  }
+  body[data-view-mode="chat"] .view-mode--dock {
+    display: flex;
+    min-height: var(--view-mode-dock-height);
+    box-sizing: border-box;
+  }
+  body[data-panel-open] .view-mode--dock {
+    display: none;
   }
   .hud {
     position: fixed;
@@ -2325,18 +2353,44 @@ body[data-act-tier="empire"] .chat-thread {
   .chat-starter {
     font-size: 0.68rem;
   }
-  body[data-panel-open] .stage {
-    padding-bottom: 0;
-    max-height: calc(100dvh - var(--portrait-chat-stack));
+  body[data-view-mode="chat"] .stage {
+    max-height: none;
+    min-height: 0;
   }
-  body[data-panel-open] .bottom-tray {
+  body[data-view-mode="chat"] .bottom-tray {
+    position: relative;
+    grid-row: 2;
+  }
+  body[data-view-mode="split"][data-panel-open] .stage {
+    position: fixed;
+    top: calc(var(--hud-height) + env(safe-area-inset-top, 0px));
+    left: 0;
+    right: 0;
+    bottom: calc(var(--split-half) + var(--tray-block-height));
+    padding-top: 0;
+    max-height: none;
+  }
+  body[data-view-mode="split"][data-panel-open] .bottom-tray {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(var(--dock-height) + var(--panel-sheet-height) + env(safe-area-inset-bottom, 0));
+    bottom: var(--split-half);
     z-index: calc(var(--z-dock) + 1);
+    margin: 0;
+    padding-top: 4px;
+    padding-bottom: 4px;
     transition: bottom 0.35s var(--ease-out-expo);
     isolation: isolate;
+  }
+  body[data-view-mode="manage"][data-panel-open] .stage,
+  body[data-view-mode="manage"][data-panel-open] .bottom-tray {
+    display: none;
+  }
+  body[data-view-mode="manage"][data-panel-open] .panels {
+    top: calc(var(--hud-height) + env(safe-area-inset-top, 0px));
+    bottom: 0;
+    height: auto;
+    max-height: none;
   }
   body[data-panel-open] .chat-thread {
     padding-bottom: 8px;
@@ -2367,8 +2421,11 @@ body[data-act-tier="empire"] .chat-thread {
     flex-direction: column;
   }
   body:not([data-panel-open]) .panels {
-    grid-row: 3;
+    grid-row: 4;
     background: transparent;
+  }
+  body[data-view-mode="chat"]:not([data-panel-open]) .panels {
+    grid-row: 4;
   }
   body:not([data-panel-open]) .panels:has(.dock[hidden]) {
     display: none;
@@ -2491,13 +2548,17 @@ body[data-act-tier="empire"] .chat-thread {
     display: block;
     font-size: 0.5rem;
     line-height: 1.05;
-    font-weight: 700;
+    font-weight: 800;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--tab-ink, var(--primary-ink));
-    opacity: 0.92;
+    color: var(--reeds-900);
+    text-shadow: 0 1px 0 color-mix(in oklch, var(--highlight) 70%, transparent);
+  }
+  .dock .tab.is-active .tab__label {
+    color: var(--reeds-900);
+    font-weight: 800;
   }
 
   .panel-toolbar {

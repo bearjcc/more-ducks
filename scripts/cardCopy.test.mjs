@@ -63,12 +63,15 @@ console.log("\n(e) Quick Quack shows hold interval ms at Lv 0");
   assert(!line.includes("faster"), "no vague faster");
 }
 
-console.log("\n(f) Australia flood states benefit and cost");
+console.log("\n(f) Australia unlock vs flood costs");
 {
   const aus = REGIONS.find((r) => r.id === "australia");
-  const effect = regionEffectLine(aus);
-  assert(effect.includes("50M") || effect.includes("50"), "flood cost visible");
-  assert(effect.toLowerCase().includes("unlock"), "flood unlock benefit");
+  const locked = regionEffectLine(aus, { unlocked: false, flooded: false });
+  assert(locked.includes("8M"), "unlock 8M in effect when locked");
+  assert(locked.includes("50M"), "flood 50M in effect when locked");
+  const ready = regionEffectLine(aus, { unlocked: true, flooded: false });
+  assert(ready.includes("50M"), "flood button cost line");
+  assert(ready.toLowerCase().includes("rent"), "rent benefit when unlocked not flooded");
 }
 
 console.log("\n(g) Rent label matches region effect");

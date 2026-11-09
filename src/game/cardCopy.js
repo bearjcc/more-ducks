@@ -186,14 +186,23 @@ export function hypeEffectLine(def, level = 0) {
 
 /**
  * @param {import("../data/regions.js").RegionDef} def
- * @param {{ rented?: boolean, unlocked?: boolean }} [state]
+ * @param {{ rented?: boolean, unlocked?: boolean, flooded?: boolean }} [state]
  * @returns {string}
  */
 export function regionEffectLine(def, state = {}) {
   if (def.orbital) return "Deploy orbital ducks (space ending)";
   if (def.saltwater) return "Deploy saltwater ducks (no pond cap)";
   if (def.floodCost) {
-    return `Pay ${formatNumber(def.floodCost, 0)} once · flood basin & unlock rent`;
+    if (!state.unlocked) {
+      return `Unlock ${formatNumber(def.unlockCost, 0)} · flood ${formatNumber(def.floodCost, 0)} once to rent`;
+    }
+    if (!state.flooded) {
+      return `Flood ${formatNumber(def.floodCost, 0)} once · enables basin rent`;
+    }
+    if (def.rentPerDay > 0) {
+      return `Basin flooded · rent ${rentCoinsPerGameDayLabel(def.rentPerDay)} when active`;
+    }
+    return "Basin flooded · rent available";
   }
   if (def.rentPerDay > 0) {
     return `Rent ${rentCoinsPerGameDayLabel(def.rentPerDay)} when active`;
@@ -218,7 +227,11 @@ export function flavourIsWordsOnly(flavour) {
  * @param {string} flavour
  */
 export function cardCopyMarkup(effect, flavour) {
-  const flavourBlock = flavour ? `<p class="card__flavour">${flavour}</p>` : "";
+  const flavourBlock = flavour
+    ? `<button type="button" class="card__flavour-wrap" aria-expanded="false">` +
+      `<span class="card__flavour">${flavour}</span>` +
+      `<span class="card__flavour-chevron" aria-hidden="true"></span></button>`
+    : "";
   return `<p class="card__effect">${effect}</p>${flavourBlock}`;
 }
 

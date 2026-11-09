@@ -251,14 +251,28 @@ function initViewModeControls() {
 }
 
 function initCardFlavourTap() {
+  /** @param {HTMLElement} wrap */
+  const toggleFlavour = (wrap) => {
+    const card = wrap.closest(".card");
+    if (!card) return;
+    const expanded = card.classList.toggle("is-flavour-expanded");
+    wrap.setAttribute("aria-expanded", expanded ? "true" : "false");
+  };
   document.querySelectorAll(".card-list").forEach((list) => {
     list.addEventListener("click", (e) => {
       const target = /** @type {HTMLElement} */ (e.target);
       if (target.closest(".card__buy")) return;
-      const flavour = target.closest(".card__flavour");
-      if (!flavour) return;
-      const card = flavour.closest(".card");
-      if (card) card.classList.toggle("is-flavour-expanded");
+      const wrap = target.closest(".card__flavour-wrap");
+      if (wrap instanceof HTMLElement) toggleFlavour(wrap);
+    });
+    list.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const target = /** @type {HTMLElement} */ (e.target);
+      const wrap = target.closest(".card__flavour-wrap");
+      if (wrap instanceof HTMLElement) {
+        e.preventDefault();
+        toggleFlavour(wrap);
+      }
     });
   });
 }

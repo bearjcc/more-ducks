@@ -63,7 +63,7 @@ export function updateRegions(ctx) {
       `<span class="card__emoji" aria-hidden="true">${r.emoji}</span>` +
       `<div class="card__body">` +
         `<span class="card__title">${r.name}</span>` +
-        `<div class="card__copy">${cardCopyMarkup(regionEffectLine(r, { rented, unlocked }), r.flavour)}</div>` +
+        `<div class="card__copy">${cardCopyMarkup(regionEffectLine(r, { rented, unlocked, flooded }), r.flavour)}</div>` +
         (rented && r.rentPerDay > 0
           ? `<span class="card__meta card__status">Rented · active</span>`
           : "") +
