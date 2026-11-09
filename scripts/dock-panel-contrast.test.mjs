@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
+import { contrastRatio } from "./lib/contrast.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PORT = 8768;
@@ -40,14 +41,17 @@ try {
   for (const night of [false, true]) {
     const page = await browser.newPage();
     await page.addInitScript(captureHelper);
-    await page.goto(`http://127.0.0.1:${PORT}/?v=ui26`, { waitUntil: "domcontentloaded" });
+    await page.goto(`http://127.0.0.1:${PORT}/?v=ui27`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
       timeout: 15000,
     });
     await prep(page);
     if (night) {
       await page.evaluate(() => window.__mdCapture.quietMilestones());
-      await page.click("#time-toggle");
+      await page.evaluate(async () => {
+        const { applyTimeOfDay } = await import("/src/ui/theme.js");
+        applyTimeOfDay("night");
+      });
       await page.waitForTimeout(400);
     }
     const sample = await page.evaluate(() => {
@@ -87,40 +91,32 @@ try {
       } else {
         console.log(`  ✓ ${mode}: active tab stands off dock band`);
       }
-      const ratio = await page.evaluate(
-        ({ labelColor, tabBg }) => {
-          const norm = (value, prop) => {
-            const el = document.createElement("span");
-            el.style[prop] = value;
-            document.body.appendChild(el);
-            const out = getComputedStyle(el)[prop];
-            el.remove();
-            return out;
-          };
-          const fg = norm(labelColor, "color");
-          const bg = norm(tabBg, "backgroundColor");
-          const lum = (c) => {
-            const parts = c.match(/rgba?\(([^)]+)\)/)?.[1]?.split(",").map((s) => parseFloat(s.trim()));
-            const m = parts && parts.length >= 3 ? parts.slice(0, 3) : [0, 0, 0];
-            const [r, g, b] = m.map((v) => {
-              const x = v / 255;
-              return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-            });
-            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-          };
-          const l1 = lum(fg);
-          const l2 = lum(bg);
-          const lighter = Math.max(l1, l2);
-          const darker = Math.min(l1, l2);
-          return (lighter + 0.05) / (darker + 0.05);
-        },
-        { labelColor: sample.labelColor, tabBg: sample.tabBg },
-      );
-      if (ratio < 4.5) {
-        console.error(`  ✗ ${mode}: active tab label contrast ${ratio.toFixed(2)}:1 (need 4.5:1)`);
-        failed++;
-      } else {
-        console.log(`  ✓ ${mode}: active tab label ${ratio.toFixed(2)}:1`);
+      const tabLabels = await page.evaluate(() => {
+        const out = [];
+        for (const tab of document.querySelectorAll(".dock .tab:not([hidden])")) {
+          const name = tab.getAttribute("data-tab");
+          const label = tab.querySelector(".tab__label");
+          if (!name || !label) continue;
+          out.push({
+            name,
+            active: tab.classList.contains("is-active"),
+            fg: getComputedStyle(label).color,
+            bg: getComputedStyle(tab).backgroundColor,
+          });
+        }
+        return out;
+      });
+      for (const t of tabLabels) {
+        if (!t.active && t.name !== "flock" && t.name !== "regions") continue;
+        const min = t.active ? 4.5 : 4;
+        const tabRatio = contrastRatio(t.fg, t.bg);
+        const tag = `${mode}${t.active ? " active" : ""}`;
+        if (!Number.isFinite(tabRatio) || tabRatio < min) {
+          console.error(`  ✗ ${tag}: tab ${t.name} label ${String(tabRatio)}:1 (need ${min}:1)`);
+          failed++;
+        } else {
+          console.log(`  ✓ ${tag}: tab ${t.name} label ${tabRatio.toFixed(2)}:1`);
+        }
       }
     }
     await page.close();

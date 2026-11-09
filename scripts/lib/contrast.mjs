@@ -18,13 +18,7 @@ export function hexToRgb(hex) {
  * @param {number} h hue degrees
  * @returns {[number, number, number]}
  */
-function oklchToRgb(l, c, h) {
-  const hr = (h * Math.PI) / 180;
-  const a = c * Math.cos(hr);
-  const b = c * Math.sin(hr);
-  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+function linearSrgbFromLmsCube(l_, m_, s_) {
   const l3 = l_ ** 3;
   const m3 = m_ ** 3;
   const s3 = s_ ** 3;
@@ -42,6 +36,24 @@ function oklchToRgb(l, c, h) {
   ];
 }
 
+function oklchToRgb(l, c, h) {
+  const hr = (h * Math.PI) / 180;
+  const a = c * Math.cos(hr);
+  const b = c * Math.sin(hr);
+  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+  return linearSrgbFromLmsCube(l_, m_, s_);
+}
+
+/** @param {number} l @param {number} a @param {number} b */
+function oklabToRgb(l, a, b) {
+  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+  return linearSrgbFromLmsCube(l_, m_, s_);
+}
+
 /**
  * @param {string} color  #hex or oklch(...)
  * @returns {[number, number, number]}
@@ -51,8 +63,26 @@ export function parseColor(color) {
   if (s.startsWith("#")) return hexToRgb(s);
   const m = s.match(/^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
   if (m) return oklchToRgb(+m[1], +m[2], +m[3]);
+  const lab = s.match(/^oklab\(\s*([\d.]+)\s+([-\d.]+)\s+([-\d.]+)/i);
+  if (lab) return oklabToRgb(+lab[1], +lab[2], +lab[3]);
   const rgb = s.match(/^rgba?\(\s*([\d.]+)[,%\s]+([\d.]+)[,%\s]+([\d.]+)/i);
   if (rgb) return [+rgb[1], +rgb[2], +rgb[3]];
+  const srgb = s.match(/^color\(\s*srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
+  if (srgb) {
+    return [
+      Math.round(+srgb[1] * 255),
+      Math.round(+srgb[2] * 255),
+      Math.round(+srgb[3] * 255),
+    ];
+  }
+  const srgbPct = s.match(/^color\(\s*srgb\s+([\d.]+)%\s+([\d.]+)%\s+([\d.]+)%/i);
+  if (srgbPct) {
+    return [
+      Math.round((+srgbPct[1] / 100) * 255),
+      Math.round((+srgbPct[2] / 100) * 255),
+      Math.round((+srgbPct[3] / 100) * 255),
+    ];
+  }
   return [0, 0, 0];
 }
 

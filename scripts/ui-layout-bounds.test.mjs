@@ -135,6 +135,16 @@ try {
     if (ratio < 0.85 || ratio > 1.15) {
       throw new Error(`${vp.tag} split ratio upper/lower ${ratio.toFixed(2)} (want ~1)`);
     }
+  const stageTraySeam = await page.evaluate(() => {
+    const stage = document.querySelector(".stage")?.getBoundingClientRect();
+    const tray = document.querySelector(".bottom-tray")?.getBoundingClientRect();
+    if (!stage || !tray) return { ok: false, delta: null };
+    const delta = tray.top - stage.bottom;
+    return { ok: Math.abs(delta) <= 2, delta };
+  });
+  if (!stageTraySeam.ok) {
+    throw new Error(`${vp.tag} stage→tray seam ${stageTraySeam.delta}px (want ≤2px)`);
+  }
 
     await setMode(page, "manage");
     const mg = await rects(page);
@@ -186,6 +196,88 @@ try {
     });
     if (!focusOk) throw new Error(`${vp.tag} composer focus failed`);
 
+    await page.close();
+  }
+
+  // Night: no day-bright chrome leaking between chat log and composer (all view modes)
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.addInitScript(captureHelper);
+    await page.goto(`http://127.0.0.1:${PORT}/?v=ui27`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
+      timeout: 15000,
+    });
+    await page.evaluate(() => {
+      localStorage.clear();
+      document.querySelector(".ending")?.remove();
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
+      timeout: 15000,
+    });
+    await prepMid(page, 390, 844);
+    await page.evaluate(() => window.__mdCapture.quietMilestones());
+    await page.evaluate(async () => {
+      const { applyTimeOfDay } = await import("/src/ui/theme.js");
+      applyTimeOfDay("night");
+    });
+    await page.waitForTimeout(400);
+    for (const mode of ["chat", "split", "manage"]) {
+      await setMode(page, mode);
+      const leak = await page.evaluate((m) => {
+        const relLum = (c) => {
+          const okLab = c.match(/^oklab\(\s*([\d.]+)/i)?.[1];
+          if (okLab) return parseFloat(okLab);
+          const okLch = c.match(/^oklch\(\s*([\d.]+)/i)?.[1];
+          if (okLch) return parseFloat(okLch);
+          const parts = c.match(/rgba?\(([^)]+)\)/)?.[1]?.split(",").map((s) => parseFloat(s.trim()));
+          const rgb = parts && parts.length >= 3 ? parts.slice(0, 3) : [255, 255, 255];
+          const chan = rgb.map((v) => {
+            const x = v / 255;
+            return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * chan[0] + 0.7152 * chan[1] + 0.0722 * chan[2];
+        };
+        /** @type {{ where: string, lum: number, bg: string }[]} */
+        const samples = [];
+        const stage = document.querySelector(".stage");
+        const tray = document.querySelector(".bottom-tray");
+        if (stage && getComputedStyle(stage).display !== "none") {
+          const bg = getComputedStyle(stage).backgroundColor;
+          samples.push({ where: "stage", lum: relLum(bg), bg });
+        }
+        if (tray && getComputedStyle(tray).display !== "none") {
+          const bg = getComputedStyle(tray).backgroundColor;
+          samples.push({ where: "tray", lum: relLum(bg), bg });
+        }
+        if (m === "split") {
+          const thread = document.querySelector(".chat-thread");
+          const trayEl = document.querySelector(".bottom-tray");
+          if (thread && trayEl) {
+            const tr = thread.getBoundingClientRect();
+            const br = trayEl.getBoundingClientRect();
+            const y = (tr.bottom + br.top) / 2;
+            const x = Math.round(window.innerWidth / 2);
+            const hit = document.elementFromPoint(x, y);
+            if (hit) {
+              const bg = getComputedStyle(/** @type {Element} */ (hit)).backgroundColor;
+              samples.push({ where: `seam:${hit.className || hit.tagName}`, lum: relLum(bg), bg });
+            }
+          }
+        }
+        return {
+          mode: m,
+          night: document.documentElement.dataset.time === "night",
+          samples,
+        };
+      }, mode);
+      if (!leak.night) throw new Error("night mode not active");
+      for (const s of leak.samples) {
+        if (s.lum > 0.68) {
+          throw new Error(`night ${mode} ${s.where} too bright L=${s.lum.toFixed(2)} ${s.bg}`);
+        }
+      }
+    }
     await page.close();
   }
 

@@ -39,8 +39,14 @@
      edge stays light via --sheet-edge so the seam catches a rim of light. */
   --panel-sheet-bg: color-mix(in oklch, var(--water-500) 90%, var(--highlight));
   --panel-sheet-bg-2: color-mix(in oklch, var(--water-600) 88%, var(--highlight));
-  --panel-body-bg: color-mix(in oklch, var(--water-500) 38%, var(--surface-raised));
-  --panel-row-bg: color-mix(in oklch, var(--highlight) 42%, var(--panel-body-bg));
+  --panel-body-bg: color-mix(
+    in oklch,
+    var(--bread-300) 44%,
+    color-mix(in oklch, var(--water-500) 58%, var(--reeds-400))
+  );
+  --panel-row-bg: color-mix(in oklch, var(--highlight) 62%, var(--panel-body-bg));
+  --chat-stage-bg: var(--stage-bg);
+  --chat-tray-bg: var(--surface);
   --dock-band-bg: color-mix(in oklch, var(--reeds-600) 16%, var(--water-600) 84%);
   --panel-sheet-border: var(--neutral-a14);
   --sheet-edge: color-mix(in oklch, var(--highlight) 70%, transparent);
@@ -200,6 +206,8 @@ html {
   --panel-body-bg: color-mix(in oklch, var(--water-600) 55%, var(--grass-700) 45%);
   --panel-row-bg: color-mix(in oklch, var(--grass-500) 12%, var(--panel-body-bg));
   --dock-band-bg: color-mix(in oklch, var(--reeds-700) 35%, var(--water-700) 65%);
+  --chat-stage-bg: color-mix(in oklch, var(--water-700) 58%, var(--sky-500) 42%);
+  --chat-tray-bg: color-mix(in oklch, var(--water-700) 65%, var(--grass-700) 35%);
   --sheet-edge: color-mix(in oklch, var(--grass-500) 30%, transparent);
   --stage-bg: color-mix(in oklch, var(--surface) 92%, var(--sky-500));
   --chrome-bg: var(--surface);
@@ -935,31 +943,37 @@ body[data-panel-open] .panel-header {
   --tab-bg: color-mix(in oklch, var(--bread-500) 75%, var(--text));
   --tab-active: color-mix(in oklch, var(--bread-500) 55%, var(--text));
   --tab-ink: var(--on-primary);
+  --tab-dock-label: color-mix(in oklch, var(--reeds-800) 85%, var(--bread-900));
 }
 .tab[data-tab="flock"] {
   --tab-bg: color-mix(in oklch, var(--water-500) 70%, var(--grass-500));
   --tab-active: color-mix(in oklch, var(--water-500) 50%, var(--grass-500));
   --tab-ink: var(--on-primary);
+  --tab-dock-label: color-mix(in oklch, var(--reeds-800) 90%, var(--grass-900));
 }
 .tab[data-tab="hype"] {
   --tab-bg: color-mix(in oklch, var(--sunlight-500) 65%, var(--bread-500));
   --tab-active: color-mix(in oklch, var(--sunlight-500) 45%, var(--bread-500));
   --tab-ink: var(--text);
+  --tab-dock-label: color-mix(in oklch, var(--reeds-800) 82%, var(--bread-900));
 }
 .tab[data-tab="upgrades"] {
   --tab-bg: color-mix(in oklch, var(--grass-500) 70%, var(--text));
   --tab-active: color-mix(in oklch, var(--grass-500) 50%, var(--text));
   --tab-ink: var(--on-primary);
+  --tab-dock-label: color-mix(in oklch, var(--reeds-800) 88%, var(--grass-900));
 }
 .tab[data-tab="regions"] {
   --tab-bg: color-mix(in oklch, var(--water-500) 60%, var(--reeds-500));
   --tab-active: color-mix(in oklch, var(--water-500) 45%, var(--reeds-500));
   --tab-ink: var(--on-primary);
+  --tab-dock-label: color-mix(in oklch, var(--reeds-800) 85%, var(--water-900));
 }
 .tab[data-tab="collections"] {
   --tab-bg: color-mix(in oklch, var(--reeds-500) 55%, var(--water-500));
   --tab-active: color-mix(in oklch, var(--reeds-500) 40%, var(--grass-500));
   --tab-ink: var(--on-primary);
+  --tab-dock-label: color-mix(in oklch, var(--reeds-800) 86%, var(--water-900));
 }
 
 .tabs {
@@ -992,6 +1006,9 @@ body[data-panel-open] .panel-header {
   background: var(--tab-active, var(--primary));
   color: var(--tab-ink, var(--on-primary));
   box-shadow: inset 0 3px 0 var(--highlight-a82);
+}
+.dock .tab.is-active {
+  background: unset;
 }
 .tab:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 .tab.is-locked {
@@ -2193,10 +2210,11 @@ body[data-act-tier="empire"] .chat-thread {
     --dock-height: 56px;
     --hud-height: 53px;
     --input-tray-height: 60px;
-    --bottom-tray-chrome: 34px;
+    --bottom-tray-chrome: 10px;
     --panel-minimize-height: 40px;
     --sheet-rim-height: 30px;
-    --tray-block-height: calc(var(--bottom-tray-chrome) + var(--input-tray-height) + 12px);
+    --tray-stack-height: 63px;
+    --tray-block-height: var(--tray-stack-height);
     --split-half: calc(var(--below-hud) / 2);
     --below-hud: calc(
       100dvh - var(--hud-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
@@ -2238,14 +2256,14 @@ body[data-act-tier="empire"] .chat-thread {
     background: var(--bg);
   }
   body[data-act-tier="chat"] .stage {
-    background: var(--bg);
+    background: var(--chat-stage-bg);
   }
   body[data-act-tier="chat"] .hud {
-    background: var(--bg);
+    background: var(--chat-stage-bg);
     border-bottom: 1px solid var(--row-divider);
   }
   body[data-act-tier="chat"] .bottom-tray {
-    background: var(--bg);
+    background: var(--chat-tray-bg);
   }
   body[data-act-tier="chat"] .chat-input {
     background: var(--surface-raised);
@@ -2400,7 +2418,7 @@ body[data-act-tier="empire"] .chat-thread {
     top: calc(var(--hud-height) + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
-    bottom: calc(var(--split-half) + var(--tray-block-height));
+    bottom: calc(var(--split-half) + var(--tray-stack-height));
     padding-top: 0;
     max-height: none;
   }
@@ -2415,6 +2433,10 @@ body[data-act-tier="empire"] .chat-thread {
     padding-bottom: 4px;
     transition: bottom 0.35s var(--ease-out-expo);
     isolation: isolate;
+    background: var(--chat-tray-bg);
+  }
+  body[data-view-mode="split"][data-panel-open] .chat-thread {
+    background: var(--chat-stage-bg);
   }
   body[data-view-mode="manage"][data-panel-open] .stage,
   body[data-view-mode="manage"][data-panel-open] .bottom-tray {
@@ -2557,13 +2579,15 @@ body[data-act-tier="empire"] .chat-thread {
     min-height: 52px;
     border-radius: 8px 8px 0 0;
     font-size: inherit;
-    background: color-mix(in oklch, var(--tab-bg, var(--primary)) 72%, var(--reeds-800) 28%);
+    background-color: color-mix(in oklch, var(--tab-bg, var(--primary)) 52%, var(--reeds-900) 48%);
+    background-image: none;
     box-shadow: inset 0 -2px 0 var(--neutral-a10);
     position: relative;
     z-index: 0;
   }
   .dock .tab.is-active {
-    background: color-mix(in oklch, var(--tab-active, var(--primary)) 62%, var(--highlight));
+    background-color: color-mix(in oklch, var(--tab-active, var(--primary)) 62%, var(--highlight));
+    background-image: none;
     box-shadow:
       inset 0 2px 0 var(--highlight-a82),
       0 -3px 0 var(--panel-body-bg);
@@ -2590,7 +2614,7 @@ body[data-act-tier="empire"] .chat-thread {
     box-shadow: none;
     text-shadow: 0 1px 1px var(--neutral-a12);
   }
-  .dock .tab__label {
+  .dock .tab:not(.is-active) .tab__label {
     display: block;
     font-size: 0.5rem;
     line-height: 1.05;
@@ -2599,20 +2623,49 @@ body[data-act-tier="empire"] .chat-thread {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--tab-ink, var(--reeds-900));
-    text-shadow: 0 1px 0 var(--neutral-a10), 0 0 1px var(--neutral-a15);
+    color: color-mix(in oklch, var(--highlight) 97%, var(--reeds-400));
+    text-shadow: 0 1px 2px var(--neutral-a20);
   }
   .dock .tab.is-active .tab__label {
-    color: var(--tab-ink, var(--reeds-900));
+    display: block;
+    font-size: 0.5rem;
+    line-height: 1.05;
     font-weight: 800;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--tab-dock-label, var(--reeds-800));
+    text-shadow: 0 1px 2px var(--neutral-a12);
   }
-  [data-time="night"] .dock .tab:not(.is-active) .tab__label {
-    color: color-mix(in oklch, var(--tab-ink, var(--reeds-500)) 65%, var(--highlight));
-    text-shadow: 0 1px 2px var(--neutral-a18);
+    [data-time="day"] .dock .tab[data-tab="flock"] .tab__label,
+  [data-time="day"] .dock .tab[data-tab="regions"] .tab__label {
+    color: color-mix(in oklch, var(--reeds-900) 88%, var(--grass-900));
+  }
+  [data-time="day"] .dock .tab[data-tab="flock"].is-active .tab__label,
+  [data-time="day"] .dock .tab[data-tab="regions"].is-active .tab__label {
+    color: color-mix(in oklch, var(--reeds-900) 92%, var(--water-900));
+  }
+  .dock .tab[data-tab="hype"].is-active .tab__label {
+    color: var(--tab-dock-label);
+    text-shadow: 0 1px 1px var(--neutral-a15);
+  }
+  .dock .tab[data-tab="hype"]:not(.is-active) {
+    background: color-mix(in oklch, var(--tab-bg) 46%, var(--reeds-900) 54%);
+  }
+  .dock .tab.is-locked .tab__label {
+    opacity: 0.82;
+  }
+  [data-time="night"] .dock .tab:not(.is-active) {
+    background-color: color-mix(in oklch, var(--tab-bg, var(--primary)) 34%, var(--water-700) 66%);
   }
   [data-time="night"] .dock .tab.is-active {
-    background: color-mix(in oklch, var(--tab-active, var(--primary)) 38%, var(--reeds-900));
-    filter: saturate(1.2) brightness(0.98);
+    background-color: color-mix(in oklch, var(--water-600) 50%, var(--tab-active, var(--primary)) 50%) !important;
+    filter: none;
+  }
+  [data-time="night"] .dock .tab:not(.is-active) .tab__label {
+    color: color-mix(in oklch, var(--highlight) 97%, var(--reeds-400));
+    text-shadow: 0 1px 2px var(--neutral-a20);
   }
   [data-time="night"] .dock .tab.is-active .tab__label {
     color: var(--highlight);
@@ -2620,6 +2673,14 @@ body[data-act-tier="empire"] .chat-thread {
   }
   [data-time="night"] .dock .tab[data-tab="hype"] .tab__label {
     color: color-mix(in oklch, var(--reeds-700) 55%, var(--highlight));
+  }
+  [data-time="night"] .dock .tab[data-tab="flock"]:not(.is-active) .tab__label,
+  [data-time="night"] .dock .tab[data-tab="regions"]:not(.is-active) .tab__label {
+    color: color-mix(in oklch, var(--highlight) 97%, var(--reeds-400));
+  }
+  [data-time="night"] .dock .tab[data-tab="flock"].is-active .tab__label,
+  [data-time="night"] .dock .tab[data-tab="regions"].is-active .tab__label {
+    color: var(--highlight);
   }
 
   .panel-toolbar {
@@ -2746,6 +2807,29 @@ body[data-act-tier="empire"] .chat-thread {
   .dash-stat--hype.is-decaying .dash-stat__icon { animation: none; }
   .stage__hint { animation: none; opacity: 0.8; }
   .modal.is-exiting { animation: none; }
+}
+
+@media (max-width: 560px), (max-aspect-ratio: 1 / 1) {
+  [data-time="night"] .dock .tab.is-active {
+    background-color: color-mix(in oklch, var(--water-700) 52%, var(--tab-active, var(--primary)) 48%) !important;
+    background-image: none !important;
+    filter: none !important;
+  }
+  [data-time="night"] .dock .tab:not(.is-active) {
+    background-color: color-mix(in oklch, var(--tab-bg, var(--primary)) 30%, var(--water-700) 70%) !important;
+    background-image: none !important;
+  }
+  [data-time="night"] .dock .tab.is-active .tab__label {
+    color: var(--highlight) !important;
+  }
+  [data-time="day"] .dock .tab[data-tab="flock"].is-active .tab__label,
+  [data-time="day"] .dock .tab[data-tab="regions"].is-active .tab__label {
+    color: color-mix(in oklch, var(--reeds-900) 92%, var(--water-900)) !important;
+  }
+  [data-time="day"] .dock .tab[data-tab="regions"]:not(.is-active) .tab__label,
+  [data-time="day"] .dock .tab[data-tab="flock"]:not(.is-active) .tab__label {
+    color: color-mix(in oklch, var(--highlight) 97%, var(--reeds-400)) !important;
+  }
 }
 
 body.force-reduce-motion .ending__sky,

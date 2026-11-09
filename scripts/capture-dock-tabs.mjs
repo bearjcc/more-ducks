@@ -4,7 +4,7 @@ import { writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 
-const BASE = "http://127.0.0.1:8765/?v=ui26";
+const BASE = "http://127.0.0.1:8765/?v=ui27";
 const OUT = "/opt/cursor/artifacts";
 const captureHelper = readFileSync(new URL("capture-page.js", import.meta.url), "utf8");
 
@@ -23,16 +23,16 @@ async function setMode(page, mode) {
 
 /** @type {Shot[]} */
 const shots = [
-  { name: "ui26-flock-chat-390-day", tab: "flock", mode: "chat", setup: "mid" },
-  { name: "ui26-flock-chat-390-night", tab: "flock", mode: "chat", setup: "mid", night: true },
-  { name: "ui26-flock-split-390-day", tab: "flock", mode: "split", setup: "mid" },
-  { name: "ui26-flock-split-390-night", tab: "flock", mode: "split", setup: "mid", night: true },
-  { name: "ui26-flock-manage-390-day", tab: "flock", mode: "manage", setup: "mid" },
-  { name: "ui26-flock-manage-390-night", tab: "flock", mode: "manage", setup: "mid", night: true },
-  { name: "ui26-upgrades-split-390-day", tab: "upgrades", mode: "split", setup: "mid" },
-  { name: "ui26-upgrades-split-390-night", tab: "upgrades", mode: "split", setup: "mid", night: true },
-  { name: "ui26-laptop-split-1440-day", tab: "flock", mode: "split", setup: "late", w: 1440, h: 900 },
-  { name: "ui26-laptop-split-1440-night", tab: "flock", mode: "split", setup: "late", w: 1440, h: 900, night: true },
+  { name: "ui27-flock-chat-390-day", tab: "flock", mode: "chat", setup: "mid" },
+  { name: "ui27-flock-chat-390-night", tab: "flock", mode: "chat", setup: "mid", night: true },
+  { name: "ui27-flock-split-390-day", tab: "flock", mode: "split", setup: "mid" },
+  { name: "ui27-flock-split-390-night", tab: "flock", mode: "split", setup: "mid", night: true },
+  { name: "ui27-flock-manage-390-day", tab: "flock", mode: "manage", setup: "mid" },
+  { name: "ui27-flock-manage-390-night", tab: "flock", mode: "manage", setup: "mid", night: true },
+  { name: "ui27-upgrades-split-390-day", tab: "upgrades", mode: "split", setup: "mid" },
+  { name: "ui27-upgrades-split-390-night", tab: "upgrades", mode: "split", setup: "mid", night: true },
+  { name: "ui27-laptop-split-1440-day", tab: "flock", mode: "split", setup: "late", w: 1440, h: 900 },
+  { name: "ui27-laptop-split-1440-night", tab: "flock", mode: "split", setup: "late", w: 1440, h: 900, night: true },
 ];
 
 const browser = await chromium.launch({
@@ -77,6 +77,6 @@ for (const shot of shots) {
   await page.close();
 }
 
-writeFileSync(`${OUT}/ui26-capture-manifest.txt`, shots.map((s) => s.name + ".png").join("\n"));
+writeFileSync(`${OUT}/ui27-capture-manifest.txt`, shots.map((s) => s.name + ".png").join("\n"));
 console.log("Captured", shots.length, "→", OUT);
 await browser.close();
