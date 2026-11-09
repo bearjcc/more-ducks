@@ -39,6 +39,28 @@ function nextStepPct(before, after) {
   return Math.round((after / before - 1) * 100);
 }
 
+const BASE_HOLD_MS = 450;
+const MIN_HOLD_MS = 120;
+
+/**
+ * @param {number} targetMult
+ * @param {number} level
+ * @param {number} cap
+ */
+function holdIntervalMs(targetMult, level, cap) {
+  const m = stackedMultAtLevel(targetMult, level, cap);
+  return Math.max(MIN_HOLD_MS, Math.floor(BASE_HOLD_MS * m));
+}
+
+/**
+ * @param {number} pct
+ */
+function fmtDecayPct(pct) {
+  if (pct <= 0) return "0%";
+  if (pct < 1) return `${formatNumber(pct, 1)}%`;
+  return `${Math.round(pct)}%`;
+}
+
 /**
  * @param {import("../data/upgrades.js").UpgradeDef} def
  */
@@ -59,12 +81,11 @@ export function upgradeEffectLine(def, level = 0) {
     case "holdRepeat":
       return "Hold Auto to repeat questions";
     case "holdRepeatSpeed": {
-      const now = stackedMultAtLevel(e.mult, level, cap);
-      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
-      const pct = nextStepPct(now, nxt);
+      const nowMs = holdIntervalMs(e.mult, level, cap);
+      const nextMs = holdIntervalMs(e.mult, level + 1, cap);
       return level >= cap
-        ? `Auto hold interval ${fmtMult(now)} · max`
-        : `Next: ${pct <= 0 ? "faster" : `${pct}%`} Auto hold · now ${fmtMult(now)}`;
+        ? `Auto hold every ${formatNumber(nowMs, 0)}ms · max`
+        : `Next: Auto hold every ${formatNumber(nextMs, 0)}ms (now ${formatNumber(nowMs, 0)}ms)`;
     }
     case "efficiencyMult": {
       const now = stackedMultAtLevel(e.mult, level, cap);
@@ -148,10 +169,11 @@ export function hypeEffectLine(def, level = 0) {
   const nextGain = campaignHypeGain(def, level + 1);
   const demand = nextGain * HYPE_FACTOR;
   if (def.id === "socialmedia") {
-    const decayCut = Math.round(100 * (0.04 * Math.min(level + 1, cap) / cap));
+    const decayRaw = 100 * (0.04 * Math.min(level + 1, cap) / cap);
+    const decayCut = fmtDecayPct(decayRaw);
     return level >= cap
-      ? `Hype decay −${decayCut}% · max Lv ${cap}`
-      : `Next: +${formatNumber(nextGain, 0)} hype · −${decayCut}% hype decay at Lv ${level + 1}`;
+      ? `Hype decay −${decayCut} · max Lv ${cap}`
+      : `Next: +${formatNumber(nextGain, 0)} hype · −${decayCut} hype decay at Lv ${level + 1}`;
   }
   if (def.purchaseMode === "level") {
     const totalHype = campaignHypeGain(def, level + 1);
@@ -170,7 +192,9 @@ export function hypeEffectLine(def, level = 0) {
 export function regionEffectLine(def, state = {}) {
   if (def.orbital) return "Deploy orbital ducks (space ending)";
   if (def.saltwater) return "Deploy saltwater ducks (no pond cap)";
-  if (def.floodCost) return "One-time flood capex";
+  if (def.floodCost) {
+    return `Pay ${formatNumber(def.floodCost, 0)} once · flood basin & unlock rent`;
+  }
   if (def.rentPerDay > 0) {
     return `Rent ${rentCoinsPerGameDayLabel(def.rentPerDay)} when active`;
   }

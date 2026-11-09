@@ -818,88 +818,93 @@ body[data-started] .stage__hint { display: none; }
 
 .tab-panels { position: relative; flex: 1; min-height: 0; }
 
-/* Sheet handle = drag affordance + dense header (title · grip · coins).
-   Drag up/down to resize across minimized / half / full; tap to toggle. */
-.panel-minimize {
+/* Open panel header: tab title + explicit view-mode toggles (no drag handle). */
+.panel-header {
   display: none;
   flex: none;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  height: var(--panel-minimize-height, 34px);
-  padding: 0 12px;
+  min-height: var(--panel-minimize-height, 40px);
+  padding: 6px 8px;
   border: none;
-  background:
-    linear-gradient(180deg, var(--sheet-edge) 0%, transparent 65%),
-    var(--panel-sheet-bg);
+  border-bottom: 1px solid var(--row-divider);
+  background: var(--panel-sheet-bg);
   color: var(--ink);
-  font: inherit;
-  line-height: 1;
-  cursor: grab;
-  touch-action: none;
-  transition: background 0.12s ease;
 }
-.panel-minimize:active { cursor: grabbing; }
-.panel-minimize:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -3px;
-}
-body[data-panel-open] .panel-minimize { display: flex; }
-
-.sheet-handle__title {
+.panel-header__title {
   flex: 1 1 0;
   min-width: 0;
-  text-align: left;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.82rem;
-  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.sheet-handle__grip {
-  flex: none;
-  position: relative;
-  width: 38px;
-  height: 5px;
-  border-radius: 3px;
-  background: var(--neutral-a22);
-}
-/* Chevron above the grip points the direction a tap will take you. */
-.sheet-handle__grip::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -8px;
-  width: 9px;
-  height: 9px;
-  border-left: 2px solid var(--muted);
-  border-top: 2px solid var(--muted);
-  transform: translateX(-50%) rotate(45deg);
-  transition: transform 0.22s var(--ease-out-expo), top 0.22s var(--ease-out-expo);
-}
-body[data-sheet="full"] .sheet-handle__grip::after {
-  transform: translateX(-50%) rotate(225deg);
-  top: -3px;
-}
-.sheet-handle__metric {
-  flex: 1 1 0;
-  min-width: 0;
+body[data-panel-open] .panel-header {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
 }
-.sheet-handle__coin { font-size: 0.9rem; }
-@media (prefers-reduced-motion: reduce) {
-  .sheet-handle__grip::after { transition: none; }
+
+.view-mode {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  gap: 3px;
+  max-width: min(100%, 220px);
+}
+.view-mode--dock {
+  display: none;
+  justify-content: center;
+  padding: 4px 8px 2px;
+  background: linear-gradient(180deg, var(--sheet-edge) 0%, transparent 70%), var(--panel-sheet-bg);
+}
+@media (max-aspect-ratio: 1 / 1), (max-width: 560px), (orientation: landscape) and (max-height: 520px) {
+  .view-mode--dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--dock-height) + env(safe-area-inset-bottom, 0px));
+    z-index: calc(var(--z-dock) + 2);
+    pointer-events: auto;
+  }
+  body[data-view-mode="chat"] .view-mode--dock {
+    display: flex;
+  }
+  body[data-panel-open] .view-mode--dock {
+    display: none;
+  }
+}
+.view-mode__btn {
+  flex: 1;
+  min-height: 36px;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--row-divider);
+  border-radius: 8px;
+  background: var(--highlight-a14);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.view-mode__btn.is-active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 var(--highlight-a14);
+}
+.view-mode__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.view-mode__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .dock { order: -1; }
@@ -1004,6 +1009,7 @@ body[data-panel-open] .tab-panels {
   grid-template-columns: 1fr;
 }
 .app:has(.dock[hidden]) .panels { display: none; }
+.app:has(.dock[hidden]) .view-mode--dock { display: none !important; }
 .app:has(.dock[hidden]) .stage { border-right: none; }
 
 .tab-panel {
@@ -1076,7 +1082,7 @@ body[data-panel-open] .tab-panels {
   align-items: center;
   gap: 8px;
   min-height: 48px;
-  padding: 7px 0;
+  padding: 5px 0;
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--row-divider);
@@ -1095,7 +1101,7 @@ body[data-panel-open] .tab-panels {
   border-bottom-color: var(--row-divider);
   border-radius: 0;
   margin: 0;
-  padding: 7px 0;
+  padding: 5px 0;
 }
 .card.is-first-hint {
   position: relative;
@@ -1124,7 +1130,10 @@ body[data-panel-open] .tab-panels {
   0% { background: var(--accent-a28); }
   100% { background: transparent; }
 }
-.card.is-owned { opacity: 0.65; }
+.card.is-owned .card__title,
+.card.is-owned .card__effect {
+  opacity: 0.82;
+}
 .card.is-owned .card__buy {
   background: transparent;
   color: var(--good);
@@ -1153,7 +1162,21 @@ body[data-panel-open] .tab-panels {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-.card__flavour { font-size: 0.76rem; color: var(--muted); line-height: 1.25; margin: 3px 0 0; }
+.card__flavour {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.2;
+  margin: 1px 0 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  cursor: pointer;
+}
+.card.is-flavour-expanded .card__flavour {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
 .card__blurb { font-size: 0.78rem; color: var(--muted); line-height: 1.25; margin-top: 1px; }
 .card__meta {
   display: block;
@@ -1903,7 +1926,7 @@ body.duck-hungry .feed-hint:not([hidden]) {
   background: var(--warn-a35);
 }
 .answerdex__cell.is-rare:not(.is-seen) {
-  border: 1px dashed var(--rare);
+  border: 1px solid color-mix(in oklch, var(--rare) 35%, transparent);
 }
 
 /* Act tier: chat-first Acts 0-1 */
@@ -2115,14 +2138,24 @@ body[data-act-tier="empire"] .chat-thread {
     /* Starter hint + tray padding above the input row (portrait). */
     --bottom-tray-chrome: 34px;
     --panel-minimize-height: 34px;
-    --panel-sheet-height: 50dvh;
-    --panel-sheet-height: min(50dvh, 420px);
+    --playable-stack: calc(
+      100dvh - var(--hud-height) - var(--dock-height) - var(--input-tray-height)
+        - var(--bottom-tray-chrome) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    );
     --toast-stack: calc(var(--dock-height) + var(--input-tray-height) + 2 * var(--gap));
   }
 
   body[data-panel-open] .toast-host {
     top: calc(var(--hud-height) + var(--gap) + env(safe-area-inset-top, 0px));
     bottom: auto;
+    z-index: calc(var(--z-dock) + 4);
+  }
+  body[data-view-mode="chat"] .toast-host {
+    bottom: calc(
+      var(--dock-height) + var(--view-mode-dock-height, 44px) + var(--gap)
+      + env(safe-area-inset-bottom, 0px)
+    );
+    top: auto;
   }
 
   body[data-panel-open] {
@@ -2138,8 +2171,11 @@ body[data-act-tier="empire"] .chat-thread {
     );
   }
 
-  /* Full-screen sheet: rises to just under the HUD, covering the chat (TT2). */
-  body[data-sheet="full"] {
+  body[data-view-mode="split"][data-panel-open] {
+    --panel-sheet-height: calc(var(--playable-stack) / 2);
+  }
+  /* Full management panel under HUD — chat/composer hidden. */
+  body[data-view-mode="manage"][data-panel-open] {
     --panel-sheet-height: calc(
       100dvh - var(--hud-height) - var(--dock-height) - env(safe-area-inset-bottom, 0px)
     );
@@ -2309,25 +2345,20 @@ body[data-act-tier="empire"] .chat-thread {
     -webkit-mask-image: none;
     mask-image: none;
   }
-  body[data-panel-open] .panel-minimize {
+  body[data-panel-open] .panel-header {
+    display: flex;
     position: relative;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    flex: none;
     order: 0;
-    z-index: 1;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    box-shadow: none;
+    z-index: 2;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
     background: var(--panel-sheet-bg);
-    transition: none;
   }
-  body[data-panel-open][data-sheet="full"] .bottom-tray {
+  body[data-view-mode="manage"][data-panel-open] .bottom-tray {
     display: none;
   }
   @media (prefers-reduced-motion: reduce) {
-    body[data-panel-open] .panel-minimize { transition: none; }
+    body[data-panel-open] .panel-header { transition: none; }
   }
   .panels {
     grid-column: 1;
@@ -2363,12 +2394,12 @@ body[data-act-tier="empire"] .chat-thread {
     flex-direction: column;
     height: var(--panel-sheet-height);
     max-height: var(--panel-sheet-height);
-    background: linear-gradient(180deg, var(--panel-sheet-bg) 0%, var(--panel-sheet-bg-2) 100%);
+    background: var(--panel-sheet-bg);
     border-top: none;
-    box-shadow: 0 -8px 32px var(--neutral-a28);
+    box-shadow: 0 -4px 18px var(--neutral-a18);
   }
   /* Full-screen sheet meets the HUD: square off the handle's top edge. */
-  body[data-panel-open][data-sheet="full"] .panel-minimize {
+  body[data-view-mode="manage"][data-panel-open] .panel-header {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
   }
@@ -2384,9 +2415,6 @@ body[data-act-tier="empire"] .chat-thread {
     margin-top: 0;
     padding-top: 0;
     transition: none;
-  }
-  body[data-panel-open] .sheet-handle__grip::after {
-    display: none;
   }
   body[data-panel-open] .tab-panel.is-active {
     display: block;
@@ -2415,10 +2443,8 @@ body[data-act-tier="empire"] .chat-thread {
   /* Minimized: the dock is a grounded pond bar at the bottom (same slab the
      sheet grows from), with a light top rim — not chips floating on the chat. */
   body:not([data-panel-open]) .dock {
-    background:
-      linear-gradient(180deg, var(--sheet-edge) 0%, transparent 60%),
-      var(--panel-sheet-bg);
-    box-shadow: 0 -3px 14px var(--neutral-a12);
+    background: var(--panel-sheet-bg);
+    box-shadow: 0 -2px 8px var(--neutral-a12);
   }
   .dock .tabs {
     align-items: stretch;
@@ -2436,29 +2462,43 @@ body[data-act-tier="empire"] .chat-thread {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    padding: 4px 2px;
+    gap: 1px;
+    padding: 3px 2px 2px;
     min-height: 52px;
-    border-radius: 7px 7px 0 0;
+    border-radius: 6px 6px 0 0;
     font-size: inherit;
+    background: transparent;
+    box-shadow: none;
+  }
+  .dock .tab.is-active {
+    background: color-mix(in oklch, var(--tab-active, var(--primary)) 55%, transparent);
+    box-shadow: inset 0 2px 0 var(--highlight-a82);
+  }
+  .dock .tab.is-locked {
+    opacity: 0.55;
+    filter: none;
   }
   .dock .tab__icon {
-    display: inline-grid;
-    place-items: center;
-    min-width: 1.65em;
-    min-height: 1.65em;
-    padding: 0.1em;
-    border-radius: 999px;
-    font-size: 1.05rem;
+    display: block;
+    font-size: 1.1rem;
     line-height: 1;
     color: var(--tab-ink, var(--primary-ink));
-    background: var(--shadow-md);
-    box-shadow: inset 0 1px 0 var(--highlight-a14);
-    text-shadow: 0 1px 2px var(--neutral-a35);
+    background: none;
+    box-shadow: none;
+    text-shadow: none;
   }
-  .dock .tab.is-active .tab__icon { background: var(--neutral-a28); }
-  .dock .tab__label { display: none; font-size: 0.48rem; line-height: 1.1; font-weight: 700; }
-  .dock .tab.is-active .tab__label { display: block; }
+  .dock .tab__label {
+    display: block;
+    font-size: 0.5rem;
+    line-height: 1.05;
+    font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--tab-ink, var(--primary-ink));
+    opacity: 0.92;
+  }
 
   .panel-toolbar {
     display: flex;
@@ -2467,8 +2507,8 @@ body[data-act-tier="empire"] .chat-thread {
     position: sticky;
     top: 0;
     z-index: 1;
-    margin: 0 0 8px;
-    padding: 0 0 6px;
+    margin: 0 0 4px;
+    padding: 0 0 4px;
     background: var(--panel-sheet-bg);
     border-bottom: 1px solid var(--row-divider);
   }
@@ -2484,7 +2524,14 @@ body[data-act-tier="empire"] .chat-thread {
   }
   .panel-toolbar .buy-amount { margin-bottom: 0; flex: 1; min-width: 0; }
 
-  .tab-panel { border-radius: 0; padding: 6px 8px; }
+  .tab-panel { border-radius: 0; padding: 4px 6px; }
+  .tab-panel[data-panel="dashboard"] .dashboard {
+    align-content: start;
+    gap: 6px 8px;
+  }
+  .tab-panel[data-panel="dashboard"] .hero-stat__value {
+    font-size: 1.35rem;
+  }
   .tab-panel[data-panel="collections"] {
     padding-bottom: 20px;
   }

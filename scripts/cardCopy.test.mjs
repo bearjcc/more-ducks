@@ -55,7 +55,23 @@ console.log("\n(d) Producer rate uses K suffix and each");
   assert(line.includes("K"), "datapond rate uses formatNumber K");
 }
 
-console.log("\n(e) Rent label matches region effect");
+console.log("\n(e) Quick Quack shows hold interval ms at Lv 0");
+{
+  const qq = UPGRADES.find((u) => u.id === "quickquack");
+  const line = upgradeEffectLine(/** @type {any} */ (qq), 0);
+  assert(line.includes("450") && line.includes("ms"), "quick quack quantifies ms");
+  assert(!line.includes("faster"), "no vague faster");
+}
+
+console.log("\n(f) Australia flood states benefit and cost");
+{
+  const aus = REGIONS.find((r) => r.id === "australia");
+  const effect = regionEffectLine(aus);
+  assert(effect.includes("50M") || effect.includes("50"), "flood cost visible");
+  assert(effect.toLowerCase().includes("unlock"), "flood unlock benefit");
+}
+
+console.log("\n(g) Rent label matches region effect");
 {
   const asia = REGIONS.find((r) => r.id === "asia");
   const label = rentCoinsPerGameDayLabel(asia.rentPerDay);

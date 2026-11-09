@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles/main.css?v=ui22" />
+  <link rel="stylesheet" href="styles/main.css?v=ui23" />
 </head>
-<body data-act-tier="chat">
+<body data-act-tier="chat" data-view-mode="chat">
   <p id="rotate-hint" class="rotate-hint" role="status">Portrait feels best — same chat layout as QLM.</p>
   <main class="app">
     <header class="hud" aria-label="Resources">
@@ -54,14 +54,21 @@
       </div>
     </div>
 
+    <div class="view-mode view-mode--dock" id="view-mode-dock" role="group" aria-label="Screen layout">
+      <button type="button" class="view-mode__btn" data-set-view="chat" aria-pressed="true">Chat</button>
+      <button type="button" class="view-mode__btn" data-set-view="split" aria-pressed="false">Split</button>
+      <button type="button" class="view-mode__btn" data-set-view="manage" aria-pressed="false">Panel</button>
+    </div>
+
     <section class="panels" aria-label="Management">
-      <button id="panel-minimize" class="panel-minimize" type="button" aria-label="Resize panel — drag or tap to expand, drag down to minimize">
-        <span id="sheet-title" class="sheet-handle__title">Stats</span>
-        <span class="sheet-handle__grip" aria-hidden="true"></span>
-        <span class="sheet-handle__metric" aria-hidden="true">
-          <span class="sheet-handle__coin">🪙</span><span id="sheet-metric" class="sheet-handle__metric-val">0</span>
-        </span>
-      </button>
+      <header id="panel-header" class="panel-header">
+        <span id="sheet-title" class="panel-header__title">Stats</span>
+        <div class="view-mode view-mode--header" id="view-mode-header" role="group" aria-label="Screen layout">
+          <button type="button" class="view-mode__btn" data-set-view="chat" aria-pressed="false">Chat</button>
+          <button type="button" class="view-mode__btn" data-set-view="split" aria-pressed="true">Split</button>
+          <button type="button" class="view-mode__btn" data-set-view="manage" aria-pressed="false">Panel</button>
+        </div>
+      </header>
       <div class="tab-panels">
         <div class="tab-panel" data-panel="upgrades" role="tabpanel" hidden>
           <ul id="upgrade-list" class="card-list"></ul>
@@ -82,7 +89,6 @@
           <p id="flock-empty" class="empty-hint">Buy duck-makers here. They multiply while you nap.</p>
         </div>
         <div class="tab-panel" data-panel="hype" role="tabpanel" hidden>
-          <p class="shop-section__intro">Spend coins to manufacture demand. Hype fades — the bubble needs feeding.</p>
           <ul id="hype-list" class="card-list"></ul>
           <p id="hype-empty" class="empty-hint">Campaigns unlock as the flock grows.</p>
         </div>

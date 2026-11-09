@@ -154,23 +154,19 @@ export function initUI(handlers) {
   els.feedStatEl = els.feedOpexEl?.closest(".dash-stat--feed") ?? null;
   els.pondCapLabel = byId("pond-cap-label");
   els.buyPondBtn = /** @type {HTMLButtonElement} */ (byId("buy-pond-btn"));
-  els.panelMinimize = byId("panel-minimize");
+  els.panelHeader = byId("panel-header");
   els.sheetTitle = byId("sheet-title");
-  els.sheetMetric = byId("sheet-metric");
   els.answersRateLabel = byId("answers-rate-label");
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       const name = tab.getAttribute("data-tab");
       if (tab.classList.contains("is-locked")) return;
-      if (tab.classList.contains("is-active") && document.body.hasAttribute("data-panel-open")) {
-        closeTab();
-      } else {
-        openTab(name);
-      }
+      openTab(name);
     });
   });
-  bindSheetHandle(els.panelMinimize);
+  initViewModeControls();
+  initCardFlavourTap();
   if (handlers.onFeedTap && els.duckFeedBtn) {
     els.duckFeedBtn.addEventListener("click", () => handlers.onFeedTap?.());
   }
@@ -179,7 +175,7 @@ export function initUI(handlers) {
   if (handlers.onBuyPond && els.buyPondBtn) {
     els.buyPondBtn.addEventListener("click", () => handlers.onBuyPond?.());
   }
-  closeTab();
+  setViewMode("chat");
 }
 
 /**
@@ -195,94 +191,97 @@ const PANEL_TITLES = {
   collections: "Collections",
 };
 
+/** Last selected dock tab — kept when switching to chat-only layout. */
+let selectedPanelTab = "dashboard";
+
+/** @returns {"chat"|"split"|"manage"} */
+export function getViewMode() {
+  const v = document.body.dataset.viewMode;
+  if (v === "split" || v === "manage") return v;
+  return "chat";
+}
+
 /**
- * Resize the open bottom sheet. No-op unless a panel is open; the matching CSS
- * (`body[data-sheet]`) only takes effect in the portrait bottom-sheet layout.
+ * Portrait: chat (no panel), split (chat + panel), manage (panel only).
+ * Wide layout: chat closes side panel; split/manage both keep the two-column panel open.
+ * @param {"chat"|"split"|"manage"} mode
+ */
+export function setViewMode(mode) {
+  let next = mode;
+  if (!usesPortraitSheet() && next === "manage") next = "split";
+  document.body.dataset.viewMode = next;
+  syncViewModeChrome();
+  if (next === "chat") {
+    document.body.removeAttribute("data-panel-open");
+    hidePanelSurfaces();
+    highlightSelectedTab();
+    return;
+  }
+  const tab = selectedPanelTab || document.body.dataset.panelOpen || "dashboard";
+  showPanelSurfaces(tab);
+  document.body.dataset.panelOpen = tab;
+}
+
+/**
+ * Legacy capture helpers: half → split, full → manage.
  * @param {"half"|"full"} state
  */
 export function setSheet(state) {
-  if (!document.body.hasAttribute("data-panel-open")) return;
-  document.body.dataset.sheet = state;
+  setViewMode(state === "full" ? "manage" : "split");
 }
 
-/**
- * Tap Titans 2–style sheet handle: drag up/down (or tap) to move between
- * minimized / half / full. On wide layouts the panel is a fixed side column
- * with no half/full, so the handle simply closes it.
- * @param {HTMLElement|null} btn
- */
-function bindSheetHandle(btn) {
-  if (!btn) return;
-  const panels = document.querySelector(".panels");
-  const isSheet = () =>
-    panels instanceof HTMLElement && getComputedStyle(panels).position === "fixed";
-  const currentState = () => (document.body.dataset.sheet === "full" ? "full" : "half");
-
-  /** @type {number|null} */ let startY = null;
-  /** @type {"half"|"full"} */ let startState = "half";
-  btn.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) return;
-    startY = e.clientY;
-    startState = currentState();
-    try { btn.setPointerCapture(e.pointerId); } catch { /* unsupported */ }
-  });
-  btn.addEventListener("pointerup", (e) => {
-    if (startY === null) return;
-    const dy = e.clientY - startY;
-    startY = null;
-    if (!isSheet()) { closeTab(); return; }
-    if (Math.abs(dy) < 10) {
-      setSheet(startState === "full" ? "half" : "full"); // tap toggles
-    } else if (dy < 0) {
-      setSheet("full"); // drag up → expand
-    } else if (startState === "full") {
-      setSheet("half"); // drag down from full → shrink
-    } else {
-      closeTab(); // drag down from half → minimize
-    }
-  });
-  btn.addEventListener("pointercancel", () => { startY = null; });
-  btn.addEventListener("keydown", (e) => {
-    if (!isSheet()) return;
-    const cur = currentState();
-    if (e.key === "ArrowUp") { e.preventDefault(); setSheet("full"); }
-    else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (cur === "full") setSheet("half"); else closeTab();
-    } else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault(); setSheet(cur === "full" ? "half" : "full");
-    } else if (e.key === "Escape") { e.preventDefault(); closeTab(); }
+function syncViewModeChrome() {
+  const mode = getViewMode();
+  document.querySelectorAll(".view-mode__btn[data-set-view]").forEach((btn) => {
+    const v = btn.getAttribute("data-set-view");
+    const on = v === mode;
+    btn.classList.toggle("is-active", on);
+    btn.setAttribute("aria-pressed", String(on));
   });
 }
 
-/** Close all panels (mobile specials tray). */
-export function closeTab() {
-  document.body.removeAttribute("data-panel-open");
-  document.body.removeAttribute("data-sheet");
-  document.querySelectorAll(".tab").forEach((t) => {
-    t.classList.remove("is-active");
-    t.setAttribute("aria-selected", "false");
+function initViewModeControls() {
+  document.querySelectorAll(".view-mode__btn[data-set-view]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const mode = btn.getAttribute("data-set-view");
+      if (mode === "chat" || mode === "split" || mode === "manage") setViewMode(mode);
+    });
   });
+}
+
+function initCardFlavourTap() {
+  document.querySelectorAll(".card-list").forEach((list) => {
+    list.addEventListener("click", (e) => {
+      const target = /** @type {HTMLElement} */ (e.target);
+      if (target.closest(".card__buy")) return;
+      const flavour = target.closest(".card__flavour");
+      if (!flavour) return;
+      const card = flavour.closest(".card");
+      if (card) card.classList.toggle("is-flavour-expanded");
+    });
+  });
+}
+
+function hidePanelSurfaces() {
   document.querySelectorAll(".tab-panel").forEach((p) => {
     p.classList.remove("is-active");
     /** @type {HTMLElement} */ (p).hidden = true;
   });
 }
 
-/** @param {string|null|undefined} name */
-export function openTab(name) {
-  if (!name) {
-    closeTab();
-    return;
-  }
-  const panel = name;
-  if (document.body.dataset.panelOpen === panel) {
-    closeTab();
-    return;
-  }
-  document.body.dataset.panelOpen = panel;
-  // Open at half height; preserve full if the player already expanded the sheet.
-  if (!document.body.dataset.sheet) document.body.dataset.sheet = "half";
+function highlightSelectedTab() {
+  document.querySelectorAll(".tab").forEach((t) => {
+    const tabName = t.getAttribute("data-tab");
+    const isActive = tabName === selectedPanelTab;
+    t.classList.toggle("is-active", isActive);
+    t.setAttribute("aria-selected", String(isActive));
+  });
+}
+
+/** @param {string} panel */
+function showPanelSurfaces(panel) {
+  selectedPanelTab = panel;
   if (els.sheetTitle) els.sheetTitle.textContent = PANEL_TITLES[panel] || "Panel";
   document.querySelectorAll(".tab").forEach((t) => {
     const tabName = t.getAttribute("data-tab");
@@ -295,7 +294,27 @@ export function openTab(name) {
     p.classList.toggle("is-active", isActive);
     /** @type {HTMLElement} */ (p).hidden = !isActive;
   });
-  if (tabMeta && name) tabMeta.flags.dockDotSeen = true;
+}
+
+/** Close management panel (chat-only layout). */
+export function closeTab() {
+  setViewMode("chat");
+}
+
+/** @param {string|null|undefined} name */
+export function openTab(name) {
+  if (!name) {
+    closeTab();
+    return;
+  }
+  if (selectedPanelTab === name && getViewMode() !== "chat") {
+    setViewMode("chat");
+    return;
+  }
+  selectedPanelTab = name;
+  const mode = getViewMode() === "chat" ? "split" : getViewMode();
+  setViewMode(mode);
+  if (tabMeta) tabMeta.flags.dockDotSeen = true;
 }
 
 /** First quack — hide onboarding hint. */
@@ -375,7 +394,6 @@ export function updateUI(snapshot) {
   if (els.duckCount) els.duckCount.textContent = formatNumber(snapshot.ducks);
   document.body.dataset.totalDucks = String(snapshot.ducks);
   if (els.coinCount) els.coinCount.textContent = formatNumber(snapshot.coins);
-  if (els.sheetMetric) els.sheetMetric.textContent = formatNumber(snapshot.coins);
   if (els.answersRate) els.answersRate.textContent = formatNumber(snapshot.answersPerSec, 2);
   if (els.answersRateLabel) {
     const r = snapshot.answersPerSec;
@@ -463,9 +481,10 @@ export function updateTabUnlocks(ctx) {
     closeTab();
   }
 
-  if (!tabsVisible && document.body.hasAttribute("data-panel-open")) {
+  if (!tabsVisible && getViewMode() !== "chat") {
     closeTab();
   }
+  syncViewModeChrome();
 
   if (
     tabsVisible
@@ -474,7 +493,7 @@ export function updateTabUnlocks(ctx) {
     && dashboardTabUnlocked(meta, answersPerSec)
   ) {
     wideDefaultTabOpened = true;
-    if (!document.body.hasAttribute("data-panel-open")) openTab("dashboard");
+    if (getViewMode() === "chat") openTab("dashboard");
   }
 }
 
