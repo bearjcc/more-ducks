@@ -26,8 +26,8 @@ async function rects(page) {
     const send = r(".chat-input__send");
     const auto = r(".chat-input__auto");
     const tray = r(".bottom-tray");
-    const modeDock = r("#view-mode-dock");
-    const modeHdr = r("#view-mode-header");
+    const rimDock = r("#sheet-rim-dock");
+    const rimUp = r(".sheet-rim__arrow--up");
     const panel = r(".panels");
     const header = r(".panel-header");
     const thread = r(".chat-thread");
@@ -41,8 +41,8 @@ async function rects(page) {
       input,
       send,
       auto,
-      modeDock,
-      modeHdr,
+      rimDock,
+      rimUp,
       panel,
       header,
       thread,
@@ -106,7 +106,7 @@ try {
   ]) {
     const page = await browser.newPage({ viewport: { width: vp.w, height: vp.h } });
     await page.addInitScript(captureHelper);
-    await page.goto(`http://127.0.0.1:${PORT}/?v=ui24`, { waitUntil: "domcontentloaded" });
+    await page.goto(`http://127.0.0.1:${PORT}/?v=ui25`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
       timeout: 15000,
     });
@@ -145,6 +145,21 @@ try {
     );
     if (!trayHidden) throw new Error(`${vp.tag} tray visible in manage`);
 
+    const arrowTouch = await page.evaluate(() => {
+      const up = document.querySelector(".panel-header .sheet-rim__arrow--up");
+      const buy = document.querySelector(".card__buy");
+      if (!up) return { ok: true, skip: true };
+      const ur = up.getBoundingClientRect();
+      if (ur.width < 40 || ur.height < 28) return { ok: false, size: ur };
+      if (!buy) return { ok: true, ur };
+      const br = buy.getBoundingClientRect();
+      const hit = !(ur.right <= br.left || ur.left >= br.right || ur.bottom <= br.top || ur.top >= br.bottom);
+      return { ok: !hit, ur, br };
+    });
+    if (!arrowTouch.ok && !arrowTouch.skip) {
+      throw new Error(`${vp.tag} arrow touches buy ${JSON.stringify(arrowTouch)}`);
+    }
+
     const tabKeep = await page.evaluate(async () => {
       const { setViewMode, getViewMode } = await import("/src/ui/render.js");
       const start = document.querySelector(".tab.is-active")?.getAttribute("data-tab");
@@ -159,9 +174,9 @@ try {
     }
 
     await setMode(page, "chat");
-    await assertNoOverlap(page, ".chat-input__field", "#view-mode-dock .view-mode__btn", `${vp.tag} chat input vs mode`);
-    await assertNoOverlap(page, ".chat-input__send", "#view-mode-dock .view-mode__btn", `${vp.tag} send vs mode`);
-    await assertNoOverlap(page, ".chat-input__auto", "#view-mode-dock .view-mode__btn", `${vp.tag} auto vs mode`);
+    await assertNoOverlap(page, ".chat-input__field", ".sheet-rim__arrow", `${vp.tag} chat input vs rim`);
+    await assertNoOverlap(page, ".chat-input__send", ".sheet-rim__arrow", `${vp.tag} send vs rim`);
+    await assertNoOverlap(page, ".chat-input__auto", ".sheet-rim__arrow", `${vp.tag} auto vs rim`);
 
     const focusOk = await page.evaluate(() => {
       const field = document.querySelector(".chat-input__field");
@@ -178,7 +193,7 @@ try {
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.addInitScript(captureHelper);
-    await page.goto(`http://127.0.0.1:${PORT}/?v=ui24`, { waitUntil: "domcontentloaded" });
+    await page.goto(`http://127.0.0.1:${PORT}/?v=ui25`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
       timeout: 15000,
     });
@@ -188,7 +203,7 @@ try {
       window.dispatchEvent(new Event("resize"));
       document.documentElement.style.setProperty("--kb-sim", "0.62");
     });
-    await assertNoOverlap(page, ".chat-input__field", "#view-mode-dock .view-mode__btn", "keyboard-sim overlap");
+    await assertNoOverlap(page, ".chat-input__field", ".sheet-rim__arrow", "keyboard-sim overlap");
     await page.close();
   }
 
@@ -196,14 +211,14 @@ try {
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.addInitScript(captureHelper);
-    await page.goto(`http://127.0.0.1:${PORT}/?v=ui24`, { waitUntil: "domcontentloaded" });
+    await page.goto(`http://127.0.0.1:${PORT}/?v=ui25`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.MoreDucks?.engine, null, { timeout: 15000 });
     const fresh = await page.evaluate(() => ({
       dockHidden: document.querySelector(".dock")?.hidden,
-      modeBar: getComputedStyle(document.querySelector("#view-mode-dock")).display,
+      rimBar: document.querySelector("#sheet-rim-dock")?.hidden,
     }));
     if (!fresh.dockHidden) throw new Error("fresh dock should be hidden");
-    if (fresh.modeBar !== "none") throw new Error("fresh mode bar should hide with dock");
+    if (!fresh.rimBar) throw new Error("fresh rim should hide with dock");
     await page.close();
   }
 
@@ -211,7 +226,7 @@ try {
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.addInitScript(captureHelper);
-    await page.goto(`http://127.0.0.1:${PORT}/?v=ui24`, { waitUntil: "domcontentloaded" });
+    await page.goto(`http://127.0.0.1:${PORT}/?v=ui25`, { waitUntil: "domcontentloaded" });
     await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
       timeout: 15000,
     });

@@ -230,22 +230,73 @@ export function setSheet(state) {
   setViewMode(state === "full" ? "manage" : "split");
 }
 
+/** @param {"up"|"down"} direction */
+export function stepViewMode(direction) {
+  const mode = getViewMode();
+  const portrait = usesPortraitSheet();
+  if (direction === "up") {
+    if (mode === "chat") {
+      const tab = selectedPanelTab || "dashboard";
+      selectedPanelTab = tab;
+      setViewMode("split");
+    } else if (mode === "split" && portrait) {
+      setViewMode("manage");
+    }
+    return;
+  }
+  if (mode === "manage") setViewMode("split");
+  else if (mode === "split") setViewMode("chat");
+}
+
 function syncViewModeChrome() {
   const mode = getViewMode();
-  document.querySelectorAll(".view-mode__btn[data-set-view]").forEach((btn) => {
-    const v = btn.getAttribute("data-set-view");
-    const on = v === mode;
-    btn.classList.toggle("is-active", on);
-    btn.setAttribute("aria-pressed", String(on));
+  const portrait = usesPortraitSheet();
+  document.querySelectorAll(".sheet-rim__arrow--up").forEach((btn) => {
+    const disable = mode === "manage" || (mode === "split" && !portrait);
+    /** @type {HTMLButtonElement} */ (btn).disabled = disable;
+    btn.setAttribute("aria-disabled", String(disable));
+    btn.setAttribute(
+      "aria-label",
+      mode === "chat"
+        ? "Expand management panel to split view"
+        : mode === "split" && portrait
+          ? "Expand management panel to full height"
+          : "Expand management panel",
+    );
   });
+  document.querySelectorAll(".sheet-rim__arrow--down").forEach((btn) => {
+    const disable = mode === "chat";
+    /** @type {HTMLButtonElement} */ (btn).disabled = disable;
+    btn.setAttribute("aria-disabled", String(disable));
+    btn.setAttribute(
+      "aria-label",
+      mode === "manage"
+        ? "Shrink panel to split view with chat"
+        : mode === "split"
+          ? "Close panel and show full chat"
+          : "Show more chat",
+    );
+  });
+  const dockRim = byId("sheet-rim-dock");
+  const dockVisible = document.querySelector(".dock") instanceof HTMLElement
+    && !/** @type {HTMLElement} */ (document.querySelector(".dock")).hidden;
+  if (dockRim) dockRim.hidden = !dockVisible || mode !== "chat";
 }
 
 function initViewModeControls() {
-  document.querySelectorAll(".view-mode__btn[data-set-view]").forEach((btn) => {
+  document.querySelectorAll(".sheet-rim__arrow[data-step]").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const mode = btn.getAttribute("data-set-view");
-      if (mode === "chat" || mode === "split" || mode === "manage") setViewMode(mode);
+      if (/** @type {HTMLButtonElement} */ (btn).disabled) return;
+      const step = btn.getAttribute("data-step");
+      if (step === "up" || step === "down") stepViewMode(step);
+    });
+    btn.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      if (/** @type {HTMLButtonElement} */ (btn).disabled) return;
+      e.preventDefault();
+      const step = btn.getAttribute("data-step");
+      if (step === "up" || step === "down") stepViewMode(step);
     });
   });
 }

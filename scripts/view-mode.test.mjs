@@ -1,14 +1,11 @@
 #!/usr/bin/env node
-/**
- * Portrait view modes: chat / split / manage toggles, tab retention, overlap guard.
- */
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const BASE = "http://127.0.0.1:8765/?v=ui24";
+const BASE = "http://127.0.0.1:8765/?v=ui25";
 const PORT = 8765;
 const captureHelper = readFileSync(new URL("capture-page.js", import.meta.url), "utf8");
 
@@ -17,23 +14,16 @@ async function viewState(page) {
   return page.evaluate(() => ({
     mode: document.body.dataset.viewMode,
     panel: document.body.dataset.panelOpen ?? null,
-    trayHidden: (() => {
-      const t = document.querySelector(".bottom-tray");
-      return !t || getComputedStyle(t).display === "none";
-    })(),
     activeTab: document.querySelector(".tab.is-active")?.getAttribute("data-tab") ?? null,
+    upDisabled: document.querySelector(".sheet-rim__arrow--up:not(:disabled)") === null,
+    downDisabled: document.querySelector(".sheet-rim__arrow--down:not(:disabled)") === null,
   }));
 }
 
-/** @param {import('playwright').Page} page @param {"chat"|"split"|"manage"} mode */
-async function tapViewMode(page, mode) {
-  const hdr = page.locator(`#view-mode-header .view-mode__btn[data-set-view="${mode}"]`);
-  const dock = page.locator(`#view-mode-dock .view-mode__btn[data-set-view="${mode}"]`);
-  if (await hdr.isVisible()) await hdr.click();
-  else {
-    await dock.waitFor({ state: "visible", timeout: 8000 });
-    await dock.click();
-  }
+/** @param {import('playwright').Page} page @param {"up"|"down"} dir */
+async function clickArrow(page, dir) {
+  const vis = page.locator(`.sheet-rim__arrow--${dir}:visible`).first();
+  await vis.click();
   await page.waitForTimeout(280);
 }
 
@@ -72,82 +62,68 @@ try {
   await page.waitForFunction(() => window.__mdCapture && window.MoreDucks?.engine, null, {
     timeout: 15000,
   });
-  await page.evaluate(() => window.__mdCapture.playMidGame());
-  await page.evaluate(() => window.__mdCapture.quietMilestones());
   await page.evaluate(async () => {
     const { updateTabUnlocks } = await import("/src/ui/render.js");
+    await window.__mdCapture.playMidGame();
+    window.__mdCapture.quietMilestones();
     const { engine, meta } = window.MoreDucks;
-    updateTabUnlocks({
-      meta,
-      coins: engine.currency("coins").value,
-      engine,
-      answersPerSec: 1,
-    });
+    updateTabUnlocks({ meta, coins: engine.currency("coins").value, engine, answersPerSec: 2 });
   });
-  await page.waitForFunction(() => {
-    const dock = document.querySelector(".dock");
-    return dock instanceof HTMLElement && !dock.hidden;
-  }, null, { timeout: 8000 });
-
-  let s = await viewState(page);
-  if (s.mode !== "chat") throw new Error(`expected chat default, got ${JSON.stringify(s)}`);
-
   await openTab(page, "flock");
-  s = await viewState(page);
-  if (s.mode !== "split" || s.panel !== "flock" || s.activeTab !== "flock") {
-    throw new Error(`openTab flock → split: ${JSON.stringify(s)}`);
-  }
-  if (s.trayHidden) throw new Error("composer hidden in split");
-
-  await tapViewMode(page, "manage");
-  s = await viewState(page);
-  if (s.mode !== "manage" || s.panel !== "flock" || s.trayHidden !== true) {
-    throw new Error(`manage mode: ${JSON.stringify(s)}`);
-  }
-
-  await tapViewMode(page, "chat");
-  s = await viewState(page);
-  if (s.mode !== "chat" || s.panel !== null || s.activeTab !== "flock") {
-    throw new Error(`chat keeps tab: ${JSON.stringify(s)}`);
-  }
 
   await page.evaluate(async () => {
     const { setViewMode } = await import("/src/ui/render.js");
+    setViewMode("chat");
+  });
+  await page.waitForTimeout(200);
+
+  let s = await viewState(page);
+  if (s.mode !== "chat" || s.activeTab !== "flock") {
+    throw new Error(`chat baseline: ${JSON.stringify(s)}`);
+  }
+  if (!s.downDisabled) throw new Error("down should be disabled in chat");
+
+  await clickArrow(page, "up");
+  s = await viewState(page);
+  if (s.mode !== "split" || s.panel !== "flock") throw new Error(`up→split: ${JSON.stringify(s)}`);
+
+  await clickArrow(page, "up");
+  s = await viewState(page);
+  if (s.mode !== "manage") throw new Error(`up→manage: ${JSON.stringify(s)}`);
+  if (!s.upDisabled) throw new Error("up should be disabled in manage");
+
+  await clickArrow(page, "down");
+  s = await viewState(page);
+  if (s.mode !== "split") throw new Error(`down→split: ${JSON.stringify(s)}`);
+
+  await clickArrow(page, "down");
+  s = await viewState(page);
+  if (s.mode !== "chat" || s.activeTab !== "flock") {
+    throw new Error(`down→chat keeps tab: ${JSON.stringify(s)}`);
+  }
+
+  const sep = await page.evaluate(() => {
+    const up = document.querySelector("#sheet-rim-dock .sheet-rim__arrow--up");
+    const down = document.querySelector("#sheet-rim-dock .sheet-rim__arrow--down");
+    if (!up || !down) return { ok: true, skip: true };
+    const ur = up.getBoundingClientRect();
+    const dr = down.getBoundingClientRect();
+  const overlap = !(ur.right <= dr.left + 0.5 || dr.right <= ur.left + 0.5);
+    return { ok: !overlap, ur, dr };
+  });
+  if (!sep.ok && !sep.skip) throw new Error(`arrow overlap ${JSON.stringify(sep)}`);
+
+  await page.evaluate(async () => {
+    const { setViewMode, stepViewMode, getViewMode } = await import("/src/ui/render.js");
     setViewMode("split");
+    stepViewMode("up");
+    stepViewMode("up");
+    if (getViewMode() !== "manage") throw new Error("no wrap up");
+    stepViewMode("down");
+    stepViewMode("down");
+    stepViewMode("down");
+    if (getViewMode() !== "chat") throw new Error("no wrap down");
   });
-  await page.waitForTimeout(300);
-  s = await viewState(page);
-  if (s.mode !== "split" || s.panel !== "flock") {
-    throw new Error(`split restores flock: ${JSON.stringify(s)}`);
-  }
-
-  await tapViewMode(page, "chat");
-  await tapViewMode(page, "split");
-  s = await viewState(page);
-  if (s.mode !== "split") throw new Error(`dock toggle split: ${JSON.stringify(s)}`);
-
-  await openTab(page, "upgrades");
-  s = await viewState(page);
-  if (s.panel !== "upgrades" || s.mode !== "split") {
-    throw new Error(`tab switch retains split: ${JSON.stringify(s)}`);
-  }
-
-  const overlap = await page.evaluate(() => {
-    const toggles = document.querySelectorAll(".view-mode__btn");
-    const buy = document.querySelector(".card.is-affordable .card__buy");
-    if (!buy || toggles.length === 0) return { ok: true, skip: true };
-    const br = buy.getBoundingClientRect();
-    for (const t of toggles) {
-      if (t.hidden) continue;
-      const tr = t.getBoundingClientRect();
-      const hit = !(br.right <= tr.left || br.left >= tr.right || br.bottom <= tr.top || br.top >= tr.bottom);
-      if (hit) return { ok: false, toggle: tr, buy: br };
-    }
-    return { ok: true };
-  });
-  if (!overlap.ok && !overlap.skip) {
-    throw new Error(`view toggle overlaps buy: ${JSON.stringify(overlap)}`);
-  }
 
   console.log("view-mode.test.mjs: all passed");
 } finally {

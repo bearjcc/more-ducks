@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 
-const BASE = "http://127.0.0.1:8765/?v=ui24";
+const BASE = "http://127.0.0.1:8765/?v=ui25";
 const OUT = "/opt/cursor/artifacts";
 const captureHelper = readFileSync(new URL("capture-page.js", import.meta.url), "utf8");
 
@@ -19,14 +19,14 @@ async function setMode(page, mode) {
 }
 
 const shots = [
-  { name: "ui24-flock-chat-390", tab: "flock", mode: "chat", setup: "mid" },
-  { name: "ui24-flock-split-390", tab: "flock", mode: "split", setup: "mid" },
-  { name: "ui24-flock-manage-390", tab: "flock", mode: "manage", setup: "mid" },
-  { name: "ui24-upgrades-split-390", tab: "upgrades", mode: "split", setup: "mid" },
-  { name: "ui24-marketing-manage-390", tab: "hype", mode: "manage", setup: "mid" },
-  { name: "ui24-regions-split-390", tab: "regions", mode: "split", setup: "regions" },
-  { name: "ui24-stats-manage-360", tab: "dashboard", mode: "manage", setup: "mid", w: 360, h: 800 },
-  { name: "ui24-laptop-split-1440", tab: "flock", mode: "split", setup: "late", w: 1440, h: 900 },
+  { name: "ui25-flock-chat-390", tab: "flock", mode: "chat", setup: "mid" },
+  { name: "ui25-flock-split-390", tab: "flock", mode: "split", setup: "mid" },
+  { name: "ui25-flock-manage-390", tab: "flock", mode: "manage", setup: "mid" },
+  { name: "ui25-upgrades-split-390", tab: "upgrades", mode: "split", setup: "mid" },
+  { name: "ui25-marketing-manage-390", tab: "hype", mode: "manage", setup: "mid" },
+  { name: "ui25-regions-split-390", tab: "regions", mode: "split", setup: "regions" },
+  { name: "ui25-stats-manage-360", tab: "dashboard", mode: "manage", setup: "mid", w: 360, h: 800 },
+  { name: "ui25-laptop-split-1440", tab: "flock", mode: "split", setup: "late", w: 1440, h: 900 },
 ];
 
 const browser = await chromium.launch({
@@ -89,6 +89,6 @@ for (const shot of shots) {
   await page.close();
 }
 
-writeFileSync(`${OUT}/ui24-capture-metrics.json`, JSON.stringify(metrics, null, 2));
+writeFileSync(`${OUT}/ui25-capture-metrics.json`, JSON.stringify(metrics, null, 2));
 console.log("Captured", shots.length, "screenshots →", OUT);
 await browser.close();
