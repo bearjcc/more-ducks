@@ -108,6 +108,23 @@ try {
     await assertNoChatOverlap(page, tab);
   }
 
+  await openTab(page, "dashboard");
+  const feedOk = await page.evaluate(() => {
+    const feed = document.querySelector(".dash-stat--feed");
+    if (!feed || feed.hidden) return { ok: true, skip: true };
+    const val = feed.querySelector(".dash-stat__value");
+    const label = feed.querySelector(".dash-stat__label");
+    if (!val || !label) return { ok: false, error: "missing feed nodes" };
+    const vr = val.getBoundingClientRect();
+    const lr = label.getBoundingClientRect();
+    const overlap = !(vr.bottom <= lr.top + 0.5 || lr.bottom <= vr.top + 0.5)
+      && vr.left < lr.right && lr.left < vr.right;
+    return { ok: !overlap, overlap, valH: vr.height, labelTop: lr.top, valBottom: vr.bottom };
+  });
+  if (!feedOk.ok && !feedOk.skip) {
+    throw new Error(`feed/sec layout overlap ${JSON.stringify(feedOk)}`);
+  }
+
   console.log("chat-panel-layout.test.mjs: all passed");
 } finally {
   await browser.close();

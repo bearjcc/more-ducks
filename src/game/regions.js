@@ -1,5 +1,14 @@
 // @ts-check
 import { REGIONS, GAME_DAY_SEC } from "../data/regions.js";
+import { formatNumber } from "./format.js";
+
+/**
+ * @param {number} rentPerDay
+ * @returns {string}
+ */
+export function rentCoinsPerGameDayLabel(rentPerDay) {
+  return `${formatNumber(rentPerDay, 2)} coins/game-day`;
+}
 
 /**
  * @param {string} id

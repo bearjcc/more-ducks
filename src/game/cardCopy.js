@@ -4,31 +4,39 @@ import { UPGRADES } from "../data/upgrades.js";
 import { HYPE_CAMPAIGNS } from "../data/hype.js";
 import { REGIONS } from "../data/regions.js";
 import { HYPE_FACTOR } from "./market.js";
-import { maxMarketingLevel } from "./hype.js";
+import { maxMarketingLevel, campaignHypeGain } from "./hype.js";
 import { maxLevelFor } from "./upgrades.js";
 import { ENDINGS } from "../data/endings.js";
-
-/**
- * @param {number} n
- */
-function fmtNum(n) {
-  if (!Number.isFinite(n)) return "?";
-  const abs = Math.abs(n);
-  if (abs >= 1000) {
-    if (abs >= 1e9) return `${+(n / 1e9).toFixed(2)}B`;
-    if (abs >= 1e6) return `${+(n / 1e6).toFixed(2)}M`;
-    if (abs >= 1e3) return `${+(n / 1e3).toFixed(2)}K`;
-  }
-  if (abs >= 10) return `${Math.round(n)}`;
-  if (abs >= 1) return `${+n.toFixed(2)}`;
-  return `${+n.toFixed(3)}`;
-}
+import { formatNumber } from "./format.js";
+import { rentCoinsPerGameDayLabel } from "./regions.js";
 
 /**
  * @param {number} mult
  */
 function fmtMult(mult) {
-  return `×${fmtNum(mult)}`;
+  if (!Number.isFinite(mult) || mult === 1) return "×1";
+  return `×${formatNumber(mult, 2)}`;
+}
+
+/**
+ * @param {number} targetMult
+ * @param {number} level
+ * @param {number} maxLevel
+ */
+export function stackedMultAtLevel(targetMult, level, maxLevel) {
+  if (level <= 0) return 1;
+  if (maxLevel <= 0) return 1;
+  const perLevel = targetMult ** (1 / maxLevel);
+  return perLevel ** Math.min(level, maxLevel);
+}
+
+/**
+ * @param {number} before
+ * @param {number} after
+ */
+function nextStepPct(before, after) {
+  if (before <= 0) return 0;
+  return Math.round((after / before - 1) * 100);
 }
 
 /**
@@ -41,29 +49,45 @@ function capFor(def) {
 
 /**
  * @param {import("../data/upgrades.js").UpgradeDef} def
+ * @param {number} [level]
  * @returns {string}
  */
-export function upgradeEffectLine(def) {
+export function upgradeEffectLine(def, level = 0) {
   const e = def.effect;
   const cap = capFor(def);
   switch (e.kind) {
     case "holdRepeat":
       return "Hold Auto to repeat questions";
-    case "holdRepeatSpeed":
-      return `Auto hold interval ${fmtMult(e.mult)} at Lv ${cap}`;
-    case "efficiencyMult":
-      return def.purchaseMode === "level"
-        ? `Supply efficiency ${fmtMult(e.mult)} at Lv ${cap}`
-        : `Supply efficiency ${fmtMult(e.mult)}`;
+    case "holdRepeatSpeed": {
+      const now = stackedMultAtLevel(e.mult, level, cap);
+      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
+      const pct = nextStepPct(now, nxt);
+      return level >= cap
+        ? `Auto hold interval ${fmtMult(now)} · max`
+        : `Next: ${pct <= 0 ? "faster" : `${pct}%`} Auto hold · now ${fmtMult(now)}`;
+    }
+    case "efficiencyMult": {
+      const now = stackedMultAtLevel(e.mult, level, cap);
+      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
+      const pct = nextStepPct(now, nxt);
+      return `Next: +${pct}% supply efficiency · now ${fmtMult(now)}`;
+    }
     case "autoFeeder":
       return "Auto-feed (feed/sec scales with answers/sec)";
-    case "coinMult":
+    case "coinMult": {
+      const now = stackedMultAtLevel(e.mult, level, cap);
+      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
+      const pct = nextStepPct(now, nxt);
       return def.purchaseMode === "level"
-        ? `Coin earnings ${fmtMult(e.mult)} at Lv ${cap}`
+        ? `Next: +${pct}% coin earnings · now ${fmtMult(now)}`
         : `Coin earnings ${fmtMult(e.mult)}`;
+    }
     case "globalMult": {
+      const now = stackedMultAtLevel(e.mult, level, cap);
+      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
+      const pct = nextStepPct(now, nxt);
       const base = def.purchaseMode === "level"
-        ? `All duck-makers ${fmtMult(e.mult)} at Lv ${cap}`
+        ? `Next: +${pct}% all duck-makers · now ${fmtMult(now)}`
         : `All duck-makers ${fmtMult(e.mult)}`;
       if (def.id === "scalinglaws") {
         return `${base}. Unlocks: hold 🦆 to ponder (while fed)`;
@@ -72,12 +96,21 @@ export function upgradeEffectLine(def) {
     }
     case "producerMult": {
       const name = PRODUCERS.find((p) => p.id === e.target)?.name ?? e.target;
-      return `${name} output ${fmtMult(e.mult)} at Lv ${cap}`;
+      const now = stackedMultAtLevel(e.mult, level, cap);
+      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
+      const pct = nextStepPct(now, nxt);
+      return `Next: +${pct}% ${name} output · now ${fmtMult(now)}`;
     }
-    case "clickMult":
-      return `Manual tap power ${fmtMult(e.mult)} at Lv ${cap}`;
+    case "clickMult": {
+      const now = stackedMultAtLevel(e.mult, level, cap);
+      const nxt = stackedMultAtLevel(e.mult, level + 1, cap);
+      const pct = nextStepPct(now, nxt);
+      return `Next: +${pct}% manual tap power · now ${fmtMult(now)}`;
+    }
     case "pondCapacity":
-      return `+${e.amount} pond cap per purchase`;
+      return level > 0
+        ? `+${e.amount} pond cap each · owned ×${formatNumber(level, 0)}`
+        : `+${e.amount} pond cap each`;
     case "capstone": {
       const title = ENDINGS[e.ending]?.title ?? e.ending;
       return `Capstone ending: ${title}`;
@@ -88,46 +121,61 @@ export function upgradeEffectLine(def) {
 }
 
 /**
- * @param {import("../data/producers.js").ProducerDef} def
+ * @param {number} ducksPerSecPerUnit
  * @returns {string}
  */
-export function producerEffectLine(def) {
-  const perUnit = (def.productionAmount * 1000) / def.productionTime;
-  return `${fmtNum(perUnit)} ducks/sec per unit`;
+export function producerRateLine(ducksPerSecPerUnit) {
+  return `${formatNumber(ducksPerSecPerUnit, 2)} ducks/sec each`;
+}
+
+/**
+ * @param {import("../data/producers.js").ProducerDef} def
+ * @param {number} [ducksPerSecPerUnit]
+ * @returns {string}
+ */
+export function producerEffectLine(def, ducksPerSecPerUnit) {
+  const perUnit = ducksPerSecPerUnit ?? (def.productionAmount * 1000) / def.productionTime;
+  return producerRateLine(perUnit);
 }
 
 /**
  * @param {import("../data/hype.js").HypeCampaignDef} def
+ * @param {number} [level]
  * @returns {string}
  */
-export function hypeEffectLine(def) {
-  const hype = def.hypeGain;
-  const demand = hype * HYPE_FACTOR;
+export function hypeEffectLine(def, level = 0) {
+  const cap = maxMarketingLevel(def);
+  const nextGain = campaignHypeGain(def, level + 1);
+  const demand = nextGain * HYPE_FACTOR;
   if (def.id === "socialmedia") {
-    const max = maxMarketingLevel(def);
-    return `+${fmtNum(hype)}×Lv hype; −4% hype decay at Lv ${max}`;
+    const decayCut = Math.round(100 * (0.04 * Math.min(level + 1, cap) / cap));
+    return level >= cap
+      ? `Hype decay −${decayCut}% · max Lv ${cap}`
+      : `Next: +${formatNumber(nextGain, 0)} hype · −${decayCut}% hype decay at Lv ${level + 1}`;
   }
   if (def.purchaseMode === "level") {
-    const max = maxMarketingLevel(def);
-    const peakHype = hype * max;
-    const peakDemand = peakHype * HYPE_FACTOR;
-    return `Up to +${fmtNum(peakHype)} hype/Lv stack; +${fmtNum(peakDemand)} demand/sec peak at Lv ${max}`;
+    const totalHype = campaignHypeGain(def, level + 1);
+    return level >= cap
+      ? `+${formatNumber(campaignHypeGain(def, cap), 0)} hype/Lv stack · max`
+      : `Next: +${formatNumber(totalHype, 0)} hype (+${formatNumber(totalHype * HYPE_FACTOR, 1)} demand/sec peak)`;
   }
-  return `+${fmtNum(hype)} hype; +${fmtNum(demand)} demand/sec while hype lasts`;
+  return `+${formatNumber(nextGain, 0)} hype (+${formatNumber(demand, 1)} demand/sec peak)`;
 }
 
 /**
  * @param {import("../data/regions.js").RegionDef} def
+ * @param {{ rented?: boolean, unlocked?: boolean }} [state]
  * @returns {string}
  */
-export function regionEffectLine(def) {
+export function regionEffectLine(def, state = {}) {
   if (def.orbital) return "Deploy orbital ducks (space ending)";
-  if (def.saltwater) return "Deploy saltwater ducks (no pond)";
-  if (def.floodCost) return "Flood basin (one-time); no rent after";
+  if (def.saltwater) return "Deploy saltwater ducks (no pond cap)";
+  if (def.floodCost) return "One-time flood capex";
   if (def.rentPerDay > 0) {
-    return `Rent ${fmtNum(def.rentPerDay)} coins/game-day when active`;
+    return `Rent ${rentCoinsPerGameDayLabel(def.rentPerDay)} when active`;
   }
-  if (def.unlockCost > 0) return "Unlock region access";
+  if (def.unlockCost > 0 && !state.unlocked) return "Unlock region access";
+  if (def.unlockCost > 0) return "Region unlocked";
   return "Home pond (owned)";
 }
 
@@ -157,13 +205,13 @@ export function allPurchasableCopy() {
   /** @type {{ id: string, flavour: string, effectLine: string }[]} */
   const out = [];
   for (const u of UPGRADES) {
-    out.push({ id: `upgrade:${u.id}`, flavour: u.flavour, effectLine: upgradeEffectLine(u) });
+    out.push({ id: `upgrade:${u.id}`, flavour: u.flavour, effectLine: upgradeEffectLine(u, 0) });
   }
   for (const p of PRODUCERS) {
     out.push({ id: `producer:${p.id}`, flavour: p.flavour, effectLine: producerEffectLine(p) });
   }
   for (const h of HYPE_CAMPAIGNS) {
-    out.push({ id: `hype:${h.id}`, flavour: h.flavour, effectLine: hypeEffectLine(h) });
+    out.push({ id: `hype:${h.id}`, flavour: h.flavour, effectLine: hypeEffectLine(h, 0) });
   }
   for (const r of REGIONS) {
     if (r.id === "home") continue;

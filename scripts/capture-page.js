@@ -37,18 +37,30 @@ window.__mdCapture = {
     await this.refreshUnlocks();
     this.clearToasts();
   },
+  async quietMilestones() {
+    const { meta } = window.MoreDucks;
+    const { MILESTONES } = await import("/src/game/achievements.js");
+    meta.achievements = MILESTONES.map((m) => m.id);
+    meta.flags.upgradesTabToast = true;
+    meta.flags.flockTabToast = true;
+    meta.flags.firstProducerToast = true;
+    meta.flags.firstAffordableHint = true;
+    this.clearToasts();
+  },
   async playMidGame() {
     await this.playEarlyUnlock();
     const { meta, engine, mods, advanceGame } = window.MoreDucks;
     const { buyUpgrade } = await import("/src/game/upgrades.js");
     const { buyProducer } = await import("/src/game/economy.js");
+    engine.currency("coins").incrementBy(50_000);
     buyUpgrade(engine, meta, mods, "steadybeak");
     buyUpgrade(engine, meta, mods, "autofeeder");
-    meta.autoFeederOwned = true;
-    engine.currency("coins").incrementBy(8000);
     buyProducer(engine, "duckling", 12, meta);
     buyProducer(engine, "nestbox", 3, meta);
+    buyProducer(engine, "pondfarm", 2, meta);
+    buyProducer(engine, "breeder", 1, meta);
     meta.era = 2;
+    await this.quietMilestones();
     meta.answerdexSeen = ["Quack?", "Quack quack", "Quack quack quack", "Quack!"];
     meta.dexUnlocked = ["mallard", "rubber", "decoy"];
     advanceGame(180);

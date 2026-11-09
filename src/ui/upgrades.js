@@ -13,6 +13,7 @@ import { cardCopyMarkup, upgradeEffectLine } from "../game/cardCopy.js";
  * @property {HTMLElement} title
  * @property {HTMLElement} count
  * @property {HTMLElement} cost
+ * @property {HTMLElement|null} effectEl
  * @property {HTMLButtonElement} btn
  */
 
@@ -49,7 +50,7 @@ function createCard(def, container) {
     `<div class="card__icon" aria-hidden="true">${def.emoji}</div>` +
     `<div class="card__body">` +
       `<div class="card__title" data-title>${def.name}</div>` +
-      `<div class="card__copy">${cardCopyMarkup(upgradeEffectLine(def), def.flavour)}</div>` +
+      `<div class="card__copy" data-copy>${cardCopyMarkup(upgradeEffectLine(def, 0), def.flavour)}</div>` +
     `</div>` +
     `<button class="card__buy" type="button" data-buy aria-label="Buy ${def.name}">` +
       `<span class="card__count" data-count hidden></span>` +
@@ -68,6 +69,7 @@ function createCard(def, container) {
     count: /** @type {HTMLElement} */ (li.querySelector("[data-count]")),
 
     cost: /** @type {HTMLElement} */ (li.querySelector("[data-cost]")),
+    effectEl: li.querySelector(".card__effect"),
     btn,
   };
 
@@ -109,6 +111,9 @@ export function updateUpgrades(s) {
     refs.root.style.display = "";
     anyVisible = true;
     refs.root.classList.toggle("is-owned", atCap && def.purchaseMode === "once");
+    if (refs.effectEl) {
+      refs.effectEl.textContent = upgradeEffectLine(def, level);
+    }
     if (def.purchaseMode === "level") {
       const max = maxLevelFor(def);
       refs.title.textContent = `${def.name} Lv ${level}/${max}`;

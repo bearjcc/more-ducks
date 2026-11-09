@@ -13,6 +13,7 @@ import { cardCopyMarkup, producerEffectLine } from "../game/cardCopy.js";
  * @property {HTMLElement} root
  * @property {HTMLElement} count
  * @property {HTMLElement} cost
+ * @property {HTMLElement|null} effectEl
  * @property {HTMLButtonElement} btn
  */
 
@@ -122,6 +123,7 @@ function createCard(def) {
     root: li,
     count: /** @type {HTMLElement} */ (li.querySelector("[data-count]")),
     cost: /** @type {HTMLElement} */ (li.querySelector("[data-cost]")),
+    effectEl: li.querySelector(".card__effect"),
     btn,
   };
   btn.addEventListener("click", (e) => {
@@ -163,6 +165,11 @@ export function updateShop(s) {
     const qty = resolveQty(s.engine, def.id, s.coins);
     const cost = qty > 0 ? bulkCost(s.engine, def.id, qty) : bulkCost(s.engine, def.id, 1);
     refs.count.textContent = "×" + formatNumber(prod.count, 0);
+    if (refs.effectEl) {
+      const amt = prod.outputs?.resources?.ducks?.productionAmount ?? def.productionAmount;
+      const rate = (amt * 1000) / def.productionTime;
+      refs.effectEl.textContent = producerEffectLine(def, rate);
+    }
     const label = qty > 1 ? `×${formatNumber(qty, 0)} ` : "";
     refs.cost.textContent = "🪙 " + label + (isFinite(cost) ? formatNumber(cost, 0) : "∞");
     const affordable = qty > 0 && isFinite(cost) && s.coins >= cost;

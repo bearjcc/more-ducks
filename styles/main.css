@@ -606,7 +606,7 @@ body[data-started] .stage__hint { display: none; }
   max-width: 340px;
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto auto auto;
   align-items: start;
   gap: 8px 10px;
 }
@@ -652,7 +652,7 @@ body[data-started] .stage__hint { display: none; }
 
 .market-gauge {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 2 / span 2;
   min-width: 0;
   align-self: center;
 }
@@ -696,8 +696,6 @@ body[data-started] .stage__hint { display: none; }
 .dash-stat[hidden] { display: none; }
 
 .dash-stat {
-  grid-column: 2;
-  grid-row: 2;
   flex: none;
   display: flex;
   flex-direction: row;
@@ -707,6 +705,10 @@ body[data-started] .stage__hint { display: none; }
   padding: 0;
   background: transparent;
   border-radius: 0;
+}
+.dash-stat--hype {
+  grid-column: 2;
+  grid-row: 2;
 }
 .dash-stat__icon { font-size: 0.85rem; line-height: 1; }
 .dash-stat__value {
@@ -728,16 +730,34 @@ body[data-started] .stage__hint { display: none; }
   animation: hype-pulse 1.4s var(--ease-out-expo) infinite;
 }
 .dash-stat--feed {
-  flex-wrap: wrap;
-  row-gap: 0;
+  grid-column: 2;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
   column-gap: 5px;
+  row-gap: 1px;
+  align-items: center;
 }
+.dash-stat--feed .dash-stat__icon {
+  grid-row: 1 / span 2;
+  align-self: start;
+  padding-top: 1px;
+}
+.dash-stat--feed .dash-stat__value { grid-column: 2; }
 .dash-stat--feed .dash-stat__label {
-  flex: 1 1 100%;
-  margin-left: 1.35rem;
+  grid-column: 2;
+  margin-left: 0;
 }
-.dash-stat--ducks { grid-column: 1; grid-row: 3; }
-.dash-stat--dps { grid-column: 2; grid-row: 3; }
+.card__status {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--good);
+  margin-top: 2px;
+}
+.dash-stat--ducks { grid-column: 1; grid-row: 4; }
+.dash-stat--dps { grid-column: 2; grid-row: 4; }
 @keyframes hype-drip {
   0%, 100% { transform: translateY(0); opacity: 1; }
   50% { transform: translateY(2px); opacity: 0.8; }
@@ -2098,6 +2118,11 @@ body[data-act-tier="empire"] .chat-thread {
     --panel-sheet-height: 50dvh;
     --panel-sheet-height: min(50dvh, 420px);
     --toast-stack: calc(var(--dock-height) + var(--input-tray-height) + 2 * var(--gap));
+  }
+
+  body[data-panel-open] .toast-host {
+    top: calc(var(--hud-height) + var(--gap) + env(safe-area-inset-top, 0px));
+    bottom: auto;
   }
 
   body[data-panel-open] {

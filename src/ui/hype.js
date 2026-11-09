@@ -21,6 +21,7 @@ import { cardCopyMarkup, hypeEffectLine } from "../game/cardCopy.js";
  * @property {HTMLElement} title
  * @property {HTMLElement} count
  * @property {HTMLElement} cost
+ * @property {HTMLElement|null} effectEl
  * @property {HTMLButtonElement} btn
  */
 
@@ -75,6 +76,7 @@ function createCard(def) {
     count: /** @type {HTMLElement} */ (li.querySelector("[data-count]")),
 
     cost: /** @type {HTMLElement} */ (li.querySelector("[data-cost]")),
+    effectEl: li.querySelector(".card__effect"),
     btn,
   };
 
@@ -112,6 +114,7 @@ export function updateHype(s) {
     if (!refs) refs = createCard(def);
     refs.root.style.display = "";
     anyVisible = true;
+    if (refs.effectEl) refs.effectEl.textContent = hypeEffectLine(def, level);
     const nextGain = campaignHypeGain(def, level + 1);
     if (def.purchaseMode === "level") {
       const max = maxMarketingLevel(def);

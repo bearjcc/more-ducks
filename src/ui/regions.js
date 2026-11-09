@@ -2,9 +2,7 @@
 // aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (REGIONS data, emoji).
 import { formatNumber } from "../game/format.js";
 import { REGIONS } from "../data/regions.js";
-import {
-  totalRentPerDay,
-} from "../game/regions.js";
+import { totalRentPerDay, rentCoinsPerGameDayLabel } from "../game/regions.js";
 import { flashCard } from "./render.js";
 import { cardCopyMarkup, regionEffectLine } from "../game/cardCopy.js";
 /** @type {HTMLElement|null} */ let listEl = null;
@@ -58,19 +56,22 @@ export function updateRegions(ctx) {
       actionLabel = formatNumber(r.floodCost ?? 0, 0) + " 🪙 flood";
     } else if (!r.saltwater && r.rentPerDay > 0 && !rented) {
       action = "rent";
-      actionLabel = `Rent · ${formatNumber(r.rentPerDay, 0)} coins / game-day`;
+      actionLabel = `Rent · ${rentCoinsPerGameDayLabel(r.rentPerDay)}`;
     }
 
     li.innerHTML =
       `<span class="card__emoji" aria-hidden="true">${r.emoji}</span>` +
       `<div class="card__body">` +
         `<span class="card__title">${r.name}</span>` +
-        `<div class="card__copy">${cardCopyMarkup(regionEffectLine(r), r.flavour)}</div>` +
+        `<div class="card__copy">${cardCopyMarkup(regionEffectLine(r, { rented, unlocked }), r.flavour)}</div>` +
         (rented && r.rentPerDay > 0
-          ? `<span class="card__meta">Rented · ${formatNumber(r.rentPerDay, 0)} coins / game-day</span>`
+          ? `<span class="card__meta card__status">Rented · active</span>`
           : "") +
-        (rented && !action && r.rentPerDay === 0
-          ? `<span class="card__meta">Owned</span>`
+        (flooded
+          ? `<span class="card__meta card__status">Flooded · active</span>`
+          : "") +
+        (rented && !action && r.rentPerDay === 0 && !flooded
+          ? `<span class="card__meta card__status">Active</span>`
           : "") +
       `</div>` +
       (action
@@ -91,7 +92,7 @@ export function updateRegions(ctx) {
   if (rent > 0) {
     const note = document.createElement("p");
     note.className = "empty-hint";
-    note.textContent = `Total rent: ${formatNumber(rent, 0)} coins / game-day`;
+    note.textContent = `Total rent: ${rentCoinsPerGameDayLabel(rent)}`;
     listEl.appendChild(note);
   }
 }

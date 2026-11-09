@@ -3,8 +3,13 @@ import {
   allPurchasableCopy,
   flavourIsWordsOnly,
   upgradeEffectLine,
+  producerEffectLine,
 } from "../src/game/cardCopy.js";
 import { UPGRADES } from "../src/data/upgrades.js";
+import { PRODUCERS } from "../src/data/producers.js";
+import { rentCoinsPerGameDayLabel } from "../src/game/regions.js";
+import { REGIONS } from "../src/data/regions.js";
+import { regionEffectLine } from "../src/game/cardCopy.js";
 
 let passed = 0;
 let failed = 0;
@@ -31,6 +36,32 @@ console.log("\n(b) Critical Mass effect mentions pondering");
   const line = upgradeEffectLine(/** @type {any} */ (def));
   assert(line.includes("ponder"), "scalinglaws effect mentions ponder");
   assert(line.includes("×3") || line.includes("×"), "scalinglaws effect mentions mult");
+}
+
+console.log("\n(c) Level upgrades show next+now at Lv 0");
+{
+  const crumb = UPGRADES.find((u) => u.id === "promptcache");
+  const line = upgradeEffectLine(/** @type {any} */ (crumb), 0);
+  assert(line.includes("Next:"), "crumb recall has Next");
+  assert(line.includes("now"), "crumb recall shows current");
+  assert(!line.includes("Lv 25"), "crumb recall not end-state only");
+}
+
+console.log("\n(d) Producer rate uses K suffix and each");
+{
+  const pond = PRODUCERS.find((p) => p.id === "datapond");
+  const line = producerEffectLine(/** @type {any} */ (pond));
+  assert(line.includes("each"), "producer says each");
+  assert(line.includes("K"), "datapond rate uses formatNumber K");
+}
+
+console.log("\n(e) Rent label matches region effect");
+{
+  const asia = REGIONS.find((r) => r.id === "asia");
+  const label = rentCoinsPerGameDayLabel(asia.rentPerDay);
+  const effect = regionEffectLine(asia);
+  assert(effect.includes(label), `asia effect includes ${label}`);
+  assert(label.includes("1.2K"), "asia rent formats as 1.2K not 1K");
 }
 
 console.log(`\n${passed + failed} checks: ${passed} passed, ${failed} failed.\n`);
