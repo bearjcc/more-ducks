@@ -51,6 +51,8 @@ export function parseColor(color) {
   if (s.startsWith("#")) return hexToRgb(s);
   const m = s.match(/^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/i);
   if (m) return oklchToRgb(+m[1], +m[2], +m[3]);
+  const rgb = s.match(/^rgba?\(\s*([\d.]+)[,%\s]+([\d.]+)[,%\s]+([\d.]+)/i);
+  if (rgb) return [+rgb[1], +rgb[2], +rgb[3]];
   return [0, 0, 0];
 }
 

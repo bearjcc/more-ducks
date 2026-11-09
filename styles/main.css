@@ -39,6 +39,9 @@
      edge stays light via --sheet-edge so the seam catches a rim of light. */
   --panel-sheet-bg: color-mix(in oklch, var(--water-500) 90%, var(--highlight));
   --panel-sheet-bg-2: color-mix(in oklch, var(--water-600) 88%, var(--highlight));
+  --panel-body-bg: color-mix(in oklch, var(--water-500) 38%, var(--surface-raised));
+  --panel-row-bg: color-mix(in oklch, var(--highlight) 42%, var(--panel-body-bg));
+  --dock-band-bg: color-mix(in oklch, var(--reeds-600) 16%, var(--water-600) 84%);
   --panel-sheet-border: var(--neutral-a14);
   --sheet-edge: color-mix(in oklch, var(--highlight) 70%, transparent);
   /* Airy near-white chat surface so the pond slab sits visibly in front of it. */
@@ -194,6 +197,9 @@ html {
   --panel-border: color-mix(in oklch, var(--grass-500) 55%, var(--water-500));
   --panel-sheet-bg: color-mix(in oklch, var(--water-500) 65%, var(--grass-500));
   --panel-sheet-bg-2: color-mix(in oklch, var(--water-500) 80%, var(--grass-500));
+  --panel-body-bg: color-mix(in oklch, var(--water-600) 55%, var(--grass-700) 45%);
+  --panel-row-bg: color-mix(in oklch, var(--grass-500) 12%, var(--panel-body-bg));
+  --dock-band-bg: color-mix(in oklch, var(--reeds-700) 35%, var(--water-700) 65%);
   --sheet-edge: color-mix(in oklch, var(--grass-500) 30%, transparent);
   --stage-bg: color-mix(in oklch, var(--surface) 92%, var(--sky-500));
   --chrome-bg: var(--surface);
@@ -2255,10 +2261,8 @@ body[data-act-tier="empire"] .chat-thread {
     padding-right: 12px;
   }
   body[data-act-tier="chat"]:not([data-panel-open]) .dock {
-    background:
-      linear-gradient(180deg, var(--row-divider) 0%, transparent 55%),
-      var(--bg);
-    box-shadow: 0 -2px 10px var(--neutral-a08);
+    background: var(--dock-band-bg);
+    box-shadow: 0 -2px 10px var(--neutral-a10);
   }
 
   .app {
@@ -2436,7 +2440,7 @@ body[data-act-tier="empire"] .chat-thread {
     z-index: 2;
     border-top-left-radius: 14px;
     border-top-right-radius: 14px;
-    background: var(--panel-sheet-bg);
+    background: var(--panel-body-bg);
   }
   body[data-view-mode="manage"][data-panel-open] .bottom-tray {
     display: none;
@@ -2481,7 +2485,7 @@ body[data-act-tier="empire"] .chat-thread {
     flex-direction: column;
     height: var(--panel-sheet-height);
     max-height: var(--panel-sheet-height);
-    background: var(--panel-sheet-bg);
+    background: var(--panel-body-bg);
     border-top: none;
     box-shadow: 0 -4px 18px var(--neutral-a18);
   }
@@ -2525,19 +2529,18 @@ body[data-act-tier="empire"] .chat-thread {
   .hero-stat__label { font-size: 0.78rem; }
   .questions-answered { font-size: 0.65rem; }
 
-  .dock { order: 1; margin: 0; }
+  .dock { order: 2; margin: 0; flex: none; }
   .dock[hidden] { display: none !important; }
-  /* Minimized: the dock is a grounded pond bar at the bottom (same slab the
-     sheet grows from), with a light top rim — not chips floating on the chat. */
-  body:not([data-panel-open]) .dock {
-    background: var(--panel-sheet-bg);
-    box-shadow: 0 -2px 8px var(--neutral-a12);
+  body:not([data-panel-open]) .dock,
+  body[data-panel-open] .dock {
+    background: var(--dock-band-bg);
+    box-shadow: inset 0 1px 0 var(--neutral-a08);
   }
   .dock .tabs {
-    align-items: stretch;
-    gap: 3px;
+    align-items: flex-end;
+    gap: 2px;
     margin-bottom: 0;
-    padding: 4px 4px env(safe-area-inset-bottom, 0);
+    padding: 2px 2px env(safe-area-inset-bottom, 0);
     background: transparent;
     border: none;
     border-radius: 0;
@@ -2550,20 +2553,33 @@ body[data-act-tier="empire"] .chat-thread {
     align-items: center;
     justify-content: center;
     gap: 1px;
-    padding: 3px 2px 2px;
+    padding: 4px 2px 3px;
     min-height: 52px;
-    border-radius: 6px 6px 0 0;
+    border-radius: 8px 8px 0 0;
     font-size: inherit;
-    background: transparent;
-    box-shadow: none;
+    background: color-mix(in oklch, var(--tab-bg, var(--primary)) 72%, var(--reeds-800) 28%);
+    box-shadow: inset 0 -2px 0 var(--neutral-a10);
+    position: relative;
+    z-index: 0;
   }
   .dock .tab.is-active {
-    background: color-mix(in oklch, var(--tab-active, var(--primary)) 55%, transparent);
+    background: color-mix(in oklch, var(--tab-active, var(--primary)) 62%, var(--highlight));
+    box-shadow:
+      inset 0 2px 0 var(--highlight-a82),
+      0 -3px 0 var(--panel-body-bg);
+    z-index: 2;
+    margin-top: -3px;
+    padding-top: 6px;
+    filter: saturate(1.08) brightness(1.04);
+  }
+  body:not([data-panel-open]) .dock .tab.is-active {
     box-shadow: inset 0 2px 0 var(--highlight-a82);
+    margin-top: 0;
+    padding-top: 4px;
   }
   .dock .tab.is-locked {
-    opacity: 0.55;
-    filter: none;
+    opacity: 0.5;
+    filter: saturate(0.35) brightness(0.88);
   }
   .dock .tab__icon {
     display: block;
@@ -2572,7 +2588,7 @@ body[data-act-tier="empire"] .chat-thread {
     color: var(--tab-ink, var(--primary-ink));
     background: none;
     box-shadow: none;
-    text-shadow: none;
+    text-shadow: 0 1px 1px var(--neutral-a12);
   }
   .dock .tab__label {
     display: block;
@@ -2583,12 +2599,27 @@ body[data-act-tier="empire"] .chat-thread {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--reeds-900);
-    text-shadow: 0 1px 0 color-mix(in oklch, var(--highlight) 70%, transparent);
+    color: var(--tab-ink, var(--reeds-900));
+    text-shadow: 0 1px 0 var(--neutral-a10), 0 0 1px var(--neutral-a15);
   }
   .dock .tab.is-active .tab__label {
-    color: var(--reeds-900);
+    color: var(--tab-ink, var(--reeds-900));
     font-weight: 800;
+  }
+  [data-time="night"] .dock .tab:not(.is-active) .tab__label {
+    color: color-mix(in oklch, var(--tab-ink, var(--reeds-500)) 65%, var(--highlight));
+    text-shadow: 0 1px 2px var(--neutral-a18);
+  }
+  [data-time="night"] .dock .tab.is-active {
+    background: color-mix(in oklch, var(--tab-active, var(--primary)) 38%, var(--reeds-900));
+    filter: saturate(1.2) brightness(0.98);
+  }
+  [data-time="night"] .dock .tab.is-active .tab__label {
+    color: var(--highlight);
+    text-shadow: 0 1px 2px var(--neutral-a25);
+  }
+  [data-time="night"] .dock .tab[data-tab="hype"] .tab__label {
+    color: color-mix(in oklch, var(--reeds-700) 55%, var(--highlight));
   }
 
   .panel-toolbar {
@@ -2600,7 +2631,7 @@ body[data-act-tier="empire"] .chat-thread {
     z-index: 1;
     margin: 0 0 4px;
     padding: 0 0 4px;
-    background: var(--panel-sheet-bg);
+    background: var(--panel-body-bg);
     border-bottom: 1px solid var(--row-divider);
   }
   .panel-toolbar__rate {
@@ -2615,7 +2646,17 @@ body[data-act-tier="empire"] .chat-thread {
   }
   .panel-toolbar .buy-amount { margin-bottom: 0; flex: 1; min-width: 0; }
 
-  .tab-panel { border-radius: 0; padding: 4px 6px; }
+  .tab-panel { border-radius: 0; padding: 4px 6px; background: var(--panel-body-bg); }
+  .tab-panel .card {
+    background: var(--panel-row-bg);
+    border-bottom: 1px solid var(--neutral-a12);
+  }
+  .tab-panel .card.is-affordable {
+    background: color-mix(in oklch, var(--good-a12) 55%, var(--panel-row-bg));
+  }
+  .tab-panel .card.is-owned {
+    background: color-mix(in oklch, var(--panel-row-bg) 88%, var(--neutral-a06));
+  }
   .tab-panel[data-panel="dashboard"] .dashboard {
     align-content: start;
     gap: 6px 8px;
