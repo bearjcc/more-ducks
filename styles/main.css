@@ -70,7 +70,8 @@
   --counter-coin-ink: color-mix(in oklch, var(--bread-900) 55%, var(--reeds-800));
   --coin: var(--currency-bread);
   --error: color-mix(in oklch, var(--bread-600) 55%, var(--reeds-700));
-  --bad: color-mix(in oklch, var(--reeds-900) 38%, var(--bread-700) 62%);
+  --bad: color(srgb 0.784 0.216 0.176);
+  --bad-ink: var(--highlight);
   --backlog: color-mix(in oklch, var(--bread-500) 70%, var(--reeds-700));
 
   --water: color-mix(in oklch, var(--water-500) 55%, var(--grass-500));
@@ -156,7 +157,6 @@
   --z-dock: 30;
   --z-toast: 45;
   --z-modal: 90;
-  --bad-ink: var(--on-primary);
   --z-float: 60;
 }
 
@@ -224,6 +224,8 @@ html {
   --counter-duck-ink: var(--reeds-500);
   --counter-coin-ink: var(--currency-bread);
   --good: var(--success);
+  --bad: color(srgb 0.914 0.318 0.251);
+  --bad-ink: var(--highlight);
 
   --overlay: color-mix(in oklch, var(--sky-500) 60%, transparent);
 
@@ -1613,13 +1615,6 @@ body[data-panel-open] .tab-panels {
   --gw-btn: color-mix(in oklch, var(--water-700) 52%, var(--grass-900));
   --gw-tile: color-mix(in oklch, var(--water-700) 48%, var(--grass-900) 52%);
   background: color-mix(in oklch, var(--water-700) 88%, var(--grass-900));
-  --gw-danger: color-mix(in oklch, var(--mask-opaque) 42%, var(--bread-700) 58%);
-}
-[data-time="night"] .gw-action--danger,
-[data-time="night"] .gamewin__btn--danger {
-  background: var(--gw-danger);
-  border-color: color-mix(in oklch, var(--mask-opaque) 50%, var(--bread-800));
-  box-shadow: 0 4px 0 color-mix(in oklch, var(--mask-opaque) 65%, var(--reeds-900));
 }
 @keyframes modal-exit {
   from { opacity: 1; transform: scale(1) translateY(0); }
@@ -1772,10 +1767,10 @@ body[data-panel-open] .tab-panels {
   border-color: color-mix(in oklch, var(--accent) 55%, var(--shadow-sm));
 }
 .gamewin__btn--danger {
-  background: color-mix(in oklch, var(--reeds-900) 68%, var(--bread-700) 32%);
-  color: var(--highlight);
-  border-color: color-mix(in oklch, var(--reeds-900) 55%, var(--bread-800));
-  box-shadow: 0 4px 0 color-mix(in oklch, var(--reeds-900) 75%, var(--bread-900));
+  background: var(--bad);
+  color: var(--bad-ink);
+  border-color: color-mix(in srgb, var(--bad) 72%, var(--mask-opaque));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--bad) 58%, var(--mask-opaque));
 }
 .gamewin--welcome .gamewin__btn--primary {
   background: var(--accent);
@@ -1905,24 +1900,26 @@ body[data-panel-open] .tab-panels {
   color: color-mix(in oklch, var(--gw-muted) 85%, var(--gw-ink));
   filter: saturate(0.2) brightness(0.92);
 }
-.gw-tile--off .gw-tile__badge { display: block; }
-.gw-tile--on .gw-tile__badge { display: none; }
-.gw-tile--mute-active {
-  filter: none;
-  background: color-mix(in oklch, var(--bad) 22%, var(--gw-tile));
+.gw-tile--audio.gw-tile--off:not(.gw-tile--mute) .gw-tile__offmark {
+  display: block;
 }
 .gw-tile--mute-active .gw-tile__icon {
-  background: color-mix(in oklch, var(--bad) 55%, var(--bread-500));
+  background: var(--bad);
   color: var(--bad-ink);
+  box-shadow:
+    inset 0 -2px 0 color-mix(in srgb, var(--bad) 70%, var(--mask-opaque)),
+    0 0 0 2px color-mix(in srgb, var(--bad) 45%, transparent);
 }
 .gw-tile__icon {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: none;
   width: 40px;
   height: 40px;
   border-radius: 10px;
+  overflow: visible;
   background: color-mix(in oklch, var(--sunlight-500) 35%, var(--accent) 30%);
   color: var(--gw-ink);
   box-shadow: inset 0 -2px 0 var(--neutral-a10);
@@ -1937,12 +1934,28 @@ body[data-panel-open] .tab-panels {
   background: color-mix(in oklch, var(--bread-400) 48%, var(--sunlight-400));
 }
 .gw-tile__icon .gw-icon { width: 22px; height: 22px; }
-.gw-tile__badge {
-  position: absolute;
-  right: -8px;
-  bottom: -8px;
-  line-height: 0;
+.gw-tile__offmark {
   display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.gw-tile__offmark::before,
+.gw-tile__offmark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 88%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bad);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--bad-ink) 35%, transparent);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.gw-tile__offmark::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 .gw-tile__voltrack {
   padding: 5px 8px 7px;
@@ -2019,10 +2032,10 @@ body[data-panel-open] .tab-panels {
 .gw-action__icon .gw-icon { width: 20px; height: 20px; }
 .gw-action__label { font-size: 0.8rem; line-height: 1.2; color: inherit; }
 .gw-action--danger {
-  background: color-mix(in oklch, var(--reeds-900) 68%, var(--bread-700) 32%);
-  border-color: color-mix(in oklch, var(--reeds-900) 55%, var(--bread-800));
-  color: var(--highlight);
-  box-shadow: 0 4px 0 color-mix(in oklch, var(--reeds-900) 75%, var(--bread-900));
+  background: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 72%, var(--mask-opaque));
+  color: var(--bad-ink);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--bad) 58%, var(--mask-opaque));
 }
 .gw-action--danger .gw-action__icon { color: inherit; }
 

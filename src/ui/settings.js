@@ -26,7 +26,6 @@ import {
   iconDownload,
   iconPaste,
   iconTrash,
-  iconStrike,
 } from "./icons.js";
 
 /** @type {import("../game/meta.js").Settings} */
@@ -54,11 +53,11 @@ function pipRow(id, steps = 5) {
 
 /** @param {string} id @param {string} label @param {string} icon @param {string} [tone] @param {boolean} [vol] */
 function audioTile(id, label, icon, tone = "sfx", vol = true) {
+  const muteCls = tone === "mute" ? " gw-tile--mute" : "";
   return (
     `<div class="gw-audio-frame gw-audio-frame--${tone}">` +
-      `<button type="button" id="${id}" class="gw-tile gw-tile--audio" aria-pressed="true">` +
-        `<span class="gw-tile__icon">${icon}</span>` +
-        `<span class="gw-tile__badge" aria-hidden="true">${iconStrike()}</span>` +
+      `<button type="button" id="${id}" class="gw-tile gw-tile--audio${muteCls}" aria-pressed="true">` +
+        `<span class="gw-tile__icon">${icon}<span class="gw-tile__offmark" aria-hidden="true"></span></span>` +
         `<span class="gw-tile__label">${label}</span>` +
         `<span class="gw-tile__state" aria-hidden="true">On</span>` +
       `</button>` +
@@ -270,8 +269,6 @@ function setAudioTile(tileId, on) {
   el.classList.toggle("gw-tile--on", on);
   const state = el.querySelector(".gw-tile__state");
   if (state) state.textContent = on ? "On" : "Off";
-  const badge = /** @type {HTMLElement|null} */ (el.querySelector(".gw-tile__badge"));
-  if (badge) badge.hidden = on;
   el.closest(".gw-audio-frame")?.classList.toggle("gw-audio-frame--off", !on);
 }
 
@@ -281,13 +278,13 @@ function setMuteTile(masterMute) {
   if (!el) return;
   el.setAttribute("aria-pressed", masterMute ? "true" : "false");
   el.classList.toggle("gw-tile--mute-active", masterMute);
-  el.classList.toggle("gw-tile--off", !masterMute);
-  el.classList.toggle("gw-tile--on", masterMute);
+  el.classList.remove("gw-tile--off");
+  el.classList.toggle("gw-tile--on", !masterMute);
   const state = el.querySelector(".gw-tile__state");
   if (state) state.textContent = masterMute ? "On" : "Off";
-  const badge = /** @type {HTMLElement|null} */ (el.querySelector(".gw-tile__badge"));
-  if (badge) badge.hidden = true;
-  el.closest(".gw-audio-frame")?.classList.toggle("gw-audio-frame--off", !masterMute);
+  const frame = el.closest(".gw-audio-frame");
+  frame?.classList.remove("gw-audio-frame--off");
+  frame?.classList.toggle("gw-audio-frame--mute-active", masterMute);
 }
 
 /** @param {string} pipId @param {number} step */
