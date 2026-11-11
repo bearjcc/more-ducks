@@ -77,10 +77,6 @@ function creditsSectionsHtml() {
           link("https://kenney.nl", "kenney.nl") + ` — ` +
           link("https://creativecommons.org/publicdomain/zero/1.0/", "CC0 1.0") +
         `</li>` +
-        `<li>Kenney Game Icons (UI artwork) — Kenney Vleugels — ` +
-          link("https://kenney.nl/assets/game-icons", "kenney.nl") + ` — ` +
-          link("https://creativecommons.org/publicdomain/zero/1.0/", "CC0 1.0") +
-        `</li>` +
       `</ul>` +
     `</section>` +
     `<section class="about__block">` +
