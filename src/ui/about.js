@@ -7,6 +7,7 @@ import {
   LICENSE_ENTRIES,
   QLM_URL,
 } from "../data/about.js";
+import { iconGear, iconInfo } from "./icons.js";
 /** @type {HTMLElement|null} */
 let aboutPanel = null;
 /** @type {HTMLElement|null} */
@@ -19,6 +20,8 @@ let titleEl = null;
 let backBtn = null;
 /** @type {HTMLElement|null} */
 let modalShell = null;
+/** @type {HTMLElement|null} */
+let headerIconEl = null;
 
 /**
  * @param {{
@@ -26,9 +29,11 @@ let modalShell = null;
  *   settingsBody: HTMLElement,
  *   shell: HTMLElement,
  *   onBack: () => void,
+ *   headerIcon?: HTMLElement|null,
  * }} opts
  */
 export function mountAboutPanel(opts) {
+  headerIconEl = opts.headerIcon ?? null;
   settingsPanel = opts.settingsBody;
   panesEl = opts.panes;
   modalShell = opts.shell;
@@ -45,9 +50,8 @@ export function mountAboutPanel(opts) {
       `<p class="about__meta">Version ${GAME_VERSION} · <span class="about__commit">${BUILD_COMMIT}</span></p>` +
       `<p class="about__tagline">${GAME_TAGLINE}</p>` +
     `</header>` +
-    `<section class="about__block">` +
-      `<h3 class="about__heading">Prequel</h3>` +
-      `<p><a class="about__link" href="${QLM_URL}">Quack Language Model (QLM)</a></p>` +
+    `<section class="about__block about__block--prequel">` +
+      `<p class="about__prequel-line"><a class="about__link" href="${QLM_URL}">Quack Language Model (QLM)</a></p>` +
     `</section>` +
     creditsSectionsHtml() +
     licencesHtml() ;
@@ -149,6 +153,7 @@ export function showAbout(open) {
   if (titleEl) titleEl.textContent = open ? "About" : "Settings";
   if (backBtn) backBtn.hidden = !open;
   modalShell?.classList.toggle("gamewin--about", open);
+  if (headerIconEl) headerIconEl.innerHTML = open ? iconInfo() : iconGear();
   if (open) {
     aboutPanel.scrollTop = 0;
     backBtn?.focus({ preventScroll: true });

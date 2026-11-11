@@ -9,7 +9,13 @@ function svg(inner, cls = "gw-icon") {
 }
 
 export const iconGear = () =>
-  svg('<circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>');
+  svg(
+    '<path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>' +
+      '<path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15 1.65 1.65 0 003.49 13.5H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.6 1.65 1.65 0 0010 3.49V3a2 2 0 014 0v.09A1.65 1.65 0 0018.4 9c.46.46.74 1.09.74 1.77 0 .68-.28 1.31-.74 1.77V15c.46.46.74 1.09.74 1.77a1.65 1.65 0 01-1.51 1H21a2 2 0 010-4h-.09a1.65 1.65 0 00-1.51-1z"/>',
+  );
+
+export const iconAway = () =>
+  svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
 
 export const iconClose = () =>
   svg('<path d="M6 6l12 12M18 6L6 18"/>');
@@ -63,4 +69,8 @@ export const iconDuck = () =>
   svg('<path d="M4 14c0-4 3-7 7-7 2 0 4 .8 5.5 2.2C18 8 20 8.5 21 10c-2 .5-3.5 2-4 4H4z"/><circle cx="9" cy="11" r="1" fill="currentColor" stroke="none"/>');
 
 export const iconStrike = () =>
-  svg('<circle cx="12" cy="12" r="9" fill="var(--bad)" stroke="none"/><path d="M8 8l8 8M16 8l-8 8" stroke="var(--on-primary)" stroke-width="2.5"/>', "gw-icon gw-icon--badge");
+  svg(
+    '<circle cx="12" cy="12" r="10" fill="var(--bad)" stroke="none"/>' +
+      '<path d="M7 7l10 10M17 7L7 17" stroke="var(--bad-ink, var(--on-primary))" stroke-width="2.75"/>',
+    "gw-icon gw-icon--badge",
+  );

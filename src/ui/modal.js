@@ -3,7 +3,7 @@
 import { ACTS } from "../data/eras.js";
 import { sfxCollect } from "../game/sfx.js";
 import { BUILD_COMMIT, GAME_NAME, GAME_VERSION } from "../data/build-info.js";
-import { iconClose, iconDuck } from "./icons.js";
+import { iconAway, iconClose, iconDuck } from "./icons.js";
 
 /**
  * A single reusable modal with a queue, so act beats and dex details never
@@ -113,13 +113,10 @@ function showNext() {
   if (!spec) { hide(); return; }
   currentSpec = spec;
   open = true;
-  if (spec.emoji) {
-    iconSlot.innerHTML = `<span class="gamewin__emoji" aria-hidden="true">${spec.emoji}</span>`;
-  } else {
-    iconSlot.innerHTML = iconDuck();
-  }
+  iconSlot.innerHTML = spec.variant === "welcome" ? iconAway() : iconDuck();
   titleEl.textContent = spec.title;
-  bodyEl.textContent = spec.body;
+  const bodyText = spec.emoji ? `${spec.emoji} ${spec.body}` : spec.body;
+  bodyEl.textContent = bodyText;
   bodyEl.style.display = spec.body ? "" : "none";
   btnEl.textContent = spec.button || "Onward";
   modalEl.classList.toggle("gamewin--welcome", spec.variant === "welcome");

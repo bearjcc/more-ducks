@@ -34,6 +34,7 @@ let current = mergeSettings();
 
 /** @type {HTMLElement|null} */ let overlay = null;
 /** @type {HTMLButtonElement|null} */ let gearBtn = null;
+/** @type {HTMLElement|null} */ let headerIconEl = null;
 let settingsOpen = false;
 
 const NOTATION_LABEL = { suffix: "Suffix", scientific: "Scientific" };
@@ -51,29 +52,30 @@ function pipRow(id, steps = 5) {
   return `<div class="gw-pips" id="${id}" role="slider" aria-valuemin="0" aria-valuemax="${steps - 1}" tabindex="0">${pips}</div>`;
 }
 
-/** @param {string} id @param {string} label @param {string} icon @param {boolean} [vol] */
-function audioTile(id, label, icon, vol = true) {
+/** @param {string} id @param {string} label @param {string} icon @param {string} [tone] @param {boolean} [vol] */
+function audioTile(id, label, icon, tone = "sfx", vol = true) {
   return (
-    `<div class="gw-tile-stack gw-tile-stack--audio">` +
+    `<div class="gw-audio-frame gw-audio-frame--${tone}">` +
       `<button type="button" id="${id}" class="gw-tile gw-tile--audio" aria-pressed="true">` +
         `<span class="gw-tile__icon">${icon}</span>` +
-        `<span class="gw-tile__badge" hidden aria-hidden="true">${iconStrike()}</span>` +
+        `<span class="gw-tile__badge" aria-hidden="true">${iconStrike()}</span>` +
         `<span class="gw-tile__label">${label}</span>` +
         `<span class="gw-tile__state" aria-hidden="true">On</span>` +
       `</button>` +
-      (vol ? pipRow(`${id}-vol`) : "") +
+      (vol
+        ? `<div class="gw-tile__voltrack" aria-hidden="false">${pipRow(`${id}-vol`)}</div>`
+        : "") +
     `</div>`
   );
 }
 
-/** @param {string} id @param {string} label @param {string} icon @param {string} preview */
-function cycleTile(id, label, icon, preview) {
+/** @param {string} id @param {string} label @param {string} icon @param {string} value */
+function cycleTile(id, label, icon, value) {
   return (
-    `<button type="button" id="${id}" class="gw-tile gw-tile--cycle">` +
+    `<button type="button" id="${id}" class="gw-tile gw-tile--cycle" aria-label="${label}">` +
       `<span class="gw-tile__icon">${icon}</span>` +
       `<span class="gw-tile__label">${label}</span>` +
-      `<span class="gw-tile__preview" aria-live="polite">${preview}</span>` +
-      `<span class="gw-tile__state"></span>` +
+      `<span class="gw-tile__preview" aria-live="polite">${value}</span>` +
     `</button>`
   );
 }
@@ -93,17 +95,17 @@ const SETTINGS_BODY =
     `<section class="settings__section">` +
       `<h3 class="settings__section-title">Sound</h3>` +
       `<div class="gw-tile-row gw-tile-row--4" role="group" aria-label="Audio">` +
-        audioTile("set-sfx-tile", "SFX", iconSpeaker()) +
-        audioTile("set-amb-tile", "Ambience", iconWaves()) +
-        audioTile("set-music-tile", "Music", iconMusic()) +
-        audioTile("set-mute-tile", "Mute all", iconMute(), false) +
+        audioTile("set-sfx-tile", "SFX", iconSpeaker(), "sfx") +
+        audioTile("set-amb-tile", "Ambience", iconWaves(), "amb") +
+        audioTile("set-music-tile", "Music", iconMusic(), "music") +
+        audioTile("set-mute-tile", "Mute", iconMute(), "mute", false) +
       `</div>` +
     `</section>` +
     `<section class="settings__section">` +
       `<h3 class="settings__section-title">Display</h3>` +
       `<div class="gw-tile-row gw-tile-row--3" role="group" aria-label="Display">` +
         cycleTile("set-notation-tile", "Numbers", iconHash(), NOTATION_SAMPLE.suffix) +
-        cycleTile("set-time-tile", "Time of day", iconSun(), TIME_LABEL.system) +
+        cycleTile("set-time-tile", "Time", iconSun(), TIME_LABEL.system) +
         cycleTile("set-motion-tile", "Motion", iconMotion(), MOTION_LABEL.system) +
       `</div>` +
     `</section>` +
@@ -138,6 +140,7 @@ function initSettingsShell() {
   });
   overlay.innerHTML = inner;
   document.body.appendChild(overlay);
+  headerIconEl = overlay.querySelector(".gamewin__icon");
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSettings(); });
   overlay.querySelector(".gamewin__close")?.addEventListener("click", closeSettings);
   document.addEventListener("keydown", (e) => {
@@ -210,6 +213,7 @@ export function initSettings(ctx) {
       shell: /** @type {HTMLElement} */ (modal),
       panes: /** @type {HTMLElement} */ (panes),
       settingsBody: root,
+      headerIcon: headerIconEl,
       onBack: () => {
         /** @type {HTMLButtonElement|null} */ (overlay?.querySelector(".gamewin__close"))?.focus();
       },
@@ -220,22 +224,22 @@ export function initSettings(ctx) {
 
   /** @param {import("../game/meta.js").Settings} s */
   function syncControls(s) {
-    setAudioTile("set-sfx-tile", s.sfx && !s.masterMute, s.sfxVolume);
-    setAudioTile("set-amb-tile", s.ambience && !s.masterMute, s.ambienceVolume);
-    setAudioTile("set-music-tile", s.music && !s.masterMute, s.musicVolume);
-    setAudioTile("set-mute-tile", !s.masterMute, null);
+    setAudioTile("set-sfx-tile", s.sfx && !s.masterMute);
+    setAudioTile("set-amb-tile", s.ambience && !s.masterMute);
+    setAudioTile("set-music-tile", s.music && !s.masterMute);
+    setMuteTile(s.masterMute);
     setPips("set-sfx-tile-vol", volStep(s.sfxVolume));
     setPips("set-amb-tile-vol", volStep(s.ambienceVolume));
     setPips("set-music-tile-vol", volStep(s.musicVolume));
-    updateCycleTile("set-notation-tile", NOTATION_LABEL[s.notation], NOTATION_SAMPLE[s.notation]);
+    updateCycleTile("set-notation-tile", NOTATION_SAMPLE[s.notation]);
     const timeEl = document.getElementById("set-time-tile");
     if (timeEl) {
       const iconWrap = timeEl.querySelector(".gw-tile__icon");
       if (iconWrap) iconWrap.innerHTML = timeIcon(s.timeOfDay);
-      updateCycleTile("set-time-tile", TIME_LABEL[s.timeOfDay], TIME_LABEL[s.timeOfDay]);
+      updateCycleTile("set-time-tile", TIME_LABEL[s.timeOfDay]);
     }
     const motionKey = s.reduceMotion === true ? "on" : s.reduceMotion === false ? "off" : "system";
-    updateCycleTile("set-motion-tile", MOTION_LABEL[motionKey], MOTION_LABEL[motionKey]);
+    updateCycleTile("set-motion-tile", MOTION_LABEL[motionKey]);
   }
 
   syncControls(ctx.meta.settings);
@@ -257,17 +261,33 @@ function stepVol(step) {
 /**
  * @param {string} tileId
  * @param {boolean} on
- * @param {number|null} vol
  */
-function setAudioTile(tileId, on, vol) {
+function setAudioTile(tileId, on) {
   const el = document.getElementById(tileId);
   if (!el) return;
   el.setAttribute("aria-pressed", on ? "true" : "false");
   el.classList.toggle("gw-tile--off", !on);
+  el.classList.toggle("gw-tile--on", on);
   const state = el.querySelector(".gw-tile__state");
   if (state) state.textContent = on ? "On" : "Off";
   const badge = /** @type {HTMLElement|null} */ (el.querySelector(".gw-tile__badge"));
   if (badge) badge.hidden = on;
+  el.closest(".gw-audio-frame")?.classList.toggle("gw-audio-frame--off", !on);
+}
+
+/** @param {boolean} masterMute */
+function setMuteTile(masterMute) {
+  const el = document.getElementById("set-mute-tile");
+  if (!el) return;
+  el.setAttribute("aria-pressed", masterMute ? "true" : "false");
+  el.classList.toggle("gw-tile--mute-active", masterMute);
+  el.classList.toggle("gw-tile--off", !masterMute);
+  el.classList.toggle("gw-tile--on", masterMute);
+  const state = el.querySelector(".gw-tile__state");
+  if (state) state.textContent = masterMute ? "On" : "Off";
+  const badge = /** @type {HTMLElement|null} */ (el.querySelector(".gw-tile__badge"));
+  if (badge) badge.hidden = true;
+  el.closest(".gw-audio-frame")?.classList.toggle("gw-audio-frame--off", !masterMute);
 }
 
 /** @param {string} pipId @param {number} step */
@@ -280,18 +300,12 @@ function setPips(pipId, step) {
   pips.forEach((p, i) => p.classList.toggle("is-on", i <= step));
 }
 
-/**
- * @param {string} id
- * @param {string} stateLabel
- * @param {string} previewText
- */
-function updateCycleTile(id, stateLabel, previewText) {
+/** @param {string} id @param {string} value */
+function updateCycleTile(id, value) {
   const el = document.getElementById(id);
   if (!el) return;
-  const state = el.querySelector(".gw-tile__state");
-  if (state) state.textContent = stateLabel;
   const preview = el.querySelector(".gw-tile__preview");
-  if (preview) preview.textContent = previewText;
+  if (preview) preview.textContent = value;
 }
 
 /** @param {"system"|"day"|"night"} mode */
@@ -366,11 +380,13 @@ function bindSettingsControls(settings, sync) {
   });
 
   document.getElementById("set-paste-toggle")?.addEventListener("click", () => {
-    const panel = document.getElementById("set-import-panel");
+    const panel = /** @type {HTMLElement|null} */ (document.getElementById("set-import-panel"));
     if (!panel) return;
-    const open = panel.hidden;
-    panel.hidden = !open;
-    if (open) document.getElementById("set-import")?.focus();
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    panel.classList.toggle("is-open", opening);
+    document.getElementById("set-paste-toggle")?.setAttribute("aria-expanded", opening ? "true" : "false");
+    if (opening) /** @type {HTMLElement|null} */ (document.getElementById("set-import"))?.focus();
   });
 
   document.getElementById("set-reset")?.addEventListener("click", () => {
