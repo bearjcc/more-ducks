@@ -70,6 +70,7 @@
   --counter-coin-ink: color-mix(in oklch, var(--bread-900) 55%, var(--reeds-800));
   --coin: var(--currency-bread);
   --error: color-mix(in oklch, var(--bread-600) 55%, var(--reeds-700));
+  --bad: color-mix(in oklch, var(--reeds-900) 38%, var(--bread-700) 62%);
   --backlog: color-mix(in oklch, var(--bread-500) 70%, var(--reeds-700));
 
   --water: color-mix(in oklch, var(--water-500) 55%, var(--grass-500));
@@ -1581,7 +1582,8 @@ body[data-panel-open] .tab-panels {
   flex-direction: column;
   overflow: hidden;
   text-align: left;
-  animation: modal-enter 0.28s var(--ease-out-expo);
+  pointer-events: auto;
+  animation: modal-enter 0.28s var(--ease-out-expo) forwards;
 }
 .gamewin.is-exiting { animation: modal-exit 0.26s var(--ease-out-expo) forwards; }
 
@@ -1589,13 +1591,35 @@ body[data-panel-open] .tab-panels {
   from { opacity: 0.92; transform: scale(0.97) translateY(6px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
+[data-time="day"] .gamewin,
+:root:not([data-time="night"]) .gamewin {
+  --gw-ink: color-mix(in oklch, var(--reeds-800) 92%, var(--neutral));
+  --gw-muted: color-mix(in oklch, var(--reeds-700) 78%, var(--neutral));
+  --gw-bar: color-mix(in oklch, var(--tab-bg) 88%, var(--highlight));
+  --gw-inset: color-mix(
+    in oklch,
+    color-mix(in oklch, var(--bread-200) 40%, var(--water-300)) 38%,
+    var(--highlight)
+  );
+  --gw-btn: color-mix(in oklch, var(--highlight) 55%, var(--water-300) 45%);
+  --gw-tile: color-mix(in oklch, var(--highlight) 62%, var(--bread-200) 38%);
+  background: var(--highlight);
+}
 [data-time="night"] .gamewin {
-  --gw-ink: var(--on-primary);
-  --gw-bar: color-mix(in oklch, var(--grass-700) 52%, var(--water-600));
-  --gw-inset: color-mix(in oklch, var(--water-700) 62%, var(--grass-800) 38%);
-  --gw-btn: color-mix(in oklch, var(--water-600) 58%, var(--grass-800) 42%);
-  --gw-tile: color-mix(in oklch, var(--water-600) 50%, var(--grass-800) 50%);
-  background: color-mix(in oklch, var(--water-600) 82%, var(--grass-800));
+  --gw-ink: var(--highlight);
+  --gw-muted: color-mix(in oklch, var(--highlight) 82%, var(--sunlight-400));
+  --gw-bar: color-mix(in oklch, var(--grass-800) 45%, var(--water-700));
+  --gw-inset: color-mix(in oklch, var(--water-800) 55%, var(--grass-900) 45%);
+  --gw-btn: color-mix(in oklch, var(--water-700) 52%, var(--grass-900));
+  --gw-tile: color-mix(in oklch, var(--water-700) 48%, var(--grass-900) 52%);
+  background: color-mix(in oklch, var(--water-700) 88%, var(--grass-900));
+  --gw-danger: color-mix(in oklch, var(--mask-opaque) 42%, var(--bread-700) 58%);
+}
+[data-time="night"] .gw-action--danger,
+[data-time="night"] .gamewin__btn--danger {
+  background: var(--gw-danger);
+  border-color: color-mix(in oklch, var(--mask-opaque) 50%, var(--bread-800));
+  box-shadow: 0 4px 0 color-mix(in oklch, var(--mask-opaque) 65%, var(--reeds-900));
 }
 @keyframes modal-exit {
   from { opacity: 1; transform: scale(1) translateY(0); }
@@ -1706,11 +1730,14 @@ body[data-panel-open] .tab-panels {
 
 .gamewin__body {
   margin: 0 0 12px;
-  color: color-mix(in oklch, var(--gw-ink) 82%, var(--muted));
+  color: var(--gw-muted);
   font-size: 0.88rem;
   line-height: 1.45;
 }
-.gamewin__body--story { padding: 4px 6px 0; }
+.gamewin__body--story {
+  padding: 4px 6px 0;
+  color: var(--gw-ink);
+}
 
 .gamewin__actions {
   display: flex;
@@ -1745,14 +1772,14 @@ body[data-panel-open] .tab-panels {
   border-color: color-mix(in oklch, var(--accent) 55%, var(--shadow-sm));
 }
 .gamewin__btn--danger {
-  background: var(--bad);
-  color: var(--bad-ink);
-  border-color: color-mix(in oklch, var(--bad) 70%, var(--reeds-900));
-  box-shadow: 0 4px 0 color-mix(in oklch, var(--bad) 55%, var(--reeds-900));
+  background: color-mix(in oklch, var(--reeds-900) 68%, var(--bread-700) 32%);
+  color: var(--highlight);
+  border-color: color-mix(in oklch, var(--reeds-900) 55%, var(--bread-800));
+  box-shadow: 0 4px 0 color-mix(in oklch, var(--reeds-900) 75%, var(--bread-900));
 }
 .gamewin--welcome .gamewin__btn--primary {
-  background: var(--primary);
-  color: var(--primary-ink);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 .modal__btn { width: 100%; max-width: 16rem; margin: 0 auto; }
 
@@ -1765,8 +1792,8 @@ body[data-panel-open] .tab-panels {
   padding: 8px 12px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: color-mix(in oklch, var(--gw-ink) 78%, var(--muted));
-  background: color-mix(in oklch, var(--gw-bar) 72%, var(--highlight));
+  color: var(--gw-muted);
+  background: var(--gw-bar);
   border-top: 2px solid var(--gw-inset-border);
 }
 .gamewin__foot-build { display: none; }
@@ -1817,7 +1844,7 @@ body[data-panel-open] .tab-panels {
   font-size: 0.92rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: var(--gw-ink, var(--ink));
+  color: var(--gw-ink);
 }
 
 .gw-tile-row {
@@ -1839,13 +1866,10 @@ body[data-panel-open] .tab-panels {
   box-shadow: 0 4px 0 var(--neutral-a14);
   overflow: hidden;
 }
-.gw-audio-frame--off {
-  opacity: 0.94;
-  filter: saturate(0.35);
-}
 .gw-audio-frame--off .gw-tile__icon {
   background: color-mix(in oklch, var(--neutral-a14) 70%, var(--gw-inset));
-  color: color-mix(in oklch, var(--gw-ink, var(--ink)) 45%, var(--muted));
+  color: color-mix(in oklch, var(--gw-muted) 85%, var(--gw-ink));
+  filter: saturate(0.2) brightness(0.92);
 }
 .gw-audio-frame .gw-tile {
   border: none;
@@ -1870,16 +1894,16 @@ body[data-panel-open] .tab-panels {
   box-shadow: 0 4px 0 var(--neutral-a14);
   cursor: pointer;
   font: inherit;
-  color: var(--gw-ink, var(--ink));
+  color: var(--gw-ink);
   min-height: 5.2rem;
 }
 .gw-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--neutral-a12); }
 .gw-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .gw-tile--on .gw-tile__icon { color: var(--gw-ink, var(--ink)); }
-.gw-tile--off { filter: saturate(0.4); }
 .gw-tile--off .gw-tile__icon {
   background: color-mix(in oklch, var(--neutral-a14) 65%, var(--gw-inset));
-  color: color-mix(in oklch, var(--gw-ink, var(--ink)) 40%, var(--muted));
+  color: color-mix(in oklch, var(--gw-muted) 85%, var(--gw-ink));
+  filter: saturate(0.2) brightness(0.92);
 }
 .gw-tile--off .gw-tile__badge { display: block; }
 .gw-tile--on .gw-tile__badge { display: none; }
@@ -1900,7 +1924,7 @@ body[data-panel-open] .tab-panels {
   height: 40px;
   border-radius: 10px;
   background: color-mix(in oklch, var(--sunlight-500) 35%, var(--accent) 30%);
-  color: var(--gw-ink, var(--ink));
+  color: var(--gw-ink);
   box-shadow: inset 0 -2px 0 var(--neutral-a10);
 }
 .gw-audio-frame--sfx.gw-audio-frame:not(.gw-audio-frame--off) .gw-tile__icon {
@@ -1930,18 +1954,18 @@ body[data-panel-open] .tab-panels {
   font-weight: 700;
   text-align: center;
   line-height: 1.15;
-  color: var(--gw-ink, var(--ink));
+  color: var(--gw-ink);
 }
 .gw-tile__state {
   font-size: 0.62rem;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--gw-muted);
 }
 .gw-tile__preview {
   font-size: 0.72rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--gw-ink, var(--ink));
+  color: var(--gw-ink);
 }
 
 .gw-pips {
@@ -1986,7 +2010,7 @@ body[data-panel-open] .tab-panels {
   cursor: pointer;
   font: inherit;
   font-weight: 600;
-  color: var(--gw-ink, var(--ink));
+  color: var(--gw-ink);
   text-align: left;
 }
 .gw-action:active { transform: translateY(2px); box-shadow: none; }
@@ -1995,10 +2019,10 @@ body[data-panel-open] .tab-panels {
 .gw-action__icon .gw-icon { width: 20px; height: 20px; }
 .gw-action__label { font-size: 0.8rem; line-height: 1.2; color: inherit; }
 .gw-action--danger {
-  background: var(--bad);
-  border-color: color-mix(in oklch, var(--bad) 65%, var(--reeds-900));
-  color: var(--bad-ink);
-  box-shadow: 0 4px 0 color-mix(in oklch, var(--bad) 50%, var(--reeds-900));
+  background: color-mix(in oklch, var(--reeds-900) 68%, var(--bread-700) 32%);
+  border-color: color-mix(in oklch, var(--reeds-900) 55%, var(--bread-800));
+  color: var(--highlight);
+  box-shadow: 0 4px 0 color-mix(in oklch, var(--reeds-900) 75%, var(--bread-900));
 }
 .gw-action--danger .gw-action__icon { color: inherit; }
 
