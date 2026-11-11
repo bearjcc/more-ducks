@@ -5,10 +5,7 @@ export const CREDITS_BLOCKS = [
   {
     heading: "Music",
     lines: [
-      "Pond Bed — original calm loop composed for More Ducks (CC0, in-repo).",
-      "Direction: Kevin MacLeod (incompetech.com, CC BY 4.0). When a MacLeod track is bundled, use:",
-      '"Music: [Title] by Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0."',
-      "Licence: https://creativecommons.org/licenses/by/4.0/",
+      '"Thinking Music" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 License, http://creativecommons.org/licenses/by/4.0/.',
     ],
   },
   {
@@ -21,8 +18,10 @@ export const CREDITS_BLOCKS = [
   {
     heading: "Ambience",
     lines: [
-      "Procedural pond beds (day/night) rendered in-repo (CC0).",
-      "Freesound references (not redistributed): parret 481883, Nirtana 152675 (CC0).",
+      '"Ducks, mostly Mallard, High Park, Toronto (2012)" by TRP — CC0 1.0 — https://freesound.org/people/TRP/sounds/616827/',
+      '"night at pond edit 2012" by Nirtana — CC0 1.0 — https://freesound.org/people/Nirtana/sounds/152675/',
+      '"Night Ambience" by parret — CC0 1.0 — https://freesound.org/people/parret/sounds/481883/',
+      '"Hundreds of ducks" by spurioustransients — CC0 1.0 — https://freesound.org/people/spurioustransients/sounds/591702/ (optional late-act layer, heavily ducked).',
     ],
   },
   {

@@ -44,6 +44,10 @@ let musicBuf = null;
 let ambDayBuf = null;
 /** @type {AudioBuffer|null} */
 let ambNightBuf = null;
+/** @type {AudioBuffer|null} */
+let frenzyBuf = null;
+/** @type {ReturnType<typeof setTimeout>|null} */
+let frenzyTimer = null;
 
 const ASSET_BASE = new URL("../../assets/audio/", import.meta.url);
 
@@ -154,6 +158,9 @@ async function loadBeds() {
   musicBuf = await fetchDecode(pickExt("music/thinking-music"));
   ambDayBuf = await fetchDecode(pickExt("ambience/pond-day"));
   ambNightBuf = await fetchDecode(pickExt("ambience/pond-night"));
+  try {
+    frenzyBuf = await fetchDecode(pickExt("ambience/ducks-frenzy"));
+  } catch { /* optional */ }
 }
 
 function preferOgg() {
@@ -200,6 +207,35 @@ function updateBeds() {
   musicBus.gain.setTargetAtTime(musicTarget, ctx.currentTime, 0.3);
   startAmbienceLoop();
   startMusicLoop();
+  syncFrenzySchedule();
+}
+
+function playFrenzyColour() {
+  if (!ctx || !ambBus || !frenzyBuf || hidden || currentAct < 4) return;
+  if (settings?.masterMute || !settings?.ambience) return;
+  const src = ctx.createBufferSource();
+  src.buffer = frenzyBuf;
+  const g = ctx.createGain();
+  const base = (settings.ambienceVolume ?? 0.4) * ambienceLevelForAct(currentAct);
+  g.gain.value = base * 0.14;
+  src.connect(g);
+  g.connect(ambBus);
+  src.start();
+}
+
+function syncFrenzySchedule() {
+  if (frenzyTimer) {
+    clearTimeout(frenzyTimer);
+    frenzyTimer = null;
+  }
+  if (!frenzyBuf || currentAct < 4 || hidden) return;
+  const plan = () => {
+    frenzyTimer = setTimeout(() => {
+      playFrenzyColour();
+      plan();
+    }, 55_000 + Math.random() * 45_000);
+  };
+  plan();
 }
 
 function startLoop(which, buf, bus, /** @type {AudioBufferSourceNode|null} */ prev) {
@@ -239,6 +275,7 @@ export function onActChange(act) {
   currentAct = act;
   if (ctx) bakeQuackBank(ctx, act);
   updateBeds();
+  syncFrenzySchedule();
 }
 
 export function onTimeOfDayChange() {
@@ -252,6 +289,10 @@ export function onVisibilityHidden(isHidden) {
   hidden = isHidden;
   if (!ctx) return;
   if (isHidden) {
+    if (frenzyTimer) {
+      clearTimeout(frenzyTimer);
+      frenzyTimer = null;
+    }
     try { ctx.suspend(); } catch { /* */ }
   } else {
     ctx.resume().catch(() => {});

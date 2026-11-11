@@ -58,31 +58,4 @@ for (const name of UI_FILES) {
   console.log("ui", stem);
 }
 
-const musicOgg = path.join(MUSIC, "thinking-music.ogg");
-const musicM4a = path.join(MUSIC, "thinking-music.m4a");
-const ambDayOgg = path.join(AMB, "pond-day.ogg");
-const ambDayM4a = path.join(AMB, "pond-day.m4a");
-const ambNightOgg = path.join(AMB, "pond-night.ogg");
-const ambNightM4a = path.join(AMB, "pond-night.m4a");
-
-// Calm loop: soft pentatonic pads (original render; replace with incompetech download when available).
-execSync(
-  `ffmpeg -y -hide_banner -loglevel error -f lavfi -i "sine=frequency=196:duration=48" -f lavfi -i "sine=frequency=294:duration=48" -f lavfi -i "sine=frequency=392:duration=48" -filter_complex "[0:a][1:a][2:a]amix=inputs=3:duration=first:dropout_transition=0,volume=0.08,afade=t=in:st=0:d=2,afade=t=out:st=46:d=2" -c:a libopus -b:a 64k ${JSON.stringify(musicOgg)}`,
-);
-execSync(
-  `ffmpeg -y -hide_banner -loglevel error -i ${JSON.stringify(musicOgg)} -c:a aac -b:a 80k ${JSON.stringify(musicM4a)}`,
-);
-
-// Short ambience beds (bandpassed noise loops).
-const dayFilter = "anoisesrc=color=pink:duration=32,asetrate=44100,lowpass=f=700,highpass=f=90,volume=0.35";
-const nightFilter = "anoisesrc=color=brown:duration=32,asetrate=44100,lowpass=f=500,highpass=f=120,volume=0.28";
-execSync(
-  `ffmpeg -y -hide_banner -loglevel error -f lavfi -i ${JSON.stringify(dayFilter)} -af "afade=t=in:st=0:d=3,afade=t=out:st=29:d=3" -c:a libopus -b:a 48k ${JSON.stringify(ambDayOgg)}`,
-);
-execSync(`ffmpeg -y -hide_banner -loglevel error -i ${JSON.stringify(ambDayOgg)} -c:a aac -b:a 64k ${JSON.stringify(ambDayM4a)}`);
-execSync(
-  `ffmpeg -y -hide_banner -loglevel error -f lavfi -i ${JSON.stringify(nightFilter)} -af "afade=t=in:st=0:d=3,afade=t=out:st=29:d=3" -c:a libopus -b:a 48k ${JSON.stringify(ambNightOgg)}`,
-);
-execSync(`ffmpeg -y -hide_banner -loglevel error -i ${JSON.stringify(ambNightOgg)} -c:a aac -b:a 64k ${JSON.stringify(ambNightM4a)}`);
-
-console.log("done");
+console.log("done (music/ambience: run scripts/process-real-audio.mjs)");

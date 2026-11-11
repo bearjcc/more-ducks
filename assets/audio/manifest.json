@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "assets": [
     { "id": "ui/click_001", "files": ["ui/click_001.ogg", "ui/click_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
     { "id": "ui/click_002", "files": ["ui/click_002.ogg", "ui/click_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
@@ -15,9 +15,30 @@
     { "id": "ui/switch_002", "files": ["ui/switch_002.ogg", "ui/switch_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
     { "id": "ui/glitch_001", "files": ["ui/glitch_001.ogg", "ui/glitch_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
     { "id": "ui/tick_002", "files": ["ui/tick_002.ogg", "ui/tick_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
-    { "id": "music/thinking-music", "files": ["music/thinking-music.ogg", "music/thinking-music.m4a"], "license": "CC0-1.0", "credit": "Pond Bed — original in-repo loop (Kevin MacLeod CC-BY direction; see CREDITS)" },
-    { "id": "ambience/pond-day", "files": ["ambience/pond-day.ogg", "ambience/pond-day.m4a"], "license": "CC0-1.0", "credit": "Procedural pond bed (in-repo)" },
-    { "id": "ambience/pond-night", "files": ["ambience/pond-night.ogg", "ambience/pond-night.m4a"], "license": "CC0-1.0", "credit": "Procedural pond night bed (in-repo)" },
+    {
+      "id": "music/thinking-music",
+      "files": ["music/thinking-music.ogg", "music/thinking-music.m4a"],
+      "license": "CC-BY-4.0",
+      "credit": "\"Thinking Music\" Kevin MacLeod (incompetech.com)"
+    },
+    {
+      "id": "ambience/pond-day",
+      "files": ["ambience/pond-day.ogg", "ambience/pond-day.m4a"],
+      "license": "CC0-1.0",
+      "credit": "TRP — Ducks, mostly Mallard, High Park, Toronto (2012) — freesound.org/people/TRP/sounds/616827/"
+    },
+    {
+      "id": "ambience/pond-night",
+      "files": ["ambience/pond-night.ogg", "ambience/pond-night.m4a"],
+      "license": "CC0-1.0",
+      "credit": "Nirtana (152675) + parret (481883) night pond beds"
+    },
+    {
+      "id": "ambience/ducks-frenzy",
+      "files": ["ambience/ducks-frenzy.ogg", "ambience/ducks-frenzy.m4a"],
+      "license": "CC0-1.0",
+      "credit": "spurioustransients — Hundreds of ducks (591702), optional late-act layer"
+    },
     { "id": "code/duck-synth", "files": [], "license": "MIT", "credit": "CELPHASE duck-pond — vendor/duck-pond/synth.rs (ported to src/audio/duckSynth.js)" }
   ]
 }

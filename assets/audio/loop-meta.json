@@ -1,0 +1,58 @@
+{
+  "day": {
+    "start": 55.5,
+    "score": 0.06484312641007514,
+    "maxRms": 0.018019187854287605,
+    "meanRms": 0.005392781423606161,
+    "peaks": 0,
+    "len": 38,
+    "src": "fs-616827.mp3",
+    "why": "Lowest RMS/onset score in 38s window; water without prominent duck calls."
+  },
+  "night": {
+    "primary": {
+      "start": 76.5,
+      "score": 0.09820696104385879,
+      "maxRms": 0.020469880472014236,
+      "meanRms": 0.01839865981390804,
+      "peaks": 0,
+      "len": 38,
+      "src": "fs-152675.mp3",
+      "source": "Nirtana fs-152675"
+    },
+    "under": {
+      "start": 294,
+      "score": 0.02969985812866752,
+      "maxRms": 0.006266870200282965,
+      "meanRms": 0.005449623763909313,
+      "peaks": 0,
+      "len": 38,
+      "src": "fs-481883.mp3",
+      "source": "parret fs-481883"
+    },
+    "why": "Quiet window on Nirtana night pond, mixed under with softer parret night air."
+  },
+  "frenzy": {
+    "start": 73,
+    "score": 0.4621030711389226,
+    "maxRms": 0.05595202114695234,
+    "meanRms": 0.017123503849032808,
+    "peaks": 13,
+    "len": 12,
+    "src": "fs-591702.mp3",
+    "why": "12s excerpt for optional late-act layer; ducked in engine, not looped as bed."
+  },
+  "music": {
+    "start": 10.5,
+    "len": 88,
+    "seamDelta": 0.0015346024791063131,
+    "score": 38.37130300724076,
+    "maxRms": 0.22521339476319843,
+    "meanRms": 0.07575332989682139,
+    "peaks": 255,
+    "src": "thinking-music.mp3",
+    "loop": "3s symmetric fades + loudnorm −18 LUFS; seam ΔRMS=0.0015",
+    "role": "music",
+    "why": "Thinking Music — calm section with matched head/tail levels for gapless Web Audio loop."
+  }
+}
