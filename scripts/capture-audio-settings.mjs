@@ -42,16 +42,6 @@ await page.evaluate(() => {
 await page.waitForTimeout(200);
 await snap("ui-audio-settings-390-night.png");
 
-await page.click("details.settings__credits summary");
-await page.waitForTimeout(150);
-await snap("ui-audio-credits-390-night.png");
-
-await page.evaluate(() => {
-  document.body.dataset.time = "day";
-});
-await page.waitForTimeout(150);
-await snap("ui-audio-credits-390-day.png");
-
 await browser.close();
 server.kill();
 console.log("wrote audio settings screenshots to", OUT);

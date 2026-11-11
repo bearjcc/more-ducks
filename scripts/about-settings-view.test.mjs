@@ -46,7 +46,7 @@ try {
         settingsDisplay: cs(settings),
         aboutDisplay: cs(about),
         soundVisible: Boolean(
-          settings.querySelector("#set-sfx")?.offsetParent && !settings.hidden && cs(settings) !== "none",
+          settings.querySelector("#set-sfx-tile")?.offsetParent && !settings.hidden && cs(settings) !== "none",
         ),
         aboutHeroVisible: Boolean(
           about.querySelector(".about__title")?.offsetParent && !about.hidden && cs(about) !== "none",

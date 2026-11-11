@@ -1,13 +1,34 @@
 // @ts-check
-// aislop-ignore-file security/innerhtml -- audited: settings templates are static option lists; no user data interpolated.
+// aislop-ignore-file security/innerhtml -- audited: settings templates are static; no user data interpolated.
 import { setNotation } from "../game/format.js";
 import { mergeSettings } from "../game/meta.js";
-import { exportSaveText, importSaveText } from "../game/save.js";
+import { exportSaveText, importSaveText, clearSave } from "../game/save.js";
 import { setBuyMode } from "./shop.js";
 import { setReduceMotionPref } from "./render.js";
 import { applyAudioSettings } from "../game/sfx.js";
 import { applyTimeOfDay } from "./theme.js";
 import { mountAboutPanel, showAbout } from "./about.js";
+import { gameWindowMarkup } from "./gameWindow.js";
+import { showConfirm } from "./confirm.js";
+import {
+  iconGear,
+  iconSpeaker,
+  iconMusic,
+  iconWaves,
+  iconMute,
+  iconSun,
+  iconMoon,
+  iconAuto,
+  iconHash,
+  iconMotion,
+  iconInfo,
+  iconCopy,
+  iconDownload,
+  iconPaste,
+  iconTrash,
+  iconStrike,
+} from "./icons.js";
+
 /** @type {import("../game/meta.js").Settings} */
 let current = mergeSettings();
 
@@ -15,24 +36,110 @@ let current = mergeSettings();
 /** @type {HTMLButtonElement|null} */ let gearBtn = null;
 let settingsOpen = false;
 
+const NOTATION_LABEL = { suffix: "Suffix", scientific: "Scientific" };
+const NOTATION_SAMPLE = { suffix: "1.5aa", scientific: "1.5e15" };
+const TIME_ORDER = /** @type {const} */ (["system", "day", "night"]);
+const TIME_LABEL = { system: "System", day: "Day", night: "Night" };
+const MOTION_ORDER = /** @type {const} */ (["system", "on", "off"]);
+const MOTION_LABEL = { system: "System", on: "Reduced", off: "Full motion" };
+
+/** @param {number} steps @returns {string} */
+function pipRow(id, steps = 5) {
+  const pips = Array.from({ length: steps }, (_, i) =>
+    `<button type="button" class="gw-pip" data-step="${i}" aria-label="Level ${i + 1} of ${steps}"></button>`,
+  ).join("");
+  return `<div class="gw-pips" id="${id}" role="slider" aria-valuemin="0" aria-valuemax="${steps - 1}" tabindex="0">${pips}</div>`;
+}
+
+/** @param {string} id @param {string} label @param {string} icon @param {boolean} [vol] */
+function audioTile(id, label, icon, vol = true) {
+  return (
+    `<div class="gw-tile-stack gw-tile-stack--audio">` +
+      `<button type="button" id="${id}" class="gw-tile gw-tile--audio" aria-pressed="true">` +
+        `<span class="gw-tile__icon">${icon}</span>` +
+        `<span class="gw-tile__badge" hidden aria-hidden="true">${iconStrike()}</span>` +
+        `<span class="gw-tile__label">${label}</span>` +
+        `<span class="gw-tile__state" aria-hidden="true">On</span>` +
+      `</button>` +
+      (vol ? pipRow(`${id}-vol`) : "") +
+    `</div>`
+  );
+}
+
+/** @param {string} id @param {string} label @param {string} icon @param {string} preview */
+function cycleTile(id, label, icon, preview) {
+  return (
+    `<button type="button" id="${id}" class="gw-tile gw-tile--cycle">` +
+      `<span class="gw-tile__icon">${icon}</span>` +
+      `<span class="gw-tile__label">${label}</span>` +
+      `<span class="gw-tile__preview" aria-live="polite">${preview}</span>` +
+      `<span class="gw-tile__state"></span>` +
+    `</button>`
+  );
+}
+
+/** @param {string} id @param {string} label @param {string} icon @param {string} [extraClass] */
+function actionBtn(id, label, icon, extraClass = "") {
+  return (
+    `<button type="button" id="${id}" class="gw-action ${extraClass}">` +
+      `<span class="gw-action__icon">${icon}</span>` +
+      `<span class="gw-action__label">${label}</span>` +
+    `</button>`
+  );
+}
+
+const SETTINGS_BODY =
+  `<div id="settings-root" class="settings settings-modal__body">` +
+    `<section class="settings__section">` +
+      `<h3 class="settings__section-title">Sound</h3>` +
+      `<div class="gw-tile-row gw-tile-row--4" role="group" aria-label="Audio">` +
+        audioTile("set-sfx-tile", "SFX", iconSpeaker()) +
+        audioTile("set-amb-tile", "Ambience", iconWaves()) +
+        audioTile("set-music-tile", "Music", iconMusic()) +
+        audioTile("set-mute-tile", "Mute all", iconMute(), false) +
+      `</div>` +
+    `</section>` +
+    `<section class="settings__section">` +
+      `<h3 class="settings__section-title">Display</h3>` +
+      `<div class="gw-tile-row gw-tile-row--3" role="group" aria-label="Display">` +
+        cycleTile("set-notation-tile", "Numbers", iconHash(), NOTATION_SAMPLE.suffix) +
+        cycleTile("set-time-tile", "Time of day", iconSun(), TIME_LABEL.system) +
+        cycleTile("set-motion-tile", "Motion", iconMotion(), MOTION_LABEL.system) +
+      `</div>` +
+    `</section>` +
+    `<section class="settings__section">` +
+      `<h3 class="settings__section-title">Data</h3>` +
+      `<div class="gw-action-grid">` +
+        actionBtn("set-about", "About", iconInfo()) +
+        actionBtn("set-export", "Copy save", iconCopy()) +
+        actionBtn("set-download", "Download save", iconDownload()) +
+        actionBtn("set-paste-toggle", "Paste save", iconPaste()) +
+        actionBtn("set-reset", "Reset save", iconTrash(), "gw-action--danger") +
+      `</div>` +
+      `<div id="set-import-panel" class="settings__import" hidden>` +
+        `<textarea id="set-import" class="settings__textarea" rows="4" placeholder="Paste save JSON here…"></textarea>` +
+        `<button id="set-import-btn" type="button" class="gamewin__btn gamewin__btn--primary settings__import-btn">Import save</button>` +
+      `</div>` +
+      `<p id="set-status" class="settings__status" role="status"></p>` +
+    `</section>` +
+  `</div>`;
+
 function initSettingsShell() {
   overlay = document.createElement("div");
   overlay.className = "modal-overlay settings-overlay";
   overlay.hidden = true;
-  overlay.innerHTML =
-    `<div class="settings-modal modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">` +
-      `<div class="settings-modal__head">` +
-        `<button id="settings-about-back" class="settings-modal__back" type="button" hidden aria-label="Back to settings">←</button>` +
-        `<h2 id="settings-modal-title" class="settings-modal__title">Settings</h2>` +
-        `<button class="settings-modal__close" type="button" aria-label="Close settings">×</button>` +
-      `</div>` +
-      `<div class="settings-modal__panes">` +
-        `<div id="settings-root" class="settings settings-modal__body"></div>` +
-      `</div>` +
-    `</div>`;
+  const inner = gameWindowMarkup({
+    title: "Settings",
+    iconHtml: iconGear(),
+    labelledBy: "settings-modal-title",
+    extraClass: "settings-modal",
+    bodySlot:
+      `<div class="settings-modal__panes">` + SETTINGS_BODY + `</div>`,
+  });
+  overlay.innerHTML = inner;
   document.body.appendChild(overlay);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSettings(); });
-  overlay.querySelector(".settings-modal__close")?.addEventListener("click", closeSettings);
+  overlay.querySelector(".gamewin__close")?.addEventListener("click", closeSettings);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && settingsOpen) closeSettings();
   });
@@ -50,7 +157,7 @@ export function openSettings() {
   settingsOpen = true;
   overlay.hidden = false;
   gearBtn?.classList.add("is-active");
-  /** @type {HTMLButtonElement|null} */ (overlay.querySelector(".settings-modal__close"))?.focus();
+  /** @type {HTMLButtonElement|null} */ (overlay.querySelector(".gamewin__close"))?.focus();
 }
 
 export function closeSettings() {
@@ -84,79 +191,6 @@ export function getSettings() {
   return current;
 }
 
-const SETTINGS_HTML =
-  `<section class="settings__block">` +
-    `<h2 class="settings__heading">Display</h2>` +
-    `<label class="settings__row">` +
-      `<span>Number notation</span>` +
-      `<select id="set-notation" class="settings__select">` +
-        `<option value="suffix">Suffix (1.5M, 1.5aa)</option>` +
-        `<option value="scientific">Scientific (1.5e6)</option>` +
-      `</select>` +
-    `</label>` +
-    `<label class="settings__row">` +
-      `<span>Time of day</span>` +
-      `<select id="set-time" class="settings__select">` +
-        `<option value="system">System default</option>` +
-        `<option value="day">Day</option>` +
-        `<option value="night">Night</option>` +
-      `</select>` +
-    `</label>` +
-    `<label class="settings__row">` +
-      `<span>Reduce motion</span>` +
-      `<select id="set-motion" class="settings__select">` +
-        `<option value="system">System default</option>` +
-        `<option value="on">Always reduce</option>` +
-        `<option value="off">Allow animations</option>` +
-      `</select>` +
-    `</label>` +
-  `</section>` +
-  `<section class="settings__block">` +
-    `<h2 class="settings__heading">Sound</h2>` +
-    `<label class="settings__row settings__row--check">` +
-      `<input id="set-mute" type="checkbox" />` +
-      `<span>Mute all audio</span>` +
-    `</label>` +
-    `<label class="settings__row settings__row--check">` +
-      `<input id="set-sfx" type="checkbox" />` +
-      `<span>Sound effects</span>` +
-    `</label>` +
-    `<label class="settings__row">` +
-      `<span>SFX volume</span>` +
-      `<input id="set-sfx-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
-    `</label>` +
-    `<label class="settings__row settings__row--check">` +
-      `<input id="set-ambience" type="checkbox" />` +
-      `<span>Ambience</span>` +
-    `</label>` +
-    `<label class="settings__row">` +
-      `<span>Ambience volume</span>` +
-      `<input id="set-amb-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
-    `</label>` +
-    `<label class="settings__row settings__row--check">` +
-      `<input id="set-music" type="checkbox" />` +
-      `<span>Music</span>` +
-    `</label>` +
-    `<label class="settings__row">` +
-      `<span>Music volume</span>` +
-      `<input id="set-music-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
-    `</label>` +
-  `</section>` +
-  `<section class="settings__block">` +
-    `<button id="set-about" type="button" class="settings__btn settings__nav-btn">About</button>` +
-  `</section>` +
-  `<section class="settings__block">` +
-    `<h2 class="settings__heading">Save data</h2>` +
-    `<p class="settings__hint">Copy your save to another device, or paste one in to restore.</p>` +
-    `<div class="settings__actions">` +
-      `<button id="set-export" class="settings__btn" type="button">Copy save to clipboard</button>` +
-      `<button id="set-download" class="settings__btn" type="button">Download save</button>` +
-    `</div>` +
-    `<textarea id="set-import" class="settings__textarea" rows="4" placeholder="Paste save JSON here…"></textarea>` +
-    `<button id="set-import-btn" class="settings__btn settings__btn--primary" type="button">Import save</button>` +
-    `<p id="set-status" class="settings__status" role="status"></p>` +
-  `</section>`;
-
 /**
  * @param {{
  *   meta: import("../game/meta.js").Meta,
@@ -168,20 +202,8 @@ export function initSettings(ctx) {
   initSettingsShell();
   const root = document.getElementById("settings-root");
   if (!root) return;
-  root.innerHTML = SETTINGS_HTML;
 
-  const notationEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-notation"));
-  const timeEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-time"));
-  const motionEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-motion"));
-  const sfxEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-sfx"));
-  const muteEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-mute"));
-  const ambEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-ambience"));
-  const musicEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-music"));
-  const sfxVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-sfx-vol"));
-  const ambVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-amb-vol"));
-  const musicVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-music-vol"));
-  const statusEl = root.querySelector("#set-status");
-  const modal = overlay?.querySelector(".settings-modal");
+  const modal = overlay?.querySelector(".gamewin");
   const panes = overlay?.querySelector(".settings-modal__panes");
   if (modal && root && panes) {
     mountAboutPanel({
@@ -189,86 +211,210 @@ export function initSettings(ctx) {
       panes: /** @type {HTMLElement} */ (panes),
       settingsBody: root,
       onBack: () => {
-        /** @type {HTMLButtonElement|null} */ (overlay?.querySelector(".settings-modal__close"))?.focus();
+        /** @type {HTMLButtonElement|null} */ (overlay?.querySelector(".gamewin__close"))?.focus();
       },
     });
   }
-  root.querySelector("#set-about")?.addEventListener("click", () => showAbout(true));
+
+  const statusEl = root.querySelector("#set-status");
 
   /** @param {import("../game/meta.js").Settings} s */
   function syncControls(s) {
-    notationEl.value = s.notation;
-    timeEl.value = s.timeOfDay;
-    motionEl.value = s.reduceMotion === true ? "on" : s.reduceMotion === false ? "off" : "system";
-    sfxEl.checked = s.sfx;
-    muteEl.checked = s.masterMute;
-    ambEl.checked = s.ambience;
-    musicEl.checked = s.music;
-    sfxVolEl.value = String(Math.round(s.sfxVolume * 100));
-    ambVolEl.value = String(Math.round(s.ambienceVolume * 100));
-    musicVolEl.value = String(Math.round(s.musicVolume * 100));
+    setAudioTile("set-sfx-tile", s.sfx && !s.masterMute, s.sfxVolume);
+    setAudioTile("set-amb-tile", s.ambience && !s.masterMute, s.ambienceVolume);
+    setAudioTile("set-music-tile", s.music && !s.masterMute, s.musicVolume);
+    setAudioTile("set-mute-tile", !s.masterMute, null);
+    setPips("set-sfx-tile-vol", volStep(s.sfxVolume));
+    setPips("set-amb-tile-vol", volStep(s.ambienceVolume));
+    setPips("set-music-tile-vol", volStep(s.musicVolume));
+    updateCycleTile("set-notation-tile", NOTATION_LABEL[s.notation], NOTATION_SAMPLE[s.notation]);
+    const timeEl = document.getElementById("set-time-tile");
+    if (timeEl) {
+      const iconWrap = timeEl.querySelector(".gw-tile__icon");
+      if (iconWrap) iconWrap.innerHTML = timeIcon(s.timeOfDay);
+      updateCycleTile("set-time-tile", TIME_LABEL[s.timeOfDay], TIME_LABEL[s.timeOfDay]);
+    }
+    const motionKey = s.reduceMotion === true ? "on" : s.reduceMotion === false ? "off" : "system";
+    updateCycleTile("set-motion-tile", MOTION_LABEL[motionKey], MOTION_LABEL[motionKey]);
   }
 
   syncControls(ctx.meta.settings);
-  bindDisplayControls(ctx.meta.settings, {
-    notationEl, timeEl, motionEl, sfxEl, muteEl, ambEl, musicEl, sfxVolEl, ambVolEl, musicVolEl,
-  });
+  bindSettingsControls(ctx.meta.settings, syncControls);
   bindSaveData(root, ctx, statusEl, () => syncControls(ctx.meta.settings));
+  root.querySelector("#set-about")?.addEventListener("click", () => showAbout(true));
+}
+
+/** @param {number} v @returns {number} */
+function volStep(v) {
+  return Math.min(4, Math.round(v * 4));
+}
+
+/** @param {number} step @returns {number} */
+function stepVol(step) {
+  return step / 4;
+}
+
+/**
+ * @param {string} tileId
+ * @param {boolean} on
+ * @param {number|null} vol
+ */
+function setAudioTile(tileId, on, vol) {
+  const el = document.getElementById(tileId);
+  if (!el) return;
+  el.setAttribute("aria-pressed", on ? "true" : "false");
+  el.classList.toggle("gw-tile--off", !on);
+  const state = el.querySelector(".gw-tile__state");
+  if (state) state.textContent = on ? "On" : "Off";
+  const badge = /** @type {HTMLElement|null} */ (el.querySelector(".gw-tile__badge"));
+  if (badge) badge.hidden = on;
+}
+
+/** @param {string} pipId @param {number} step */
+function setPips(pipId, step) {
+  const row = document.getElementById(pipId);
+  if (!row) return;
+  row.setAttribute("aria-valuenow", String(step));
+  row.setAttribute("aria-valuetext", `${Math.round((step / 4) * 100)}%`);
+  const pips = row.querySelectorAll(".gw-pip");
+  pips.forEach((p, i) => p.classList.toggle("is-on", i <= step));
+}
+
+/**
+ * @param {string} id
+ * @param {string} stateLabel
+ * @param {string} previewText
+ */
+function updateCycleTile(id, stateLabel, previewText) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const state = el.querySelector(".gw-tile__state");
+  if (state) state.textContent = stateLabel;
+  const preview = el.querySelector(".gw-tile__preview");
+  if (preview) preview.textContent = previewText;
+}
+
+/** @param {"system"|"day"|"night"} mode */
+function timeIcon(mode) {
+  if (mode === "night") return iconMoon();
+  if (mode === "day") return iconSun();
+  return iconAuto();
 }
 
 /**
  * @param {import("../game/meta.js").Settings} settings
- * @param {{
- *   notationEl: HTMLSelectElement, timeEl: HTMLSelectElement, motionEl: HTMLSelectElement,
- *   sfxEl: HTMLInputElement, muteEl: HTMLInputElement, ambEl: HTMLInputElement, musicEl: HTMLInputElement,
- *   sfxVolEl: HTMLInputElement, ambVolEl: HTMLInputElement, musicVolEl: HTMLInputElement,
- * }} els
+ * @param {(s: import("../game/meta.js").Settings) => void} sync
  */
-function bindDisplayControls(settings, els) {
-  els.notationEl.addEventListener("change", () => {
-    settings.notation = /** @type {any} */ (els.notationEl.value);
+function bindSettingsControls(settings, sync) {
+  bindToggleTile("set-sfx-tile", () => {
+    settings.sfx = !settings.sfx;
     applySettings(settings);
+    sync(settings);
+    unlockAudio();
   });
-  els.motionEl.addEventListener("change", () => {
-    const v = els.motionEl.value;
-    settings.reduceMotion = v === "on" ? true : v === "off" ? false : null;
+  bindToggleTile("set-amb-tile", () => {
+    settings.ambience = !settings.ambience;
     applySettings(settings);
+    sync(settings);
   });
-  els.timeEl.addEventListener("change", () => {
-    settings.timeOfDay = /** @type {any} */ (els.timeEl.value);
+  bindToggleTile("set-music-tile", () => {
+    settings.music = !settings.music;
     applySettings(settings);
+    sync(settings);
   });
-  els.sfxEl.addEventListener("change", () => {
-    settings.sfx = els.sfxEl.checked;
+  bindToggleTile("set-mute-tile", () => {
+    settings.masterMute = !settings.masterMute;
     applySettings(settings);
-    unlockOnSlider(els.sfxEl);
+    sync(settings);
   });
-  els.muteEl.addEventListener("change", () => {
-    settings.masterMute = els.muteEl.checked;
+
+  bindPips("set-sfx-tile-vol", (step) => {
+    settings.sfxVolume = stepVol(step);
     applySettings(settings);
+    sync(settings);
+    unlockAudio();
   });
-  els.ambEl.addEventListener("change", () => {
-    settings.ambience = els.ambEl.checked;
+  bindPips("set-amb-tile-vol", (step) => {
+    settings.ambienceVolume = stepVol(step);
     applySettings(settings);
+    sync(settings);
   });
-  els.musicEl.addEventListener("change", () => {
-    settings.music = els.musicEl.checked;
+  bindPips("set-music-tile-vol", (step) => {
+    settings.musicVolume = stepVol(step);
     applySettings(settings);
+    sync(settings);
   });
-  const bindVol = (el, key) => {
-    el.addEventListener("input", () => {
-      settings[key] = Number(el.value) / 100;
-      applySettings(settings);
-      unlockOnSlider(el);
+
+  document.getElementById("set-notation-tile")?.addEventListener("click", () => {
+    settings.notation = settings.notation === "suffix" ? "scientific" : "suffix";
+    applySettings(settings);
+    sync(settings);
+  });
+  document.getElementById("set-time-tile")?.addEventListener("click", () => {
+    const i = TIME_ORDER.indexOf(settings.timeOfDay);
+    settings.timeOfDay = TIME_ORDER[(i + 1) % TIME_ORDER.length];
+    applySettings(settings);
+    sync(settings);
+  });
+  document.getElementById("set-motion-tile")?.addEventListener("click", () => {
+    const key = settings.reduceMotion === true ? "on" : settings.reduceMotion === false ? "off" : "system";
+    const i = MOTION_ORDER.indexOf(key);
+    const next = MOTION_ORDER[(i + 1) % MOTION_ORDER.length];
+    settings.reduceMotion = next === "on" ? true : next === "off" ? false : null;
+    applySettings(settings);
+    sync(settings);
+  });
+
+  document.getElementById("set-paste-toggle")?.addEventListener("click", () => {
+    const panel = document.getElementById("set-import-panel");
+    if (!panel) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    if (open) document.getElementById("set-import")?.focus();
+  });
+
+  document.getElementById("set-reset")?.addEventListener("click", () => {
+    showConfirm({
+      title: "Reset save?",
+      body: "This erases your pond on this device. Export first if you want to keep your progress.",
+      okLabel: "Yes, reset",
+      cancelLabel: "Keep playing",
+      onConfirm: () => {
+        clearSave();
+        location.reload();
+      },
     });
-  };
-  bindVol(els.sfxVolEl, "sfxVolume");
-  bindVol(els.ambVolEl, "ambienceVolume");
-  bindVol(els.musicVolEl, "musicVolume");
+  });
 }
 
-/** @param {HTMLElement} el */
-function unlockOnSlider(el) {
+/** @param {string} id @param {() => void} onToggle */
+function bindToggleTile(id, onToggle) {
+  document.getElementById(id)?.addEventListener("click", onToggle);
+}
+
+/** @param {string} pipId @param {(step: number) => void} onPick */
+function bindPips(pipId, onPick) {
+  const row = document.getElementById(pipId);
+  if (!row) return;
+  row.addEventListener("click", (e) => {
+    const t = /** @type {HTMLElement} */ (e.target);
+    const btn = t.closest(".gw-pip");
+    if (!btn) return;
+    const step = Number(btn.getAttribute("data-step"));
+    if (!Number.isFinite(step)) return;
+    onPick(step);
+    e.stopPropagation();
+  });
+  row.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const cur = Number(row.getAttribute("aria-valuenow") || "4");
+    const next = e.key === "ArrowRight" ? Math.min(4, cur + 1) : Math.max(0, cur - 1);
+    onPick(next);
+    e.preventDefault();
+  });
+}
+
+function unlockAudio() {
   import("../game/sfx.js").then((m) => m.unlockAudio(true)).catch(() => {});
 }
 

@@ -62,6 +62,7 @@ import { initHype, updateHype } from "./ui/hype.js";
 import { initUpgrades, updateUpgrades } from "./ui/upgrades.js";
 import { initDex, updateDex } from "./ui/dex.js";
 import { initModal, queueActEntry, queueWelcomeBack } from "./ui/modal.js";
+import { initConfirm } from "./ui/confirm.js";
 import { initEnding, showTerminal } from "./ui/ending.js";
 import { applySettings, initSettings, bindSettingsGear } from "./ui/settings.js";
 import { initTimeToggle } from "./ui/theme.js";
@@ -126,6 +127,7 @@ ducks.on("RESOURCE_COUNT_UPDATED", (e) => {
 applyUpgrades(engine, meta, mods);
 updateCoherence(meta);
 initModal();
+initConfirm();
 initToasts();
 function creditManualAnswer(effCoherence, ponderBonus = 0) {
   const dex = dexMods(meta);

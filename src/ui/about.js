@@ -55,7 +55,7 @@ export function mountAboutPanel(opts) {
   panesEl.appendChild(aboutPanel);
 
   titleEl = opts.shell.querySelector("#settings-modal-title");
-  backBtn = /** @type {HTMLButtonElement|null} */ (opts.shell.querySelector("#settings-about-back"));
+  backBtn = /** @type {HTMLButtonElement|null} */ (opts.shell.querySelector(".gamewin__back"));
   backBtn?.addEventListener("click", () => {
     showAbout(false);
     opts.onBack();
@@ -75,6 +75,10 @@ function creditsSectionsHtml() {
       `<ul class="about__list">` +
         `<li>Kenney Interface Sounds — Kenney Vleugels — ` +
           link("https://kenney.nl", "kenney.nl") + ` — ` +
+          link("https://creativecommons.org/publicdomain/zero/1.0/", "CC0 1.0") +
+        `</li>` +
+        `<li>Kenney Game Icons (UI artwork) — Kenney Vleugels — ` +
+          link("https://kenney.nl/assets/game-icons", "kenney.nl") + ` — ` +
           link("https://creativecommons.org/publicdomain/zero/1.0/", "CC0 1.0") +
         `</li>` +
       `</ul>` +
@@ -148,7 +152,7 @@ export function showAbout(open) {
   panesEl?.classList.toggle("settings-modal__panes--about", open);
   if (titleEl) titleEl.textContent = open ? "About" : "Settings";
   if (backBtn) backBtn.hidden = !open;
-  modalShell?.classList.toggle("settings-modal--about", open);
+  modalShell?.classList.toggle("gamewin--about", open);
   if (open) {
     aboutPanel.scrollTop = 0;
     backBtn?.focus({ preventScroll: true });

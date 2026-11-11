@@ -37,14 +37,16 @@ export function showTerminal(endingId, meta = null) {
   overlay.className = "ending";
   overlay.innerHTML =
     `<div class="ending__sky" aria-hidden="true">${"🦆".repeat(48)}</div>` +
-    `<div class="ending__card">` +
-      `<h1 class="ending__title">${def.title}</h1>` +
+    `<div class="ending__card gamewin gamewin--ending">` +
+      `<header class="gamewin__bar gamewin__bar--story"><h2 class="gamewin__title">${def.title}</h2></header>` +
+      `<div class="gamewin__inset ending__inset">` +
+      `<h1 class="ending__title visually-hidden">${def.title}</h1>` +
       `<p class="ending__line">${line}</p>` +
       `<p class="ending__line ending__line--soft">${def.soft}</p>` +
       `<p class="ending__thanks">${def.thanks}</p>` +
       `<p class="ending__line"><a class="ending__link" href="https://bearjcc-quack-language-model.hf.space/" target="_blank" rel="noopener">Play original QLM</a></p>` +
-      `<button class="ending__btn" type="button">Start a new pond</button>` +
-    `</div>`;
+      `<button class="gamewin__btn gamewin__btn--primary ending__btn" type="button">Start a new pond</button>` +
+      `</div></div>`;
   const btn = /** @type {HTMLButtonElement} */ (overlay.querySelector(".ending__btn"));
   btn.addEventListener("click", onReset);
   document.body.appendChild(overlay);
