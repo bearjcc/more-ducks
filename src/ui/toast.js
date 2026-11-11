@@ -1,6 +1,7 @@
 // @ts-check
 // aislop-ignore-file security/innerhtml -- audited: all interpolated values are dev-authored constants (BASIC_ANSWERS data, toast strings).
 import { prefersReducedMotion } from "./render.js";
+import { sfxToast } from "../game/sfx.js";
 /** @type {HTMLElement|null} */
 let host = null;
 
@@ -24,6 +25,12 @@ export function initToasts() {
 export function showToast(spec) {
   queue.push(spec);
   drainQueue();
+}
+
+/** Toast plus matching SFX (tab unlocks, achievements, etc.). */
+export function announceToast(spec) {
+  sfxToast();
+  showToast(spec);
 }
 
 function drainQueue() {

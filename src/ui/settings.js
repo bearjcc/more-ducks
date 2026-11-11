@@ -5,7 +5,7 @@ import { mergeSettings } from "../game/meta.js";
 import { exportSaveText, importSaveText } from "../game/save.js";
 import { setBuyMode } from "./shop.js";
 import { setReduceMotionPref } from "./render.js";
-import { setSfxEnabled } from "../game/sfx.js";
+import { applyAudioSettings, getCreditsText } from "../game/sfx.js";
 import { applyTimeOfDay } from "./theme.js";
 /** @type {import("../game/meta.js").Settings} */
 let current = mergeSettings();
@@ -68,7 +68,7 @@ export function applySettings(settings) {
   setNotation(current.notation);
   setBuyMode(current.buyMode);
   setReduceMotionPref(current.reduceMotion);
-  setSfxEnabled(current.sfx);
+  applyAudioSettings(current);
   applyTimeOfDay(current.timeOfDay);
   document.body.classList.toggle("force-reduce-motion", current.reduceMotion === true);
   document.body.classList.toggle("force-motion", current.reduceMotion === false);
@@ -109,9 +109,37 @@ const SETTINGS_HTML =
   `<section class="settings__block">` +
     `<h2 class="settings__heading">Sound</h2>` +
     `<label class="settings__row settings__row--check">` +
+      `<input id="set-mute" type="checkbox" />` +
+      `<span>Mute all audio</span>` +
+    `</label>` +
+    `<label class="settings__row settings__row--check">` +
       `<input id="set-sfx" type="checkbox" />` +
       `<span>Sound effects</span>` +
     `</label>` +
+    `<label class="settings__row">` +
+      `<span>SFX volume</span>` +
+      `<input id="set-sfx-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
+    `</label>` +
+    `<label class="settings__row settings__row--check">` +
+      `<input id="set-ambience" type="checkbox" />` +
+      `<span>Ambience</span>` +
+    `</label>` +
+    `<label class="settings__row">` +
+      `<span>Ambience volume</span>` +
+      `<input id="set-amb-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
+    `</label>` +
+    `<label class="settings__row settings__row--check">` +
+      `<input id="set-music" type="checkbox" />` +
+      `<span>Music</span>` +
+    `</label>` +
+    `<label class="settings__row">` +
+      `<span>Music volume</span>` +
+      `<input id="set-music-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
+    `</label>` +
+    `<details class="settings__credits">` +
+      `<summary>Credits &amp; licences</summary>` +
+      `<pre id="set-credits" class="settings__credits-body"></pre>` +
+    `</details>` +
   `</section>` +
   `<section class="settings__block">` +
     `<h2 class="settings__heading">Save data</h2>` +
@@ -142,6 +170,14 @@ export function initSettings(ctx) {
   const timeEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-time"));
   const motionEl = /** @type {HTMLSelectElement} */ (root.querySelector("#set-motion"));
   const sfxEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-sfx"));
+  const muteEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-mute"));
+  const ambEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-ambience"));
+  const musicEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-music"));
+  const sfxVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-sfx-vol"));
+  const ambVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-amb-vol"));
+  const musicVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-music-vol"));
+  const creditsEl = root.querySelector("#set-credits");
+  if (creditsEl) creditsEl.textContent = getCreditsText();
   const statusEl = root.querySelector("#set-status");
 
   /** @param {import("../game/meta.js").Settings} s */
@@ -150,16 +186,28 @@ export function initSettings(ctx) {
     timeEl.value = s.timeOfDay;
     motionEl.value = s.reduceMotion === true ? "on" : s.reduceMotion === false ? "off" : "system";
     sfxEl.checked = s.sfx;
+    muteEl.checked = s.masterMute;
+    ambEl.checked = s.ambience;
+    musicEl.checked = s.music;
+    sfxVolEl.value = String(Math.round(s.sfxVolume * 100));
+    ambVolEl.value = String(Math.round(s.ambienceVolume * 100));
+    musicVolEl.value = String(Math.round(s.musicVolume * 100));
   }
 
   syncControls(ctx.meta.settings);
-  bindDisplayControls(ctx.meta.settings, { notationEl, timeEl, motionEl, sfxEl });
+  bindDisplayControls(ctx.meta.settings, {
+    notationEl, timeEl, motionEl, sfxEl, muteEl, ambEl, musicEl, sfxVolEl, ambVolEl, musicVolEl,
+  });
   bindSaveData(root, ctx, statusEl, () => syncControls(ctx.meta.settings));
 }
 
 /**
  * @param {import("../game/meta.js").Settings} settings
- * @param {{ notationEl: HTMLSelectElement, timeEl: HTMLSelectElement, motionEl: HTMLSelectElement, sfxEl: HTMLInputElement }} els
+ * @param {{
+ *   notationEl: HTMLSelectElement, timeEl: HTMLSelectElement, motionEl: HTMLSelectElement,
+ *   sfxEl: HTMLInputElement, muteEl: HTMLInputElement, ambEl: HTMLInputElement, musicEl: HTMLInputElement,
+ *   sfxVolEl: HTMLInputElement, ambVolEl: HTMLInputElement, musicVolEl: HTMLInputElement,
+ * }} els
  */
 function bindDisplayControls(settings, els) {
   els.notationEl.addEventListener("change", () => {
@@ -178,7 +226,35 @@ function bindDisplayControls(settings, els) {
   els.sfxEl.addEventListener("change", () => {
     settings.sfx = els.sfxEl.checked;
     applySettings(settings);
+    unlockOnSlider(els.sfxEl);
   });
+  els.muteEl.addEventListener("change", () => {
+    settings.masterMute = els.muteEl.checked;
+    applySettings(settings);
+  });
+  els.ambEl.addEventListener("change", () => {
+    settings.ambience = els.ambEl.checked;
+    applySettings(settings);
+  });
+  els.musicEl.addEventListener("change", () => {
+    settings.music = els.musicEl.checked;
+    applySettings(settings);
+  });
+  const bindVol = (el, key) => {
+    el.addEventListener("input", () => {
+      settings[key] = Number(el.value) / 100;
+      applySettings(settings);
+      unlockOnSlider(el);
+    });
+  };
+  bindVol(els.sfxVolEl, "sfxVolume");
+  bindVol(els.ambVolEl, "ambienceVolume");
+  bindVol(els.musicVolEl, "musicVolume");
+}
+
+/** @param {HTMLElement} el */
+function unlockOnSlider(el) {
+  import("../game/sfx.js").then((m) => m.unlockAudio(true)).catch(() => {});
 }
 
 /**

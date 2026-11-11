@@ -20,7 +20,8 @@ import {
   upgradesTabUnlocked,
   tabUnlocked,
 } from "../game/unlocks.js";
-import { showToast } from "./toast.js";
+import { announceToast } from "./toast.js";
+import { sfxTab, sfxViewMode } from "../game/sfx.js";
 /** @type {Record<string, HTMLElement|null>} */
 const els = {};
 /** @type {boolean|null} */
@@ -232,6 +233,7 @@ export function setSheet(state) {
 
 /** @param {"up"|"down"} direction */
 export function stepViewMode(direction) {
+  sfxViewMode(direction);
   const mode = getViewMode();
   const portrait = usesPortraitSheet();
   if (direction === "up") {
@@ -372,6 +374,8 @@ export function openTab(name) {
     closeTab();
     return;
   }
+  const prev = selectedPanelTab;
+  if (name !== prev) sfxTab();
   if (selectedPanelTab === name && getViewMode() !== "chat") {
     setViewMode("chat");
     return;
@@ -528,14 +532,14 @@ export function updateTabUnlocks(ctx) {
   const flockJustUnlocked = flockTabUnlocked(meta) && !meta.flags.flockTabToast;
   if (flockJustUnlocked) {
     meta.flags.flockTabToast = true;
-    showToast({ title: "Flock unlocked", body: "Tap Flock to buy duck-makers." });
+    announceToast({ title: "Flock unlocked", body: "Tap Flock to buy duck-makers." });
   }
 
   if (upgradesTabUnlocked(meta) && !upgradesToastShown && !meta.flags.upgradesTabToast) {
     upgradesToastShown = true;
     meta.flags.upgradesTabToast = true;
     if (!flockJustUnlocked) {
-      showToast({ title: "Upgrades unlocked", body: "Try Steady Beak — hold Auto to ask faster." });
+      announceToast({ title: "Upgrades unlocked", body: "Try Steady Beak — hold Auto to ask faster." });
     }
   } else if (meta.flags.upgradesTabToast) {
     upgradesToastShown = true;

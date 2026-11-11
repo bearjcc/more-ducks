@@ -1,6 +1,7 @@
 // @ts-check
 // aislop-ignore-file security/innerhtml -- audited: modal templates are static; spec fields are dev-authored strings.
 import { ACTS } from "../data/eras.js";
+import { sfxCollect } from "../game/sfx.js";
 /**
  * A single reusable modal with a queue, so act beats and dex details never
  * stack on top of each other. Built in JS to keep index.html lean.
@@ -123,6 +124,7 @@ function dismiss() {
 function finishDismiss(closing) {
   if (!closing || currentSpec !== closing) return;
   currentSpec = null;
+  if (closing.variant === "welcome") sfxCollect();
   if (closing.onClose) closing.onClose();
   showNext();
 }

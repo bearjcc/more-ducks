@@ -9,6 +9,12 @@
  * @property {boolean|null} reduceMotion  null = follow system preference
  * @property {"day"|"night"|"system"} timeOfDay
  * @property {boolean} sfx
+ * @property {boolean} masterMute
+ * @property {number} sfxVolume
+ * @property {number} musicVolume
+ * @property {number} ambienceVolume
+ * @property {boolean} music
+ * @property {boolean} ambience
  * @property {1|10|100|"max"} buyMode
  *
  * @typedef {object} Meta
@@ -52,6 +58,12 @@ export function defaultSettings() {
     reduceMotion: null,
     timeOfDay: "system",
     sfx: true,
+    masterMute: false,
+    sfxVolume: 1,
+    musicVolume: 0.35,
+    ambienceVolume: 0.4,
+    music: true,
+    ambience: true,
     buyMode: 1,
   };
 }
@@ -101,5 +113,17 @@ export function defaultMeta() {
 export function mergeSettings(saved) {
   const merged = { ...defaultSettings(), ...saved };
   merged.notation = saved?.notation === "scientific" ? "scientific" : "suffix";
+  merged.sfxVolume = clamp01(merged.sfxVolume);
+  merged.musicVolume = clamp01(merged.musicVolume);
+  merged.ambienceVolume = clamp01(merged.ambienceVolume);
+  merged.masterMute = Boolean(merged.masterMute);
+  merged.music = merged.music !== false;
+  merged.ambience = merged.ambience !== false;
   return merged;
+}
+
+/** @param {number|undefined} v */
+function clamp01(v) {
+  const n = typeof v === "number" && Number.isFinite(v) ? v : 1;
+  return Math.max(0, Math.min(1, n));
 }

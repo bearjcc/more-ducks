@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "assets": [
+    { "id": "ui/click_001", "files": ["ui/click_001.ogg", "ui/click_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/click_002", "files": ["ui/click_002.ogg", "ui/click_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/confirmation_001", "files": ["ui/confirmation_001.ogg", "ui/confirmation_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/confirmation_002", "files": ["ui/confirmation_002.ogg", "ui/confirmation_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/confirmation_003", "files": ["ui/confirmation_003.ogg", "ui/confirmation_003.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/confirmation_004", "files": ["ui/confirmation_004.ogg", "ui/confirmation_004.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/maximize_002", "files": ["ui/maximize_002.ogg", "ui/maximize_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/minimize_002", "files": ["ui/minimize_002.ogg", "ui/minimize_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/open_001", "files": ["ui/open_001.ogg", "ui/open_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/close_001", "files": ["ui/close_001.ogg", "ui/close_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/drop_002", "files": ["ui/drop_002.ogg", "ui/drop_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/switch_002", "files": ["ui/switch_002.ogg", "ui/switch_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/glitch_001", "files": ["ui/glitch_001.ogg", "ui/glitch_001.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "ui/tick_002", "files": ["ui/tick_002.ogg", "ui/tick_002.m4a"], "license": "CC0-1.0", "credit": "Kenney Interface Sounds" },
+    { "id": "music/thinking-music", "files": ["music/thinking-music.ogg", "music/thinking-music.m4a"], "license": "CC0-1.0", "credit": "Pond Bed — original in-repo loop (Kevin MacLeod CC-BY direction; see CREDITS)" },
+    { "id": "ambience/pond-day", "files": ["ambience/pond-day.ogg", "ambience/pond-day.m4a"], "license": "CC0-1.0", "credit": "Procedural pond bed (in-repo)" },
+    { "id": "ambience/pond-night", "files": ["ambience/pond-night.ogg", "ambience/pond-night.m4a"], "license": "CC0-1.0", "credit": "Procedural pond night bed (in-repo)" },
+    { "id": "code/duck-synth", "files": [], "license": "MIT", "credit": "CELPHASE duck-pond — vendor/duck-pond/synth.rs (ported to src/audio/duckSynth.js)" }
+  ]
+}

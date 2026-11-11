@@ -22,7 +22,20 @@ import { createMods, applyUpgrades, buyUpgrade } from "./game/upgrades.js";
 import { formatNumber } from "./game/format.js";
 import { checkDex } from "./game/dex.js";
 import { checkAchievements } from "./game/achievements.js";
-import { sfxQuack, sfxBuy, sfxToast } from "./game/sfx.js";
+import {
+  sfxQuack,
+  sfxBuy,
+  sfxToast,
+  sfxFeed,
+  sfxBuyMode,
+  sfxDuckdex,
+  sfxActEntry,
+  applyAudioSettings,
+  unlockAudio,
+  onActChange,
+  onTimeOfDayChange,
+  onVisibilityHidden,
+} from "./game/sfx.js";
 import {
   initUI,
   updateUI,
@@ -94,7 +107,10 @@ const coins = engine.currency("coins");
 const loadResult = loadGame(engine, meta);
 meta.settings = mergeSettings(meta.settings);
 applySettings(meta.settings);
+applyAudioSettings(meta.settings);
+onActChange(meta.era);
 if (!loadResult.loaded && !meta.gameStartMs) meta.gameStartMs = Date.now();
+document.addEventListener("pointerdown", () => unlockAudio(true), { once: true });
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register(new URL("../sw.js", import.meta.url)).catch(() => {});
 }
@@ -136,7 +152,11 @@ function metaQuestionsAllowed() {
  * @param {string} text
  * @returns {number} coin gain for juice
  */
-function manualAsk(text) {
+/**
+ * @param {string} text
+ * @param {{ holdRepeat?: boolean }} [opts]
+ */
+function manualAsk(text, opts = {}) {
   if (meta.flags.ended || needsFeed(meta)) return 0;
   markGameStarted();
   const dex = dexMods(meta);
@@ -155,7 +175,7 @@ function manualAsk(text) {
     showToast({ title: "New answer!", body: baseAnswer.slice(0, 60) });
   }
 
-  sfxQuack();
+  sfxQuack({ holdRepeat: opts.holdRepeat });
   showExchange(question, answer);
   return coinGain;
 }
@@ -170,7 +190,7 @@ function triggerEnding(id) {
 
 initChat({
   canAsk: () => !meta.flags.ended && !needsFeed(meta),
-  onSend: (text) => manualAsk(text),
+  onSend: (text, opts) => manualAsk(text, opts),
   pickAutoQuestion: (totalDucks) =>
     pickQuestion(totalDucks, undefined, metaQuestionsAllowed()),
   holdRepeatEnabled: () => mods.holdRepeat,
@@ -182,7 +202,7 @@ initUI({
     if (needsFeed(meta)) {
       feedDuck(meta);
       meta.manualFeeds++;
-      sfxBuy();
+      sfxFeed();
     }
   },
   onBuyPond: () => {
@@ -191,7 +211,6 @@ initUI({
   onPonderStart: () => {
     if (!meta.ponderingUnlocked) return null;
     markGameStarted();
-    sfxQuack();
     const coherence = effectiveCoherence(meta, dexMods(meta));
     return {
       question: pickQuestion(meta.totalDucksEver, undefined, metaQuestionsAllowed()),
@@ -212,16 +231,23 @@ initUI({
       meta.totalDucksEver,
     );
     const coinGain = creditManualAnswer(effCoherence, ponderCoinBonus(depth));
+    sfxQuack({ kind: "ponder" });
     return { answer, coinGain };
   },
 });
-initTimeToggle({ meta, onChange: () => applySettings(meta.settings) });
+initTimeToggle({
+  meta,
+  onChange: () => {
+    applySettings(meta.settings);
+    onTimeOfDayChange();
+  },
+});
 initShop({
   onBuy: (id, qty) => {
     const hadProducers = PRODUCERS.some((p) => (engine.producer(p.id)?.count ?? 0) > 0);
     const bought = buyProducer(engine, id, qty, meta);
     if (bought > 0) {
-      sfxBuy();
+      sfxBuy(qty > 1);
       if (!hadProducers && !meta.flags.firstProducerToast) {
         meta.flags.firstProducerToast = true;
         showToast({ title: "Duck-maker hired", body: "Check Stats for ducks/sec." });
@@ -229,7 +255,10 @@ initShop({
     }
     return bought > 0;
   },
-  onBuyModeChange: (mode) => { meta.settings.buyMode = mode; },
+  onBuyModeChange: (mode) => {
+    meta.settings.buyMode = mode;
+    sfxBuyMode();
+  },
 });
 initHype({
   onBuy: (id) => {
@@ -324,7 +353,6 @@ function applyOfflineProgress(savedAt) {
     const mins = Math.round(elapsed / 60);
     pulseDuckCounter();
     pulseCoinCounter();
-    sfxToast();
     queueWelcomeBack({
       mins,
       ducks: formatNumber(offlineDucks),
@@ -339,15 +367,20 @@ function advanceEras() {
   for (let e = meta.era + 1; e <= target; e++) {
     queueActEntry(e);
     triggerEraBurst();
+    sfxActEntry();
   }
   meta.era = target;
   applyEra(meta.era);
+  onActChange(meta.era);
 }
 applyEra(meta.era);
 advanceEras();
 function announceNewDucks() {
   const newly = checkDex(engine, meta);
-  if (newly.length > 0) applyUpgrades(engine, meta, mods);
+  if (newly.length > 0) {
+    applyUpgrades(engine, meta, mods);
+    sfxDuckdex();
+  }
 }
 
 let lastFrame = Date.now();
@@ -427,6 +460,7 @@ function frame() {
 }
 requestAnimationFrame(frame);
 addEventListener("visibilitychange", () => {
+  onVisibilityHidden(document.hidden);
   if (!suppressSave && document.hidden) saveGame(engine, meta);
 });
 addEventListener("beforeunload", () => {

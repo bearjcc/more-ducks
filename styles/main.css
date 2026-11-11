@@ -2134,6 +2134,30 @@ body[data-act-tier="empire"] .chat-thread {
 
 .settings__status { margin: 0; font-size: 0.82rem; color: var(--good); min-height: 1.2em; }
 
+.settings__range {
+  flex: 1;
+  max-width: 9rem;
+  accent-color: var(--accent, #3d8f6a);
+}
+
+.settings__credits {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.settings__credits-body {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 92%, var(--ink) 8%);
+  white-space: pre-wrap;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  max-height: 12rem;
+  overflow: auto;
+}
+
 
 /* ===== TOAST ===== */
 

@@ -1,5 +1,6 @@
 // @ts-check
 import { pickQuestion } from "../game/quack.js";
+import { bindHoldRepeat } from "../game/sfx.js";
 /** @type {HTMLElement|null} */ let threadEl = null;
 /** @type {HTMLInputElement|null} */ let inputEl = null;
 /** @type {HTMLButtonElement|null} */ let sendBtn = null;
@@ -8,7 +9,7 @@ import { pickQuestion } from "../game/quack.js";
 
 /** @type {() => boolean} */ let canAsk = () => true;
 // aislop-ignore-next-line ai-slop/empty-function -- default no-op handler slot; replaced in initChat
-/** @type {(text: string) => void} */ let onSend = () => {};
+/** @type {(text: string, opts?: { holdRepeat?: boolean }) => void} */ let onSend = () => {};
 /** @type {(totalDucks: number) => string} */ let pickAutoQuestion = () => "";
 /** @type {number} */ let holdIntervalMs = 450;
 /** @type {boolean} */ let holdRepeatEnabled = false;
@@ -18,7 +19,7 @@ import { pickQuestion } from "../game/quack.js";
 /**
  * @param {{
  *   canAsk: () => boolean,
- *   onSend: (text: string) => void,
+ *   onSend: (text: string, opts?: { holdRepeat?: boolean }) => void,
  *   pickAutoQuestion?: (totalDucks: number) => string,
  *   holdRepeatEnabled?: () => boolean,
  *   holdIntervalMs?: () => number,
@@ -44,14 +45,16 @@ export function initChat(handlers) {
     if (inputEl) inputEl.value = "";
   };
 
-  const tryAuto = () => {
+  const tryAuto = (/** @type {{ holdRepeat?: boolean }} */ opts = {}) => {
     const total = Number(document.body.dataset.totalDucks || "1");
-    trySend(pickAutoQuestion(total));
+    const q = pickAutoQuestion(total);
+    onSend(q, opts);
   };
 
   const stopHold = () => {
     if (holdTimer) clearInterval(holdTimer);
     holdTimer = null;
+    bindHoldRepeat(false);
     if (autoBtn) autoBtn.classList.remove("is-holding");
   };
 
@@ -61,9 +64,10 @@ export function initChat(handlers) {
     e.preventDefault();
     autoBtn?.setPointerCapture(e.pointerId);
     autoBtn?.classList.add("is-holding");
-    tryAuto();
+    bindHoldRepeat(true);
+    tryAuto({ holdRepeat: false });
     holdTimer = setInterval(() => {
-      if (canAsk()) tryAuto();
+      if (canAsk()) tryAuto({ holdRepeat: true });
       else stopHold();
     }, holdIntervalMs);
   };
