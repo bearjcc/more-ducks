@@ -23,15 +23,13 @@ const intro = page.locator(".modal-overlay:not([hidden]) .modal__btn");
 if (await intro.count()) await intro.click();
 await page.click("#settings-gear");
 await page.click("#set-about");
-await page.waitForSelector(".about__block--licences");
-const box = await page.locator(".about__block--licences").boundingBox();
-if (box) {
-  await page.screenshot({
-    path: path.join(OUT, "ui-about-licences-390-day.png"),
-    clip: { x: box.x, y: Math.max(0, box.y - 8), width: box.width, height: Math.min(box.height + 16, 844) },
-    scale: "css",
-  });
-}
+await page.waitForSelector("#about-panel:not([hidden])");
+await page.locator(".about__block--licences").scrollIntoViewIfNeeded();
+await page.waitForTimeout(200);
+await page.screenshot({
+  path: path.join(OUT, "ui-about-licences-390-day.png"),
+  scale: "css",
+});
 await browser.close();
 server.kill();
 console.log("saved ui-about-licences-390-day.png");
