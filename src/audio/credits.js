@@ -1,12 +1,14 @@
 // @ts-check
 
+/** Exact CC-BY attribution (manifest tests). */
+export const MACLEOD_ATTRIBUTION =
+  '"Thinking Music" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 License, http://creativecommons.org/licenses/by/4.0/.';
+
 /** Audio attribution blocks (About page). Keep in sync with assets/audio/manifest.json. */
 export const CREDITS_BLOCKS = [
   {
     heading: "Music",
-    lines: [
-      '"Thinking Music" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 License, http://creativecommons.org/licenses/by/4.0/.',
-    ],
+    lines: [MACLEOD_ATTRIBUTION],
   },
   {
     heading: "Sound effects (UI)",

@@ -62,6 +62,27 @@ await setTheme("night");
 await openSettings();
 await snap("ui-settings-about-entry-390-night.png");
 
+async function snapAboutScrolled(name) {
+  await page.evaluate(() => {
+    const panel = document.getElementById("about-panel");
+    if (panel) panel.scrollTop = panel.scrollHeight;
+  });
+  await page.waitForTimeout(150);
+  await snap(name);
+}
+
+await openSettings();
+await setTheme("day");
+await page.click("#set-about");
+await page.waitForSelector("#about-panel:not([hidden])");
+await snapAboutScrolled("ui-about-page-bottom-390-day.png");
+
+await setTheme("night");
+await page.evaluate(() => {
+  document.getElementById("about-panel")?.scrollTo(0, 0);
+});
+await snapAboutScrolled("ui-about-page-bottom-390-night.png");
+
 await browser.close();
 server.kill();
 console.log("about ui screenshots in", OUT);

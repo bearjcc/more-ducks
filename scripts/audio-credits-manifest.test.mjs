@@ -2,13 +2,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { aboutPlainText } from "../src/data/about.js";
+import { MACLEOD_ATTRIBUTION } from "../src/audio/credits.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "assets/audio/manifest.json"), "utf8"));
 const credits = aboutPlainText();
 
-const MACLEOD =
-  '"Thinking Music" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 License, http://creativecommons.org/licenses/by/4.0/.';
+const MACLEOD = MACLEOD_ATTRIBUTION;
 
 const CREDIT_NEEDLES = {
   "music/thinking-music": [MACLEOD, "Thinking Music"],

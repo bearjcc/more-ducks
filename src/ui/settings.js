@@ -26,7 +26,9 @@ function initSettingsShell() {
         `<h2 id="settings-modal-title" class="settings-modal__title">Settings</h2>` +
         `<button class="settings-modal__close" type="button" aria-label="Close settings">×</button>` +
       `</div>` +
-      `<div id="settings-root" class="settings settings-modal__body"></div>` +
+      `<div class="settings-modal__panes">` +
+        `<div id="settings-root" class="settings settings-modal__body"></div>` +
+      `</div>` +
     `</div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeSettings(); });
@@ -180,9 +182,11 @@ export function initSettings(ctx) {
   const musicVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-music-vol"));
   const statusEl = root.querySelector("#set-status");
   const modal = overlay?.querySelector(".settings-modal");
-  if (modal && root) {
+  const panes = overlay?.querySelector(".settings-modal__panes");
+  if (modal && root && panes) {
     mountAboutPanel({
       shell: /** @type {HTMLElement} */ (modal),
+      panes: /** @type {HTMLElement} */ (panes),
       settingsBody: root,
       onBack: () => {
         /** @type {HTMLButtonElement|null} */ (overlay?.querySelector(".settings-modal__close"))?.focus();
