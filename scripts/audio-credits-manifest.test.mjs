@@ -46,6 +46,8 @@ assert(fs.existsSync(path.join(ROOT, "assets/audio/loop-meta.json")), "loop meta
 assert(credits.includes(MACLEOD), "exact MacLeod attribution line");
 assert(credits.includes("bearjcc-quack-language-model"), "About lists QLM link");
 assert(credits.includes("opensource.org/licenses/MIT"), "About lists MIT link");
+assert(credits.includes("continuum-engine"), "About lists continuum-engine");
+assert(!credits.includes("src/audio/duckSynth"), "no dev paths in player text");
 
 if (failed) process.exit(1);
 console.log(`\n${passed} passed`);

@@ -29,9 +29,7 @@ export const CREDITS_BLOCKS = [
   {
     heading: "Duck quack synthesizer",
     lines: [
-      "duck-pond by CELPHASE — MIT License.",
-      "https://github.com/celphase/duck-pond",
-      "JS port: src/audio/duckSynth.js (see vendor/duck-pond/LICENSE).",
+      "Quack synth ported from CELPHASE duck-pond (MIT) — https://github.com/celphase/duck-pond",
     ],
   },
 ];

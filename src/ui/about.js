@@ -4,7 +4,7 @@ import {
   GAME_NAME,
   GAME_TAGLINE,
   GAME_VERSION,
-  LICENSE_BLOCKS,
+  LICENSE_ENTRIES,
   QLM_URL,
 } from "../data/about.js";
 /** @type {HTMLElement|null} */
@@ -50,8 +50,7 @@ export function mountAboutPanel(opts) {
       `<p><a class="about__link" href="${QLM_URL}">Quack Language Model (QLM)</a></p>` +
     `</section>` +
     creditsSectionsHtml() +
-    licencesHtml(LICENSE_BLOCKS) +
-    `<p class="about__fine">Made with ducks. Not financial advice.</p>`;
+    licencesHtml() ;
 
   panesEl.appendChild(aboutPanel);
 
@@ -97,9 +96,9 @@ function creditsSectionsHtml() {
     `<section class="about__block">` +
       `<h3 class="about__heading">Duck quack synthesizer</h3>` +
       `<ul class="about__list">` +
-        `<li>duck-pond by CELPHASE — MIT License — ` +
-          link("https://github.com/celphase/duck-pond", "celphase/duck-pond") + `</li>` +
-        `<li>JS port: <code>src/audio/duckSynth.js</code> (see <code>vendor/duck-pond/LICENSE</code>)</li>` +
+        `<li>Quack synth ported from ` +
+          link("https://github.com/celphase/duck-pond", "CELPHASE duck-pond") +
+        ` (MIT)</li>` +
       `</ul>` +
     `</section>`
   );
@@ -125,43 +124,20 @@ function escapeHtml(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** @param {{ heading: string, lines: string[] }[]} blocks */
-function licencesHtml(blocks) {
+function licencesHtml() {
+  const items = LICENSE_ENTRIES.map(
+    (e) =>
+      `<li><span class="about__licence-holder">${escapeHtml(e.holder)}</span> — ` +
+      `${escapeHtml(e.licence)} — ` +
+      link(e.href, e.linkLabel) +
+      `</li>`,
+  );
   return (
-    `<section class="about__block">` +
+    `<section class="about__block about__block--licences">` +
       `<h3 class="about__heading">Licences</h3>` +
-      blocks
-        .map(
-          (b) =>
-            `<div class="about__licence">` +
-              `<h4 class="about__subheading">${b.heading}</h4>` +
-              `<ul class="about__list">${b.lines.map(licenceLineToLi).join("")}</ul>` +
-            `</div>`,
-        )
-        .join("") +
+      `<ul class="about__list about__list--licences">${items.join("")}</ul>` +
     `</section>`
   );
-}
-
-/** @param {string} line */
-function licenceLineToLi(line) {
-  if (line.includes("MIT") && !line.includes("http")) return `<li>${line}</li>`;
-  if (line.includes("opensource.org")) {
-    return `<li>This project is licensed under the MIT License — ${link("https://opensource.org/licenses/MIT", "MIT License")}</li>`;
-  }
-  if (line.includes("creativecommons.org/publicdomain/zero")) {
-    return `<li>CC0 1.0 Universal — ${link("https://creativecommons.org/publicdomain/zero/1.0/", "CC0 deed")}</li>`;
-  }
-  if (line.includes("creativecommons.org/licenses/by/4.0")) {
-    return `<li>CC BY 4.0 — ${link("https://creativecommons.org/licenses/by/4.0/", "CC BY 4.0 deed")}</li>`;
-  }
-  if (line.includes("github.com/petemares")) {
-    return `<li>Copyright (c) 2018 Peter Mares — MIT — ${link("https://github.com/petemares/continuum-engine", "continuum-engine")}</li>`;
-  }
-  if (line.includes("celphase/duck-pond")) {
-    return `<li>Copyright (c) 2026 CELPHASE — MIT — ${link("https://github.com/celphase/duck-pond", "duck-pond")}</li>`;
-  }
-  return `<li>${line}</li>`;
 }
 
 /** @param {boolean} open */
