@@ -5,8 +5,9 @@ import { mergeSettings } from "../game/meta.js";
 import { exportSaveText, importSaveText } from "../game/save.js";
 import { setBuyMode } from "./shop.js";
 import { setReduceMotionPref } from "./render.js";
-import { applyAudioSettings, getCreditsText } from "../game/sfx.js";
+import { applyAudioSettings } from "../game/sfx.js";
 import { applyTimeOfDay } from "./theme.js";
+import { mountAboutPanel, showAbout } from "./about.js";
 /** @type {import("../game/meta.js").Settings} */
 let current = mergeSettings();
 
@@ -21,6 +22,7 @@ function initSettingsShell() {
   overlay.innerHTML =
     `<div class="settings-modal modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">` +
       `<div class="settings-modal__head">` +
+        `<button id="settings-about-back" class="settings-modal__back" type="button" hidden aria-label="Back to settings">←</button>` +
         `<h2 id="settings-modal-title" class="settings-modal__title">Settings</h2>` +
         `<button class="settings-modal__close" type="button" aria-label="Close settings">×</button>` +
       `</div>` +
@@ -42,6 +44,7 @@ export function bindSettingsGear(btn) {
 
 export function openSettings() {
   if (!overlay || settingsOpen) return;
+  showAbout(false);
   settingsOpen = true;
   overlay.hidden = false;
   gearBtn?.classList.add("is-active");
@@ -136,10 +139,9 @@ const SETTINGS_HTML =
       `<span>Music volume</span>` +
       `<input id="set-music-vol" class="settings__range" type="range" min="0" max="100" step="1" />` +
     `</label>` +
-    `<details class="settings__credits">` +
-      `<summary>Credits &amp; licences</summary>` +
-      `<pre id="set-credits" class="settings__credits-body"></pre>` +
-    `</details>` +
+  `</section>` +
+  `<section class="settings__block">` +
+    `<button id="set-about" type="button" class="settings__btn settings__nav-btn">About</button>` +
   `</section>` +
   `<section class="settings__block">` +
     `<h2 class="settings__heading">Save data</h2>` +
@@ -176,9 +178,18 @@ export function initSettings(ctx) {
   const sfxVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-sfx-vol"));
   const ambVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-amb-vol"));
   const musicVolEl = /** @type {HTMLInputElement} */ (root.querySelector("#set-music-vol"));
-  const creditsEl = root.querySelector("#set-credits");
-  if (creditsEl) creditsEl.textContent = getCreditsText();
   const statusEl = root.querySelector("#set-status");
+  const modal = overlay?.querySelector(".settings-modal");
+  if (modal && root) {
+    mountAboutPanel({
+      shell: /** @type {HTMLElement} */ (modal),
+      settingsBody: root,
+      onBack: () => {
+        /** @type {HTMLButtonElement|null} */ (overlay?.querySelector(".settings-modal__close"))?.focus();
+      },
+    });
+  }
+  root.querySelector("#set-about")?.addEventListener("click", () => showAbout(true));
 
   /** @param {import("../game/meta.js").Settings} s */
   function syncControls(s) {

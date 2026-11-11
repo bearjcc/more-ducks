@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { creditsPlainText } from "../src/audio/credits.js";
+import { aboutPlainText } from "../src/data/about.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "assets/audio/manifest.json"), "utf8"));
-const credits = creditsPlainText();
+const credits = aboutPlainText();
 
 const MACLEOD =
   '"Thinking Music" Kevin MacLeod (incompetech.com), Licensed under Creative Commons: By Attribution 4.0 License, http://creativecommons.org/licenses/by/4.0/.';
@@ -44,6 +44,8 @@ for (const asset of manifest.assets) {
 assert(fs.existsSync(path.join(ROOT, "vendor/duck-pond/synth.rs")), "vendored synth.rs");
 assert(fs.existsSync(path.join(ROOT, "assets/audio/loop-meta.json")), "loop meta for beds");
 assert(credits.includes(MACLEOD), "exact MacLeod attribution line");
+assert(credits.includes("bearjcc-quack-language-model"), "About lists QLM link");
+assert(credits.includes("opensource.org/licenses/MIT"), "About lists MIT link");
 
 if (failed) process.exit(1);
 console.log(`\n${passed} passed`);

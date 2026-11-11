@@ -6,7 +6,7 @@ import {
   quackKindForHoldTick,
   setHoldRepeatActive,
 } from "./holdRepeat.js";
-import { creditsPlainText } from "./credits.js";
+import { aboutPlainText } from "../data/about.js";
 
 /** @typedef {import("../game/meta.js").Settings} Settings */
 
@@ -406,5 +406,5 @@ export function bindHoldRepeat(active) {
 }
 
 export function getCreditsText() {
-  return creditsPlainText();
+  return aboutPlainText();
 }

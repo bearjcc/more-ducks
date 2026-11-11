@@ -1,6 +1,6 @@
 // @ts-check
 
-/** Lines shown in Settings → Credits. Keep in sync with assets/audio/manifest.json. */
+/** Audio attribution blocks (About page). Keep in sync with assets/audio/manifest.json. */
 export const CREDITS_BLOCKS = [
   {
     heading: "Music",
