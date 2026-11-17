@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" role="img" aria-label="More Ducks">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ddaff"/>
+      <stop offset="1" stop-color="#eaf7ff"/>
+    </linearGradient>
+    <clipPath id="badge-clip">
+      <rect width="512" height="512" rx="112"/>
+    </clipPath>
+    <path id="duck-body-shape" d="M92 222 C118 258 168 286 232 290 L344 290 C414 292 446 330 436 374 C424 424 364 446 276 446 L196 446 C120 446 78 404 78 334 C78 290 82 254 92 222 Z"/>
+    <path id="duck-beak-shape" d="M392 180 C438 166 478 184 480 208 C482 234 444 250 396 244 Z"/>
+    <clipPath id="body-clip">
+      <use xlink:href="#duck-body-shape"/>
+    </clipPath>
+    <path id="bubble-shape" d="M346 30 H452 A34 34 0 0 1 486 64 V110 A34 34 0 0 1 452 144 H446 L436 186 L404 144 H346 A34 34 0 0 1 312 110 V64 A34 34 0 0 1 346 30 Z"/>
+  </defs>
+
+  <g id="badge" clip-path="url(#badge-clip)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <path id="pond-back" d="M0 400 C64 380 128 420 192 400 S320 380 384 400 S480 418 512 404 V512 H0 Z" fill="#72caff"/>
+  </g>
+
+  <g id="duck" transform="translate(6 46) scale(0.88)">
+    <g id="duck-outline" fill="#294039" stroke="#294039" stroke-width="30" stroke-linejoin="round">
+      <use xlink:href="#duck-body-shape"/>
+      <circle cx="318" cy="206" r="94"/>
+      <use xlink:href="#duck-beak-shape"/>
+    </g>
+    <use id="beak" xlink:href="#duck-beak-shape" fill="#ff9b1b"/>
+    <path id="beak-split" d="M404 216 C430 218 452 216 476 210" fill="none" stroke="#c96f00" stroke-width="9" stroke-linecap="round"/>
+    <g id="body">
+      <use xlink:href="#duck-body-shape" fill="#ffe231"/>
+      <g clip-path="url(#body-clip)">
+        <ellipse id="body-shade" cx="270" cy="470" rx="240" ry="80" fill="#ffc72c"/>
+        <path id="back-shine" d="M104 268 C114 300 140 316 170 322" fill="none" stroke="#fff4b1" stroke-width="16" stroke-linecap="round"/>
+      </g>
+    </g>
+    <g id="head">
+      <circle cx="318" cy="206" r="94" fill="#ffe231"/>
+      <path id="head-shine" d="M254 170 C262 146 284 128 310 124" fill="none" stroke="#fff4b1" stroke-width="16" stroke-linecap="round"/>
+    </g>
+    <path id="wing" d="M314 326 C266 346 198 344 148 314 C152 348 170 370 198 378 C208 394 236 402 256 394 C292 394 320 366 314 326 Z" fill="#ffd400" stroke="#294039" stroke-width="13" stroke-linejoin="round"/>
+    <ellipse id="eye" cx="350" cy="188" rx="18" ry="24" fill="#294039"/>
+    <circle id="eye-glint" cx="356" cy="178" r="7" fill="#ffffff"/>
+  </g>
+
+  <g id="pond-front" clip-path="url(#badge-clip)">
+    <path d="M0 436 C48 420 96 444 144 432 S240 414 288 430 S400 446 448 428 S500 424 512 430 V512 H0 Z" fill="#40b7ff" stroke="#294039" stroke-width="0"/>
+    <path id="ripple" d="M60 470 H130 M330 474 H420" stroke="#bfe7ff" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <g id="chat-bubble">
+    <use xlink:href="#bubble-shape" fill="#294039" stroke="#294039" stroke-width="22" stroke-linejoin="round"/>
+    <use xlink:href="#bubble-shape" fill="#ffffff"/>
+    <g id="typing-dots" fill="#294039">
+      <circle cx="362" cy="87" r="15"/>
+      <circle cx="399" cy="87" r="15"/>
+      <circle cx="436" cy="87" r="15"/>
+    </g>
+  </g>
+</svg>

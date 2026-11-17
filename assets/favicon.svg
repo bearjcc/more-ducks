@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" role="img" aria-label="More Ducks">
+  <defs>
+    <clipPath id="badge-clip">
+      <rect width="512" height="512" rx="120"/>
+    </clipPath>
+    <g id="duck-bust-shape">
+      <path d="M132 290 C100 370 84 440 76 560 H424 C420 460 392 392 340 320 Z"/>
+      <circle cx="236" cy="214" r="140"/>
+      <path d="M344 196 C404 190 470 204 478 234 C486 266 432 288 352 282 Z"/>
+    </g>
+  </defs>
+  <rect id="badge" width="512" height="512" rx="120" fill="#40b7ff"/>
+  <g id="duck-bust" clip-path="url(#badge-clip)">
+    <use id="duck-outline" xlink:href="#duck-bust-shape" fill="#294039" stroke="#294039" stroke-width="36" stroke-linejoin="round"/>
+    <path id="beak" d="M344 196 C404 190 470 204 478 234 C486 266 432 288 352 282 Z" fill="#ff9b1b"/>
+    <path id="chest" d="M132 290 C100 370 84 440 76 560 H424 C420 460 392 392 340 320 Z" fill="#ffe231"/>
+    <circle id="head" cx="236" cy="214" r="140" fill="#ffe231"/>
+    <path id="head-shine" d="M138 190 C144 150 170 118 206 104" fill="none" stroke="#fff4b1" stroke-width="20" stroke-linecap="round"/>
+    <rect id="cursor-eye" x="254" y="146" width="34" height="94" rx="17" fill="#294039"/>
+  </g>
+</svg>

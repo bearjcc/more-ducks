@@ -401,6 +401,36 @@ html.theme-instant { --theme-duration: 0s; }
 .counter--coins .counter__value { color: var(--counter-coin-ink); }
 
 .counter__icon { font-size: 1.05rem; line-height: 1; flex: none; }
+.coin-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  object-fit: contain;
+  flex: none;
+}
+.coin-icon--hud {
+  width: 1.15em;
+  height: 1.15em;
+}
+.coin-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22em;
+  justify-content: center;
+}
+.coin-cost__text {
+  font-variant-numeric: tabular-nums;
+}
+.card__cost .coin-icon {
+  width: 0.95em;
+  height: 0.95em;
+}
+.sheet-handle__coin.coin-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+}
 
 .counter__value {
   font-family: var(--font-display);
@@ -865,7 +895,7 @@ body[data-sheet="full"] .sheet-handle__grip::after {
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
-.sheet-handle__coin { font-size: 0.9rem; }
+.sheet-handle__coin { flex: none; }
 @media (prefers-reduced-motion: reduce) {
   .sheet-handle__grip::after { transition: none; }
 }

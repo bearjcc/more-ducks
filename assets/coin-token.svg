@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Duck coin">
+  <g id="coin">
+    <circle id="coin-side" cx="256" cy="282" r="206" fill="#c96f00" stroke="#294039" stroke-width="20"/>
+    <circle id="coin-rim" cx="256" cy="244" r="206" fill="#ffc72c" stroke="#294039" stroke-width="20"/>
+    <circle id="coin-face" cx="256" cy="244" r="158" fill="#ffe231" stroke="#e78200" stroke-width="14"/>
+    <path id="coin-shine" d="M120 196 C136 146 176 106 228 90" fill="none" stroke="#fffbe5" stroke-width="22" stroke-linecap="round"/>
+  </g>
+  <g id="emboss-duck" fill="#e78200">
+    <path id="emboss-chest" d="M200 250 C186 290 178 322 176 352 H324 C320 316 306 284 284 256 Z"/>
+    <circle id="emboss-head" cx="244" cy="214" r="64"/>
+    <path id="emboss-beak" d="M292 204 C320 200 348 206 352 220 C356 236 330 246 296 244 Z"/>
+    <rect id="emboss-eye" x="254" y="184" width="16" height="42" rx="8" fill="#ffe231"/>
+  </g>
+</svg>

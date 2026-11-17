@@ -14,6 +14,7 @@ import { HYPE_CAMPAIGNS } from "../data/hype.js";
 import { purchaseRevealed } from "../game/unlocks.js";
 import { marketingLevel } from "../game/levels.js";
 import { flashCard } from "./render.js";
+import { setCoinCost } from "./coinMark.js";
 /**
  * @typedef {object} CardRefs
  * @property {HTMLElement} root
@@ -132,7 +133,7 @@ export function updateHype(s) {
       continue;
     }
 
-    refs.cost.textContent = "🪙 " + formatNumber(nextCost, 0);
+    setCoinCost(refs.cost, formatNumber(nextCost, 0));
     const affordable = s.coins >= nextCost;
     refs.btn.disabled = !affordable;
     refs.root.classList.toggle("is-affordable", affordable);

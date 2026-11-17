@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#EAF7FF" />
   <meta name="description" content="More Ducks! — sequel to QLM. A silly satirical incremental game about scaling a duck Q&A service." />
+  <meta property="og:title" content="More Ducks!" />
+  <meta property="og:description" content="A silly satirical incremental game about making more ducks." />
+  <meta property="og:image" content="assets/icon-512.png" />
   <title>More Ducks!</title>
-  <link rel="icon" href="assets/icon.svg" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" data-brand-icon="svg" />
+  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png" data-brand-icon="png32" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" data-brand-icon="apple" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,7 +30,7 @@
           <span class="counter__label">Ducks</span>
         </div>
         <div class="counter counter--coins">
-          <span class="counter__icon" aria-hidden="true">🪙</span>
+          <img class="counter__icon coin-icon coin-icon--hud" src="assets/coin-token.svg" width="20" height="20" alt="" aria-hidden="true" decoding="async" />
           <span id="coin-count" class="counter__value" aria-live="polite">0</span>
           <span class="counter__label">Coins</span>
         </div>
@@ -59,7 +64,7 @@
         <span id="sheet-title" class="sheet-handle__title">Stats</span>
         <span class="sheet-handle__grip" aria-hidden="true"></span>
         <span class="sheet-handle__metric" aria-hidden="true">
-          <span class="sheet-handle__coin">🪙</span><span id="sheet-metric" class="sheet-handle__metric-val">0</span>
+          <img class="sheet-handle__coin coin-icon" src="assets/coin-token.svg" width="18" height="18" alt="" aria-hidden="true" decoding="async" /><span id="sheet-metric" class="sheet-handle__metric-val">0</span>
         </span>
       </button>
       <div class="tab-panels">

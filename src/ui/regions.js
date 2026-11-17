@@ -6,6 +6,7 @@ import {
   totalRentPerDay,
 } from "../game/regions.js";
 import { flashCard } from "./render.js";
+import { coinCostHtml } from "./coinMark.js";
 /** @type {HTMLElement|null} */ let listEl = null;
 /** @type {(id: string, action: string) => boolean} */ let onAction = () => false;
 
@@ -45,7 +46,7 @@ export function updateRegions(ctx) {
       action = "";
     } else if (!unlocked) {
       action = "unlock";
-      actionLabel = formatNumber(r.unlockCost, 0) + " 🪙";
+      actionLabel = coinCostHtml(formatNumber(r.unlockCost, 0));
     } else if (r.orbital && !orbital) {
       action = "space";
       actionLabel = "Launch orbital ducks";
@@ -54,7 +55,7 @@ export function updateRegions(ctx) {
       actionLabel = "Deploy saltwater ducks";
     } else if (r.id === "australia" && !flooded) {
       action = "flood";
-      actionLabel = formatNumber(r.floodCost ?? 0, 0) + " 🪙 flood";
+      actionLabel = coinCostHtml(formatNumber(r.floodCost ?? 0, 0), "flood");
     } else if (!r.saltwater && r.rentPerDay > 0 && !rented) {
       action = "rent";
       actionLabel = "Rent pond";
