@@ -90,9 +90,6 @@ export function toggleTimeOfDay(settings) {
 /**
  * @param {"day"|"night"} resolved
  */
-/**
- * @param {"day"|"night"} resolved
- */
 function syncBrandIcons(resolved) {
   const night = resolved === "night";
   const svg = night ? "assets/badge-night.svg" : "assets/favicon.svg";
