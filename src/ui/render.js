@@ -23,6 +23,7 @@ import {
 import { announceToast } from "./toast.js";
 import { sfxTab, sfxViewMode } from "../game/sfx.js";
 import { COIN_TOKEN_SRC, coinCostHtml } from "./coinMark.js";
+import { iconDuck, iconGear } from "./icons.js";
 /** @type {Record<string, HTMLElement|null>} */
 const els = {};
 /** @type {boolean|null} */
@@ -169,6 +170,7 @@ export function initUI(handlers) {
   });
   initViewModeControls();
   initCardFlavourTap();
+  initHudChrome();
   if (handlers.onFeedTap && els.duckFeedBtn) {
     els.duckFeedBtn.addEventListener("click", () => handlers.onFeedTap?.());
   }
@@ -362,6 +364,12 @@ function showPanelSurfaces(panel) {
     p.classList.toggle("is-active", isActive);
     /** @type {HTMLElement} */ (p).hidden = !isActive;
   });
+}
+
+function initHudChrome() {
+  if (els.settingsGear) els.settingsGear.innerHTML = iconGear();
+  const duckIcon = document.querySelector(".counter--ducks .counter__icon");
+  if (duckIcon) duckIcon.innerHTML = iconDuck();
 }
 
 /** Close management panel (chat-only layout). */

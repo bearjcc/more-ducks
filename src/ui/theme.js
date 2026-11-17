@@ -1,5 +1,7 @@
 // @ts-check
 
+import { iconMoon, iconSun } from "./icons.js";
+
 /** @type {MediaQueryList|null} */
 let darkMq = null;
 /** @type {(() => void)|null} */
@@ -110,7 +112,7 @@ function updateTimeToggle(resolved) {
   const btn = document.getElementById("time-toggle");
   if (!btn) return;
   const toNight = resolved === "day";
-  btn.textContent = toNight ? "\u{1F319}" : "\u{2600}\u{FE0F}";
+  btn.innerHTML = toNight ? iconMoon() : iconSun();
   btn.setAttribute("aria-label", toNight ? "Switch to night" : "Switch to day");
   btn.setAttribute("title", toNight ? "Night mode" : "Day mode");
 }

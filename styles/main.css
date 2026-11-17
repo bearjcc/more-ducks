@@ -428,8 +428,23 @@ html.theme-instant { --theme-duration: 0s; }
   flex: none;
 }
 .coin-icon--hud {
-  width: 1.15em;
-  height: 1.15em;
+  width: 1.35em;
+  height: 1.35em;
+  min-width: 22px;
+  min-height: 22px;
+}
+.hud__gear .gw-icon,
+.time-toggle .gw-icon,
+.counter--ducks .counter__icon .gw-icon {
+  display: block;
+  width: 1.35em;
+  height: 1.35em;
+  color: var(--ink);
+}
+[data-time="night"] .hud__gear .gw-icon,
+[data-time="night"] .time-toggle .gw-icon,
+[data-time="night"] .counter--ducks .counter__icon .gw-icon {
+  color: var(--counter-duck-ink);
 }
 .coin-cost {
   display: inline-flex;
@@ -2315,9 +2330,12 @@ body.duck-hungry .duck-feed-float {
 }
 [data-time="night"] .chat-msg--user {
   background: var(--chat-user-bg-night);
+  color: var(--highlight);
 }
 [data-time="night"] .chat-msg--duck {
   background: var(--chat-duck-bg-night);
+  color: var(--highlight);
+  text-shadow: 0 1px 1px var(--neutral-a12);
 }
 
 .chat-starter {

@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { chromium } from "playwright";
 import { fileURLToPath } from "node:url";
 import { GAMEWIN_AUDIT_FN } from "./lib/gamewin-a11y.mjs";
+import { forceTheme } from "./lib/theme-capture.mjs";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PORT = 8779;
@@ -16,21 +17,6 @@ function assert(c, m) {
     console.error(`  ✗ ${m}`);
     failed++;
   }
-}
-
-/** @param {import("playwright").Page} page @param {"day"|"night"} mode */
-async function forceTheme(page, mode) {
-  await page.evaluate(async (m) => {
-    const { applyTimeOfDay } = await import("/src/ui/theme.js");
-    window.MoreDucks.meta.settings.timeOfDay = m;
-    applyTimeOfDay(m);
-  }, mode);
-  await page.waitForFunction(
-    (m) => document.documentElement.dataset.time === m,
-    mode,
-    { timeout: 3000 },
-  );
-  await page.waitForTimeout(350);
 }
 
 /** @param {import("playwright").Page} page @param {string} label */
