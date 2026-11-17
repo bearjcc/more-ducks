@@ -22,6 +22,7 @@ import {
 } from "../game/unlocks.js";
 import { announceToast } from "./toast.js";
 import { sfxTab, sfxViewMode } from "../game/sfx.js";
+import { COIN_TOKEN_SRC, coinCostHtml } from "./coinMark.js";
 /** @type {Record<string, HTMLElement|null>} */
 const els = {};
 /** @type {boolean|null} */
@@ -597,11 +598,22 @@ export function triggerEraBurst() {
   if (!host) return;
   host.hidden = false;
   host.replaceChildren();
-  const pieces = ["🦆", "✨", "🪙", "🌿"];
+  const pieces = ["🦆", "✨", "coin", "🌿"];
   for (let i = 0; i < 14; i++) {
     const el = document.createElement("span");
     el.className = "era-burst__bit";
-    el.textContent = pieces[i % pieces.length];
+    const kind = pieces[i % pieces.length];
+    if (kind === "coin") {
+      const img = document.createElement("img");
+      img.src = COIN_TOKEN_SRC;
+      img.alt = "";
+      img.className = "era-burst__coin coin-icon";
+      img.width = 24;
+      img.height = 24;
+      el.appendChild(img);
+    } else {
+      el.textContent = kind;
+    }
     el.style.setProperty("--x", `${(Math.random() * 160 - 80).toFixed(0)}px`);
     el.style.setProperty("--r", `${(Math.random() * 40 - 20).toFixed(0)}deg`);
     el.style.animationDelay = `${(i * 40)}ms`;
@@ -627,7 +639,7 @@ export function updateBuyPondBtn(cost, affordable, visible) {
   if (!btn) return;
   btn.hidden = !visible;
   if (!visible) return;
-  btn.textContent = `Buy pond (${formatNumber(cost, 0)} 🪙) +50 capacity`;
+  btn.innerHTML = `Buy pond (${coinCostHtml(formatNumber(cost, 0))}) +50 capacity`;
   /** @type {HTMLButtonElement} */ (btn).disabled = !affordable;
 }
 

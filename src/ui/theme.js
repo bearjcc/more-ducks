@@ -65,6 +65,7 @@ export function applyTimeOfDay(pref) {
     scheduleThemeColorSync();
   }
   updateTimeToggle(resolved);
+  syncBrandIcons(resolved);
   if (pref === "system") {
     if (!darkMq && typeof matchMedia === "function") {
       darkMq = matchMedia("(prefers-color-scheme: dark)");
@@ -84,6 +85,25 @@ export function applyTimeOfDay(pref) {
  */
 export function toggleTimeOfDay(settings) {
   settings.timeOfDay = resolveTimeOfDay(settings.timeOfDay) === "day" ? "night" : "day";
+}
+
+/**
+ * @param {"day"|"night"} resolved
+ */
+/**
+ * @param {"day"|"night"} resolved
+ */
+function syncBrandIcons(resolved) {
+  const night = resolved === "night";
+  const svg = night ? "assets/badge-night.svg" : "assets/favicon.svg";
+  const png32 = night ? "assets/favicon-night-32.png" : "assets/favicon-32.png";
+  const apple = night ? "assets/apple-touch-icon-night.png" : "assets/apple-touch-icon.png";
+  for (const link of document.querySelectorAll("link[data-brand-icon]")) {
+    const kind = link.getAttribute("data-brand-icon");
+    if (kind === "svg") link.setAttribute("href", svg);
+    if (kind === "png32") link.setAttribute("href", png32);
+    if (kind === "apple") link.setAttribute("href", apple);
+  }
 }
 
 /**

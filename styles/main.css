@@ -419,6 +419,36 @@ html.theme-instant { --theme-duration: 0s; }
 .counter--coins .counter__value { color: var(--counter-coin-ink); }
 
 .counter__icon { font-size: 1.05rem; line-height: 1; flex: none; }
+.coin-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  object-fit: contain;
+  flex: none;
+}
+.coin-icon--hud {
+  width: 1.15em;
+  height: 1.15em;
+}
+.coin-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22em;
+  justify-content: center;
+}
+.coin-cost__text {
+  font-variant-numeric: tabular-nums;
+}
+.card__cost .coin-icon {
+  width: 0.95em;
+  height: 0.95em;
+}
+.sheet-handle__coin.coin-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+}
 
 .counter__value {
   font-family: var(--font-display);
@@ -3028,6 +3058,10 @@ body[data-act-tier="empire"] .chat-thread {
     margin-top: 0;
     padding-top: 4px;
   }
+  :root:not([data-time="night"]) .dock .tab[data-tab="flock"].is-active .tab__label {
+    color: #000 !important;
+    text-shadow: none;
+  }
   .dock .tab.is-locked {
     opacity: 0.5;
     filter: saturate(0.35) brightness(0.88);
@@ -3069,7 +3103,6 @@ body[data-act-tier="empire"] .chat-thread {
   [data-time="day"] .dock .tab[data-tab="regions"] .tab__label {
     color: color-mix(in oklch, var(--reeds-900) 88%, var(--grass-900));
   }
-  [data-time="day"] .dock .tab[data-tab="flock"].is-active .tab__label,
   [data-time="day"] .dock .tab[data-tab="regions"].is-active .tab__label {
     color: color-mix(in oklch, var(--reeds-900) 92%, var(--water-900));
   }
@@ -3105,7 +3138,13 @@ body[data-act-tier="empire"] .chat-thread {
   [data-time="night"] .dock .tab[data-tab="regions"]:not(.is-active) .tab__label {
     color: color-mix(in oklch, var(--highlight) 97%, var(--reeds-400));
   }
-  [data-time="night"] .dock .tab[data-tab="flock"].is-active .tab__label,
+  [data-time="night"] .dock .tab[data-tab="flock"].is-active {
+    background-color: color-mix(in oklch, var(--reeds-900) 52%, var(--water-700)) !important;
+  }
+  [data-time="night"] .dock .tab[data-tab="flock"].is-active .tab__label {
+    color: color-mix(in oklch, var(--highlight) 72%, white);
+    text-shadow: none;
+  }
   [data-time="night"] .dock .tab[data-tab="regions"].is-active .tab__label {
     color: var(--highlight);
   }
@@ -3249,9 +3288,15 @@ body[data-act-tier="empire"] .chat-thread {
   [data-time="night"] .dock .tab.is-active .tab__label {
     color: var(--highlight) !important;
   }
-  [data-time="day"] .dock .tab[data-tab="flock"].is-active .tab__label,
   [data-time="day"] .dock .tab[data-tab="regions"].is-active .tab__label {
     color: color-mix(in oklch, var(--reeds-900) 92%, var(--water-900)) !important;
+  }
+  [data-time="night"] .dock .tab[data-tab="flock"].is-active {
+    background-color: color-mix(in oklch, var(--reeds-900) 52%, var(--water-700)) !important;
+  }
+  [data-time="night"] .dock .tab[data-tab="flock"].is-active .tab__label {
+    color: color-mix(in oklch, var(--highlight) 72%, white) !important;
+    text-shadow: none !important;
   }
   [data-time="day"] .dock .tab[data-tab="regions"]:not(.is-active) .tab__label,
   [data-time="day"] .dock .tab[data-tab="flock"]:not(.is-active) .tab__label {

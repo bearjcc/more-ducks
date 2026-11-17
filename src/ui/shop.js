@@ -6,6 +6,7 @@ import { purchaseRevealed, flockProducersUnlocked } from "../game/unlocks.js";
 import { PRODUCERS } from "../data/producers.js";
 import { flashCard } from "./render.js";
 import { cardCopyMarkup, producerEffectLine } from "../game/cardCopy.js";
+import { setCoinCost } from "./coinMark.js";
 /** @typedef {1 | 10 | 100 | "max"} BuyMode */
 
 /**
@@ -171,7 +172,11 @@ export function updateShop(s) {
       refs.effectEl.textContent = producerEffectLine(def, rate);
     }
     const label = qty > 1 ? `×${formatNumber(qty, 0)} ` : "";
-    refs.cost.textContent = "🪙 " + label + (isFinite(cost) ? formatNumber(cost, 0) : "∞");
+    setCoinCost(
+      refs.cost,
+      isFinite(cost) ? formatNumber(cost, 0) : "∞",
+      label,
+    );
     const affordable = qty > 0 && isFinite(cost) && s.coins >= cost;
     refs.btn.disabled = !affordable;
     buyCtx.set(refs.btn, { engine: s.engine, coins: s.coins });

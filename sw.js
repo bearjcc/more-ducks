@@ -1,11 +1,22 @@
 // ponytail: static asset list — bump CACHE when deploy changes.
-const CACHE = "more-ducks-v13";
+const CACHE = "more-ducks-v14";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./styles/main.css",
+  "./assets/favicon.svg",
   "./assets/icon.svg",
+  "./assets/badge-day.svg",
+  "./assets/badge-night.svg",
+  "./assets/coin-token.svg",
+  "./assets/favicon-32.png",
+  "./assets/favicon-night-32.png",
+  "./assets/apple-touch-icon.png",
+  "./assets/apple-touch-icon-night.png",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png",
+  "./assets/icon-maskable-512.png",
   "./src/main.js",
   "./src/data/ducks.js",
   "./src/data/eras.js",
@@ -44,6 +55,8 @@ const ASSETS = [
   "./src/ui/ending.js",
   "./src/ui/modal.js",
   "./src/ui/render.js",
+  "./src/ui/coinMark.js",
+  "./src/ui/theme.js",
   "./src/ui/settings.js",
   "./src/ui/shop.js",
   "./src/ui/hype.js",

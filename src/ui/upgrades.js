@@ -7,6 +7,7 @@ import { purchaseRevealed, upgradesTabUnlocked } from "../game/unlocks.js";
 import { upgradeLevel } from "../game/levels.js";
 import { flashCard } from "./render.js";
 import { cardCopyMarkup, upgradeEffectLine } from "../game/cardCopy.js";
+import { setCoinCost } from "./coinMark.js";
 /**
  * @typedef {object} UpgRefs
  * @property {HTMLElement} root
@@ -134,7 +135,7 @@ export function updateUpgrades(s) {
       continue;
     }
 
-    refs.cost.textContent = "🪙 " + formatNumber(nextCost, 0);
+    setCoinCost(refs.cost, formatNumber(nextCost, 0));
     const affordable = s.coins >= nextCost;
     refs.btn.disabled = !affordable;
     refs.root.classList.toggle("is-affordable", affordable);
