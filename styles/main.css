@@ -3059,7 +3059,7 @@ body[data-act-tier="empire"] .chat-thread {
     padding-top: 4px;
   }
   :root:not([data-time="night"]) .dock .tab[data-tab="flock"].is-active .tab__label {
-    color: #000 !important;
+    color: color-mix(in oklch, var(--reeds-900) 60%, black) !important;
     text-shadow: none;
   }
   .dock .tab.is-locked {
